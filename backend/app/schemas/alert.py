@@ -12,6 +12,14 @@ AlertSeverity = Literal[
     "critical",
 ]
 
+AlertStatus = Literal[
+    "new",
+    "assigned",
+    "investigating",
+    "resolved",
+    "closed",
+]
+
 
 class AlertCreate(BaseModel):
     title: str = Field(
@@ -28,6 +36,10 @@ class AlertCreate(BaseModel):
         min_length=1,
         max_length=100,
     )
+
+
+class AlertUpdate(BaseModel):
+    status: AlertStatus
 
 
 class AlertRead(BaseModel):

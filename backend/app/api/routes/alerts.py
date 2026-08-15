@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, status
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_database_session
 from app.models.alert import Alert
-from app.schemas.alert import AlertCreate, AlertRead
+from app.schemas.alert import AlertCreate, AlertRead, AlertUpdate
 
 
 router = APIRouter(
@@ -52,3 +54,47 @@ async def get_alerts(
     alerts = result.scalars().all()
 
     return list(alerts)
+
+
+@router.get(
+    "/{alert_id}",
+    response_model=AlertRead,
+)
+async def get_alert(
+    alert_id: UUID,
+    session: AsyncSession = Depends(get_database_session),
+) -> Alert:
+    alert = await session.get(Alert, alert_id)
+
+    if alert is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Alert not found",
+        )
+
+    return alert
+
+
+@router.patch(
+    "/{alert_id}",
+    response_model=AlertRead,
+)
+async def update_alert(
+    alert_id: UUID,
+    alert_data: AlertUpdate,
+    session: AsyncSession = Depends(get_database_session),
+) -> Alert:
+    alert = await session.get(Alert, alert_id)
+
+    if alert is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Alert not found",
+        )
+
+    alert.status = alert_data.status
+
+    await session.commit()
+    await session.refresh(alert)
+
+    return alert
