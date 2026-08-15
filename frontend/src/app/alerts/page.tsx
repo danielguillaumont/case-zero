@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { Alert, getAlerts } from "@/lib/api";
+import { getAlerts } from "@/lib/api";
+import type { Alert } from "@/lib/api";
 
 
 export default async function AlertsPage() {
@@ -40,6 +41,7 @@ export default async function AlertsPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="flex min-h-screen">
+
         {/* Sidebar */}
         <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
           <div className="mb-10">
@@ -88,7 +90,9 @@ export default async function AlertsPage() {
         <main className="flex-1 p-10">
           <header className="mb-10 flex items-center justify-between">
             <div>
-              <p className="text-sm text-emerald-400">CASE//ZERO</p>
+              <p className="text-sm text-emerald-400">
+                CASE//ZERO
+              </p>
 
               <h2 className="mt-1 text-3xl font-semibold">
                 Alert Management
@@ -156,6 +160,7 @@ export default async function AlertsPage() {
               </div>
             ) : (
               <div>
+
                 {/* Table Header */}
                 <div className="grid grid-cols-[120px_1fr_160px_160px_190px] gap-4 border-b border-zinc-800 bg-zinc-950/40 px-6 py-3 text-xs uppercase tracking-wider text-zinc-500">
                   <span>Severity</span>
@@ -174,6 +179,7 @@ export default async function AlertsPage() {
                     />
                   ))}
                 </div>
+
               </div>
             )}
           </section>
@@ -184,9 +190,16 @@ export default async function AlertsPage() {
 }
 
 
-function AlertTableRow({ alert }: { alert: Alert }) {
+function AlertTableRow({
+  alert,
+}: {
+  alert: Alert;
+}) {
   return (
-    <div className="grid grid-cols-[120px_1fr_160px_160px_190px] items-center gap-4 px-6 py-5 transition hover:bg-zinc-800/40">
+    <Link
+      href={`/alerts/${alert.id}`}
+      className="grid grid-cols-[120px_1fr_160px_160px_190px] items-center gap-4 px-6 py-5 transition hover:bg-zinc-800/40"
+    >
       <SeverityBadge severity={alert.severity} />
 
       <div className="min-w-0">
@@ -210,19 +223,31 @@ function AlertTableRow({ alert }: { alert: Alert }) {
       <span className="text-sm text-zinc-500">
         {formatAlertTime(alert.created_at)}
       </span>
-    </div>
+    </Link>
   );
 }
 
 
-function SeverityBadge({ severity }: { severity: string }) {
-  const normalizedSeverity = severity.toLowerCase();
+function SeverityBadge({
+  severity,
+}: {
+  severity: string;
+}) {
+  const normalizedSeverity =
+    severity.toLowerCase();
 
   const styles: Record<string, string> = {
-    low: "border-blue-900 bg-blue-950 text-blue-400",
-    medium: "border-yellow-900 bg-yellow-950 text-yellow-400",
-    high: "border-orange-900 bg-orange-950 text-orange-400",
-    critical: "border-red-900 bg-red-950 text-red-400",
+    low:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    medium:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    high:
+      "border-orange-900 bg-orange-950 text-orange-400",
+
+    critical:
+      "border-red-900 bg-red-950 text-red-400",
   };
 
   return (
@@ -238,17 +263,29 @@ function SeverityBadge({ severity }: { severity: string }) {
 }
 
 
-function StatusBadge({ status }: { status: string }) {
-  const normalizedStatus = status.toLowerCase();
+function StatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const normalizedStatus =
+    status.toLowerCase();
 
   const styles: Record<string, string> = {
-    new: "border-zinc-700 bg-zinc-800 text-zinc-300",
-    assigned: "border-blue-900 bg-blue-950 text-blue-400",
+    new:
+      "border-zinc-700 bg-zinc-800 text-zinc-300",
+
+    assigned:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
     investigating:
       "border-yellow-900 bg-yellow-950 text-yellow-400",
+
     resolved:
       "border-emerald-900 bg-emerald-950 text-emerald-400",
-    closed: "border-zinc-800 bg-zinc-950 text-zinc-500",
+
+    closed:
+      "border-zinc-800 bg-zinc-950 text-zinc-500",
   };
 
   return (
