@@ -1,4 +1,9 @@
-export default function Home() {
+import { getApiHealth } from "@/lib/api";
+
+export default async function Home() {
+  const apiHealth = await getApiHealth();
+  const apiOnline = apiHealth?.status === "online";
+
   const navigationItems = [
     "Dashboard",
     "Alerts",
@@ -19,7 +24,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="flex min-h-screen">
-
         {/* Sidebar */}
         <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
           <div className="mb-10">
@@ -98,7 +102,6 @@ export default function Home() {
 
           {/* Lower Dashboard */}
           <div className="mt-8 grid grid-cols-3 gap-6">
-
             {/* System Status */}
             <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
               <div className="mb-6">
@@ -112,8 +115,8 @@ export default function Home() {
               <div className="divide-y divide-zinc-800">
                 <StatusRow
                   name="CASE//ZERO API"
-                  status="ONLINE"
-                  active
+                  status={apiOnline ? "ONLINE" : "OFFLINE"}
+                  active={apiOnline}
                 />
 
                 <StatusRow
@@ -131,6 +134,14 @@ export default function Home() {
                   status="NOT CONFIGURED"
                 />
               </div>
+
+              {apiOnline && apiHealth && (
+                <div className="mt-4 border-t border-zinc-800 pt-4">
+                  <p className="text-xs text-zinc-600">
+                    API Version: {apiHealth.version}
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* Investigation Queue */}
