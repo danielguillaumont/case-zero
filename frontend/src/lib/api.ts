@@ -12,6 +12,7 @@ export type Alert = {
   severity: string;
   status: string;
   source: string;
+  assigned_analyst: string | null;
   created_at: string;
   updated_at: string;
 };

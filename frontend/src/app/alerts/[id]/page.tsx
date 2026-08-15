@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAlert } from "@/lib/api";
-import { updateAlertStatus } from "./actions";
+import {
+  assignAlertToMe,
+  updateAlertStatus,
+} from "./actions";
 
 
 export default async function AlertDetailPage({
@@ -30,6 +33,11 @@ export default async function AlertDetailPage({
     null,
     alert.id,
     "resolved"
+  );
+
+  const assignToMeAction = assignAlertToMe.bind(
+    null,
+    alert.id
   );
 
   const navigationItems = [
@@ -169,6 +177,14 @@ export default async function AlertDetailPage({
                   />
 
                   <DetailField
+                    label="Assigned Analyst"
+                    value={
+                      alert.assigned_analyst ??
+                      "Unassigned"
+                    }
+                  />
+
+                  <DetailField
                     label="Created"
                     value={formatAlertTime(alert.created_at)}
                   />
@@ -260,15 +276,43 @@ export default async function AlertDetailPage({
 
                 </div>
 
-                {/* Analyst */}
+                {/* Analyst Assignment */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Assigned Analyst
                   </p>
 
-                  <p className="mt-2 text-sm text-zinc-400">
-                    Unassigned
-                  </p>
+                  {alert.assigned_analyst ? (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-zinc-200">
+                        {alert.assigned_analyst}
+                      </p>
+
+                      {alert.assigned_analyst === "Daniel Guillaumont" && (
+                        <p className="mt-1 text-xs text-emerald-400">
+                          Assigned to you
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-3">
+                      <p className="text-sm text-zinc-500">
+                        Unassigned
+                      </p>
+
+                      <form
+                        action={assignToMeAction}
+                        className="mt-4"
+                      >
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                        >
+                          Assign to Me
+                        </button>
+                      </form>
+                    </div>
+                  )}
                 </div>
 
                 {/* Case */}

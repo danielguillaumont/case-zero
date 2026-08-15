@@ -92,7 +92,12 @@ async def update_alert(
             detail="Alert not found",
         )
 
-    alert.status = alert_data.status
+    update_data = alert_data.model_dump(
+        exclude_unset=True
+    )
+
+    for field, value in update_data.items():
+        setattr(alert, field, value)
 
     await session.commit()
     await session.refresh(alert)

@@ -39,7 +39,13 @@ class AlertCreate(BaseModel):
 
 
 class AlertUpdate(BaseModel):
-    status: AlertStatus
+    status: AlertStatus | None = None
+
+    assigned_analyst: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
 
 
 class AlertRead(BaseModel):
@@ -51,5 +57,6 @@ class AlertRead(BaseModel):
     severity: str
     status: str
     source: str
+    assigned_analyst: str | None
     created_at: datetime
     updated_at: datetime
