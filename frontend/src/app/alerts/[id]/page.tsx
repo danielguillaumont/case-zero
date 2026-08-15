@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAlert } from "@/lib/api";
+import { updateAlertStatus } from "./actions";
 
 
 export default async function AlertDetailPage({
@@ -16,6 +17,20 @@ export default async function AlertDetailPage({
   if (!alert) {
     notFound();
   }
+
+  const normalizedStatus = alert.status.toLowerCase();
+
+  const startInvestigationAction = updateAlertStatus.bind(
+    null,
+    alert.id,
+    "investigating"
+  );
+
+  const resolveAlertAction = updateAlertStatus.bind(
+    null,
+    alert.id,
+    "resolved"
+  );
 
   const navigationItems = [
     { label: "Dashboard", href: "/" },
@@ -78,7 +93,7 @@ export default async function AlertDetailPage({
         {/* Main Content */}
         <main className="flex-1 p-10">
 
-          {/* Back */}
+          {/* Back Link */}
           <div className="mb-8">
             <Link
               href="/alerts"
@@ -88,7 +103,7 @@ export default async function AlertDetailPage({
             </Link>
           </div>
 
-          {/* Header */}
+          {/* Alert Header */}
           <header className="mb-8 flex items-start justify-between gap-6">
             <div>
               <p className="text-sm text-emerald-400">
@@ -106,6 +121,7 @@ export default async function AlertDetailPage({
 
             <div className="flex items-center gap-3">
               <SeverityBadge severity={alert.severity} />
+
               <StatusBadge status={alert.status} />
             </div>
           </header>
@@ -125,6 +141,7 @@ export default async function AlertDetailPage({
               </div>
 
               <div className="p-6">
+
                 <DetailField
                   label="Description"
                   value={
@@ -135,6 +152,7 @@ export default async function AlertDetailPage({
                 />
 
                 <div className="mt-8 grid grid-cols-2 gap-8">
+
                   <DetailField
                     label="Source"
                     value={alert.source}
@@ -159,11 +177,12 @@ export default async function AlertDetailPage({
                     label="Last Updated"
                     value={formatAlertTime(alert.updated_at)}
                   />
+
                 </div>
               </div>
             </section>
 
-            {/* Investigation */}
+            {/* Investigation Panel */}
             <section className="rounded-xl border border-zinc-800 bg-zinc-900">
               <div className="border-b border-zinc-800 p-6">
                 <h3 className="font-medium">
@@ -177,6 +196,7 @@ export default async function AlertDetailPage({
 
               <div className="space-y-6 p-6">
 
+                {/* Current Status */}
                 <div>
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Current Status
@@ -187,6 +207,60 @@ export default async function AlertDetailPage({
                   </div>
                 </div>
 
+                {/* Workflow Action */}
+                <div className="border-t border-zinc-800 pt-6">
+
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Analyst Action
+                  </p>
+
+                  {["new", "assigned"].includes(normalizedStatus) && (
+                    <form
+                      action={startInvestigationAction}
+                      className="mt-3"
+                    >
+                      <button
+                        type="submit"
+                        className="w-full rounded-lg border border-yellow-800 bg-yellow-950 px-4 py-3 text-sm font-medium text-yellow-400 transition hover:bg-yellow-900"
+                      >
+                        Start Investigation
+                      </button>
+                    </form>
+                  )}
+
+                  {normalizedStatus === "investigating" && (
+                    <form
+                      action={resolveAlertAction}
+                      className="mt-3"
+                    >
+                      <button
+                        type="submit"
+                        className="w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
+                      >
+                        Resolve Alert
+                      </button>
+                    </form>
+                  )}
+
+                  {normalizedStatus === "resolved" && (
+                    <div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
+                      <p className="text-sm text-emerald-400">
+                        Investigation resolved
+                      </p>
+                    </div>
+                  )}
+
+                  {normalizedStatus === "closed" && (
+                    <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
+                      <p className="text-sm text-zinc-400">
+                        Alert closed
+                      </p>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Analyst */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Assigned Analyst
@@ -197,6 +271,7 @@ export default async function AlertDetailPage({
                   </p>
                 </div>
 
+                {/* Case */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Investigation Case
@@ -271,12 +346,19 @@ function SeverityBadge({
 }: {
   severity: string;
 }) {
+  const normalizedSeverity =
+    severity.toLowerCase();
+
   const styles: Record<string, string> = {
-    low: "border-blue-900 bg-blue-950 text-blue-400",
+    low:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
     medium:
       "border-yellow-900 bg-yellow-950 text-yellow-400",
+
     high:
       "border-orange-900 bg-orange-950 text-orange-400",
+
     critical:
       "border-red-900 bg-red-950 text-red-400",
   };
@@ -284,7 +366,7 @@ function SeverityBadge({
   return (
     <span
       className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[severity.toLowerCase()] ??
+        styles[normalizedSeverity] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -299,15 +381,22 @@ function StatusBadge({
 }: {
   status: string;
 }) {
+  const normalizedStatus =
+    status.toLowerCase();
+
   const styles: Record<string, string> = {
     new:
       "border-zinc-700 bg-zinc-800 text-zinc-300",
+
     assigned:
       "border-blue-900 bg-blue-950 text-blue-400",
+
     investigating:
       "border-yellow-900 bg-yellow-950 text-yellow-400",
+
     resolved:
       "border-emerald-900 bg-emerald-950 text-emerald-400",
+
     closed:
       "border-zinc-800 bg-zinc-950 text-zinc-500",
   };
@@ -315,7 +404,7 @@ function StatusBadge({
   return (
     <span
       className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[status.toLowerCase()] ??
+        styles[normalizedStatus] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
