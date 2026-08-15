@@ -1,10 +1,25 @@
-import { getApiHealth } from "@/lib/api";
+import { Alert, getAlerts, getApiHealth } from "@/lib/api";
 
 export default async function Home() {
-  const apiHealth = await getApiHealth();
+  const [apiHealth, alerts] = await Promise.all([
+    getApiHealth(),
+    getAlerts(),
+  ]);
 
   const apiOnline = apiHealth?.status === "online";
   const databaseOnline = apiHealth?.database === "online";
+
+  const openAlerts = alerts.filter((alert) =>
+    ["new", "assigned", "investigating"].includes(
+      alert.status.toLowerCase()
+    )
+  );
+
+  const criticalAlerts = openAlerts.filter(
+    (alert) => alert.severity.toLowerCase() === "critical"
+  );
+
+  const recentAlerts = alerts.slice(0, 5);
 
   const navigationItems = [
     "Dashboard",
@@ -18,9 +33,9 @@ export default async function Home() {
 
   const metrics = [
     { label: "Events Today", value: "0" },
-    { label: "Open Alerts", value: "0" },
+    { label: "Open Alerts", value: String(openAlerts.length) },
     { label: "Active Cases", value: "0" },
-    { label: "Critical", value: "0" },
+    { label: "Critical", value: String(criticalAlerts.length) },
   ];
 
   return (
@@ -92,7 +107,9 @@ export default async function Home() {
                   key={metric.label}
                   className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
                 >
-                  <p className="text-sm text-zinc-500">{metric.label}</p>
+                  <p className="text-sm text-zinc-500">
+                    {metric.label}
+                  </p>
 
                   <p className="mt-3 text-3xl font-semibold">
                     {metric.value}
@@ -154,7 +171,9 @@ export default async function Home() {
 
             {/* Investigation Queue */}
             <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-              <h3 className="font-medium">Investigation Queue</h3>
+              <h3 className="font-medium">
+                Investigation Queue
+              </h3>
 
               <p className="mt-1 text-sm text-zinc-500">
                 Analyst workload
@@ -173,26 +192,42 @@ export default async function Home() {
           </div>
 
           {/* Recent Alerts */}
-          <section className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900">
+          <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
             <div className="border-b border-zinc-800 p-6">
-              <h3 className="font-medium">Recent Alerts</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Recent Alerts</h3>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Latest security detections
-              </p>
-            </div>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Latest security detections
+                  </p>
+                </div>
 
-            <div className="flex min-h-48 items-center justify-center">
-              <div className="text-center">
-                <p className="text-sm text-zinc-400">
-                  No alerts detected
-                </p>
-
-                <p className="mt-1 text-xs text-zinc-600">
-                  Detection events will appear here.
-                </p>
+                <span className="text-xs text-zinc-500">
+                  {alerts.length} total
+                </span>
               </div>
             </div>
+
+            {recentAlerts.length === 0 ? (
+              <div className="flex min-h-48 items-center justify-center">
+                <div className="text-center">
+                  <p className="text-sm text-zinc-400">
+                    No alerts detected
+                  </p>
+
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Detection events will appear here.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="divide-y divide-zinc-800">
+                {recentAlerts.map((alert) => (
+                  <AlertRow key={alert.id} alert={alert} />
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>
@@ -230,4 +265,62 @@ function StatusRow({
       </span>
     </div>
   );
+}
+
+function AlertRow({ alert }: { alert: Alert }) {
+  return (
+    <div className="flex items-center justify-between gap-6 px-6 py-5">
+      <div className="flex min-w-0 items-center gap-4">
+        <SeverityBadge severity={alert.severity} />
+
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-zinc-100">
+            {alert.title}
+          </p>
+
+          <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+            <span>{alert.source}</span>
+            <span>•</span>
+            <span>{formatAlertTime(alert.created_at)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="shrink-0">
+        <span className="rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs uppercase text-zinc-400">
+          {alert.status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: string }) {
+  const normalizedSeverity = severity.toLowerCase();
+
+  const severityStyles: Record<string, string> = {
+    low: "border-blue-900 bg-blue-950 text-blue-400",
+    medium: "border-yellow-900 bg-yellow-950 text-yellow-400",
+    high: "border-orange-900 bg-orange-950 text-orange-400",
+    critical: "border-red-900 bg-red-950 text-red-400",
+  };
+
+  const style =
+    severityStyles[normalizedSeverity] ??
+    "border-zinc-700 bg-zinc-800 text-zinc-400";
+
+  return (
+    <span
+      className={`w-20 rounded-md border px-2.5 py-1 text-center text-xs font-medium uppercase ${style}`}
+    >
+      {severity}
+    </span>
+  );
+}
+
+function formatAlertTime(timestamp: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(timestamp));
 }
