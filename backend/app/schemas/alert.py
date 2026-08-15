@@ -47,6 +47,8 @@ class AlertUpdate(BaseModel):
         max_length=255,
     )
 
+    case_id: UUID | None = None
+
 
 class AlertRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -58,5 +60,6 @@ class AlertRead(BaseModel):
     status: str
     source: str
     assigned_analyst: str | None
+    case_id: UUID | None
     created_at: datetime
     updated_at: datetime

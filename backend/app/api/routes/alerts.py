@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_database_session
 from app.models.alert import Alert
+from app.models.case import Case
 from app.schemas.alert import AlertCreate, AlertRead, AlertUpdate
 
 
@@ -48,7 +49,9 @@ async def get_alerts(
     session: AsyncSession = Depends(get_database_session),
 ) -> list[Alert]:
     result = await session.execute(
-        select(Alert).order_by(Alert.created_at.desc())
+        select(Alert).order_by(
+            Alert.created_at.desc()
+        )
     )
 
     alerts = result.scalars().all()
@@ -64,7 +67,10 @@ async def get_alert(
     alert_id: UUID,
     session: AsyncSession = Depends(get_database_session),
 ) -> Alert:
-    alert = await session.get(Alert, alert_id)
+    alert = await session.get(
+        Alert,
+        alert_id,
+    )
 
     if alert is None:
         raise HTTPException(
@@ -84,7 +90,10 @@ async def update_alert(
     alert_data: AlertUpdate,
     session: AsyncSession = Depends(get_database_session),
 ) -> Alert:
-    alert = await session.get(Alert, alert_id)
+    alert = await session.get(
+        Alert,
+        alert_id,
+    )
 
     if alert is None:
         raise HTTPException(
@@ -96,8 +105,27 @@ async def update_alert(
         exclude_unset=True
     )
 
+    if (
+        "case_id" in update_data
+        and update_data["case_id"] is not None
+    ):
+        investigation_case = await session.get(
+            Case,
+            update_data["case_id"],
+        )
+
+        if investigation_case is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Case not found",
+            )
+
     for field, value in update_data.items():
-        setattr(alert, field, value)
+        setattr(
+            alert,
+            field,
+            value,
+        )
 
     await session.commit()
     await session.refresh(alert)

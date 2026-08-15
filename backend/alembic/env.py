@@ -9,8 +9,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.config import DATABASE_URL
-from app.models.base import Base
 from app.models.alert import Alert
+from app.models.base import Base
+from app.models.case import Case
 
 
 config = context.config
@@ -55,20 +56,29 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(
+            config.config_ini_section,
+            {},
+        ),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+        await connection.run_sync(
+            do_run_migrations
+        )
 
     await connectable.dispose()
 
 
 def create_selector_event_loop():
-    loop = asyncio.SelectorEventLoop(selectors.SelectSelector())
+    loop = asyncio.SelectorEventLoop(
+        selectors.SelectSelector()
+    )
+
     asyncio.set_event_loop(loop)
+
     return loop
 
 
@@ -79,7 +89,9 @@ def run_migrations_online() -> None:
             loop_factory=create_selector_event_loop,
         )
     else:
-        asyncio.run(run_async_migrations())
+        asyncio.run(
+            run_async_migrations()
+        )
 
 
 if context.is_offline_mode():

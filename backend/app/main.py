@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.routes.alerts import router as alerts_router
+from app.api.routes.cases import router as cases_router
 from app.database import check_database_connection
 
 
@@ -12,6 +13,7 @@ app = FastAPI(
 
 
 app.include_router(alerts_router)
+app.include_router(cases_router)
 
 
 @app.get("/")

@@ -1,21 +1,14 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (
-    DateTime,
-    ForeignKey,
-    String,
-    Text,
-    Uuid,
-    func,
-)
+from sqlalchemy import DateTime, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
 
 
-class Alert(Base):
-    __tablename__ = "alerts"
+class Case(Base):
+    __tablename__ = "cases"
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
@@ -33,36 +26,20 @@ class Alert(Base):
         nullable=True,
     )
 
-    severity: Mapped[str] = mapped_column(
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="open",
+    )
+
+    priority: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
         default="medium",
     )
 
-    status: Mapped[str] = mapped_column(
-        String(30),
-        nullable=False,
-        default="new",
-    )
-
-    source: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        default="case-zero",
-    )
-
     assigned_analyst: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=True,
-    )
-
-    case_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid,
-        ForeignKey(
-            "cases.id",
-            name="fk_alerts_case_id_cases",
-            ondelete="SET NULL",
-        ),
         nullable=True,
     )
 
