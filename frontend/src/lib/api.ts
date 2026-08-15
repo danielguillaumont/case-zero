@@ -2,6 +2,7 @@ export type HealthStatus = {
   status: string;
   service: string;
   version: string;
+  database: string;
 };
 
 export async function getApiHealth(): Promise<HealthStatus | null> {

@@ -2,7 +2,9 @@ import { getApiHealth } from "@/lib/api";
 
 export default async function Home() {
   const apiHealth = await getApiHealth();
+
   const apiOnline = apiHealth?.status === "online";
+  const databaseOnline = apiHealth?.database === "online";
 
   const navigationItems = [
     "Dashboard",
@@ -117,6 +119,12 @@ export default async function Home() {
                   name="CASE//ZERO API"
                   status={apiOnline ? "ONLINE" : "OFFLINE"}
                   active={apiOnline}
+                />
+
+                <StatusRow
+                  name="PostgreSQL Database"
+                  status={databaseOnline ? "ONLINE" : "OFFLINE"}
+                  active={databaseOnline}
                 />
 
                 <StatusRow
