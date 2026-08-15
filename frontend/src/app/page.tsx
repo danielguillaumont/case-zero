@@ -1,4 +1,8 @@
-import { Alert, getAlerts, getApiHealth } from "@/lib/api";
+import Link from "next/link";
+
+import { getAlerts, getApiHealth } from "@/lib/api";
+import type { Alert } from "@/lib/api";
+
 
 export default async function Home() {
   const [apiHealth, alerts] = await Promise.all([
@@ -22,13 +26,13 @@ export default async function Home() {
   const recentAlerts = alerts.slice(0, 5);
 
   const navigationItems = [
-    "Dashboard",
-    "Alerts",
-    "Cases",
-    "Hunt",
-    "Intelligence",
-    "Rules",
-    "Playbooks",
+    { label: "Dashboard", href: "/" },
+    { label: "Alerts", href: "/alerts" },
+    { label: "Cases", href: "#" },
+    { label: "Hunt", href: "#" },
+    { label: "Intelligence", href: "#" },
+    { label: "Rules", href: "#" },
+    { label: "Playbooks", href: "#" },
   ];
 
   const metrics = [
@@ -54,24 +58,34 @@ export default async function Home() {
           </div>
 
           <nav className="space-y-2">
-            {navigationItems.map((item) => (
-              <button
-                key={item}
-                className={`w-full rounded-lg px-4 py-3 text-left text-sm transition ${
-                  item === "Dashboard"
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
+            {navigationItems.map((item) =>
+              item.href === "#" ? (
+                <div
+                  key={item.label}
+                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
+                >
+                  {item.label}
+                </div>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
+                    item.label === "Dashboard"
+                      ? "bg-zinc-800 text-white"
+                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
           </nav>
 
           <div className="mt-10 border-t border-zinc-800 pt-6">
-            <button className="w-full rounded-lg px-4 py-3 text-left text-sm text-zinc-500 hover:bg-zinc-900 hover:text-white">
+            <div className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500">
               Administration
-            </button>
+            </div>
           </div>
         </aside>
 
@@ -79,7 +93,9 @@ export default async function Home() {
         <main className="flex-1 p-10">
           <header className="mb-10 flex items-center justify-between">
             <div>
-              <p className="text-sm text-emerald-400">CASE//ZERO</p>
+              <p className="text-sm text-emerald-400">
+                CASE//ZERO
+              </p>
 
               <h2 className="mt-1 text-3xl font-semibold">
                 Security Operations Dashboard
@@ -124,7 +140,9 @@ export default async function Home() {
             {/* System Status */}
             <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
               <div className="mb-6">
-                <h3 className="font-medium">System Status</h3>
+                <h3 className="font-medium">
+                  System Status
+                </h3>
 
                 <p className="mt-1 text-sm text-zinc-500">
                   CASE//ZERO platform services
@@ -181,7 +199,9 @@ export default async function Home() {
 
               <div className="flex min-h-52 items-center justify-center">
                 <div className="text-center">
-                  <p className="text-4xl font-semibold">0</p>
+                  <p className="text-4xl font-semibold">
+                    0
+                  </p>
 
                   <p className="mt-2 text-sm text-zinc-500">
                     Active investigations
@@ -196,7 +216,9 @@ export default async function Home() {
             <div className="border-b border-zinc-800 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium">Recent Alerts</h3>
+                  <h3 className="font-medium">
+                    Recent Alerts
+                  </h3>
 
                   <p className="mt-1 text-sm text-zinc-500">
                     Latest security detections
@@ -224,7 +246,10 @@ export default async function Home() {
             ) : (
               <div className="divide-y divide-zinc-800">
                 {recentAlerts.map((alert) => (
-                  <AlertRow key={alert.id} alert={alert} />
+                  <AlertRow
+                    key={alert.id}
+                    alert={alert}
+                  />
                 ))}
               </div>
             )}
@@ -234,6 +259,7 @@ export default async function Home() {
     </div>
   );
 }
+
 
 function StatusRow({
   name,
@@ -249,16 +275,22 @@ function StatusRow({
       <div className="flex items-center gap-3">
         <div
           className={`h-2.5 w-2.5 rounded-full ${
-            active ? "bg-emerald-400" : "bg-zinc-600"
+            active
+              ? "bg-emerald-400"
+              : "bg-zinc-600"
           }`}
         />
 
-        <span className="text-sm">{name}</span>
+        <span className="text-sm">
+          {name}
+        </span>
       </div>
 
       <span
         className={`text-xs font-medium ${
-          active ? "text-emerald-400" : "text-zinc-500"
+          active
+            ? "text-emerald-400"
+            : "text-zinc-500"
         }`}
       >
         {status}
@@ -266,6 +298,7 @@ function StatusRow({
     </div>
   );
 }
+
 
 function AlertRow({ alert }: { alert: Alert }) {
   return (
@@ -280,43 +313,86 @@ function AlertRow({ alert }: { alert: Alert }) {
 
           <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
             <span>{alert.source}</span>
+
             <span>•</span>
-            <span>{formatAlertTime(alert.created_at)}</span>
+
+            <span>
+              {formatAlertTime(alert.created_at)}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="shrink-0">
-        <span className="rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs uppercase text-zinc-400">
-          {alert.status}
-        </span>
+        <StatusBadge status={alert.status} />
       </div>
     </div>
   );
 }
 
-function SeverityBadge({ severity }: { severity: string }) {
-  const normalizedSeverity = severity.toLowerCase();
 
-  const severityStyles: Record<string, string> = {
+function SeverityBadge({
+  severity,
+}: {
+  severity: string;
+}) {
+  const normalizedSeverity =
+    severity.toLowerCase();
+
+  const styles: Record<string, string> = {
     low: "border-blue-900 bg-blue-950 text-blue-400",
-    medium: "border-yellow-900 bg-yellow-950 text-yellow-400",
+    medium:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
     high: "border-orange-900 bg-orange-950 text-orange-400",
-    critical: "border-red-900 bg-red-950 text-red-400",
+    critical:
+      "border-red-900 bg-red-950 text-red-400",
   };
-
-  const style =
-    severityStyles[normalizedSeverity] ??
-    "border-zinc-700 bg-zinc-800 text-zinc-400";
 
   return (
     <span
-      className={`w-20 rounded-md border px-2.5 py-1 text-center text-xs font-medium uppercase ${style}`}
+      className={`w-20 rounded-md border px-2.5 py-1 text-center text-xs font-medium uppercase ${
+        styles[normalizedSeverity] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
     >
       {severity}
     </span>
   );
 }
+
+
+function StatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const normalizedStatus =
+    status.toLowerCase();
+
+  const styles: Record<string, string> = {
+    new: "border-zinc-700 bg-zinc-800 text-zinc-300",
+    assigned:
+      "border-blue-900 bg-blue-950 text-blue-400",
+    investigating:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+    resolved:
+      "border-emerald-900 bg-emerald-950 text-emerald-400",
+    closed:
+      "border-zinc-800 bg-zinc-950 text-zinc-500",
+  };
+
+  return (
+    <span
+      className={`w-fit rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+        styles[normalizedStatus] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
 
 function formatAlertTime(timestamp: string) {
   return new Intl.DateTimeFormat("en-CA", {
