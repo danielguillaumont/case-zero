@@ -47,3 +47,24 @@ export async function getAlerts(): Promise<Alert[]> {
     return [];
   }
 }
+
+export async function getAlert(
+  alertId: string
+): Promise<Alert | null> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/alerts/${alertId}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
