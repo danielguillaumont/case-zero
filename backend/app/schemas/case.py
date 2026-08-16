@@ -70,3 +70,23 @@ class CaseRead(BaseModel):
     assigned_analyst: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class CaseAlertRead(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+    id: UUID
+    title: str
+    description: str | None
+    severity: str
+    status: str
+    source: str
+    assigned_analyst: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class CaseDetailRead(CaseRead):
+    alerts: list[CaseAlertRead]

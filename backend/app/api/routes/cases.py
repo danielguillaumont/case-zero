@@ -5,8 +5,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_database_session
+from app.models.alert import Alert
 from app.models.case import Case
-from app.schemas.case import CaseCreate, CaseRead, CaseUpdate
+from app.schemas.case import (
+    CaseAlertRead,
+    CaseCreate,
+    CaseDetailRead,
+    CaseRead,
+    CaseUpdate,
+)
 
 
 router = APIRouter(
@@ -60,12 +67,12 @@ async def get_cases(
 
 @router.get(
     "/{case_id}",
-    response_model=CaseRead,
+    response_model=CaseDetailRead,
 )
 async def get_case(
     case_id: UUID,
     session: AsyncSession = Depends(get_database_session),
-) -> Case:
+) -> CaseDetailRead:
     investigation_case = await session.get(
         Case,
         case_id,
@@ -77,7 +84,32 @@ async def get_case(
             detail="Case not found",
         )
 
-    return investigation_case
+    result = await session.execute(
+        select(Alert)
+        .where(
+            Alert.case_id == case_id
+        )
+        .order_by(
+            Alert.created_at.desc()
+        )
+    )
+
+    linked_alerts = result.scalars().all()
+
+    return CaseDetailRead(
+        id=investigation_case.id,
+        title=investigation_case.title,
+        description=investigation_case.description,
+        status=investigation_case.status,
+        priority=investigation_case.priority,
+        assigned_analyst=investigation_case.assigned_analyst,
+        created_at=investigation_case.created_at,
+        updated_at=investigation_case.updated_at,
+        alerts=[
+            CaseAlertRead.model_validate(alert)
+            for alert in linked_alerts
+        ],
+    )
 
 
 @router.patch(

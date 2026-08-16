@@ -1,0 +1,601 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { getCase } from "@/lib/api";
+import type { CaseAlert } from "@/lib/api";
+
+
+export default async function CaseDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const investigationCase = await getCase(id);
+
+  if (!investigationCase) {
+    notFound();
+  }
+
+  const navigationItems = [
+    {
+      label: "Dashboard",
+      href: "/",
+    },
+    {
+      label: "Alerts",
+      href: "/alerts",
+    },
+    {
+      label: "Cases",
+      href: "/cases",
+    },
+    {
+      label: "Hunt",
+      href: "#",
+    },
+    {
+      label: "Intelligence",
+      href: "#",
+    },
+    {
+      label: "Rules",
+      href: "#",
+    },
+    {
+      label: "Playbooks",
+      href: "#",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <div className="flex min-h-screen">
+
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
+          <div className="mb-10">
+            <h1 className="text-2xl font-bold tracking-tight">
+              CASE
+              <span className="text-emerald-400">
+                //ZERO
+              </span>
+            </h1>
+
+            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+              Security Operations
+            </p>
+          </div>
+
+          <nav className="space-y-2">
+            {navigationItems.map((item) =>
+              item.href === "#" ? (
+                <div
+                  key={item.label}
+                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
+                >
+                  {item.label}
+                </div>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
+                    item.label === "Cases"
+                      ? "bg-zinc-800 text-white"
+                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
+          </nav>
+
+          <div className="mt-10 border-t border-zinc-800 pt-6">
+            <div className="rounded-lg px-4 py-3 text-sm text-zinc-500">
+              Administration
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-10">
+
+          {/* Back Link */}
+          <div className="mb-8">
+            <Link
+              href="/cases"
+              className="text-sm text-zinc-500 transition hover:text-zinc-200"
+            >
+              ← Back to Cases
+            </Link>
+          </div>
+
+          {/* Header */}
+          <header className="mb-8 flex items-start justify-between gap-6">
+            <div>
+              <p className="text-sm text-emerald-400">
+                CASE//ZERO / CASE
+              </p>
+
+              <h2 className="mt-2 text-3xl font-semibold">
+                {investigationCase.title}
+              </h2>
+
+              <p className="mt-3 text-sm text-zinc-500">
+                Security investigation and linked alert activity.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <PriorityBadge
+                priority={investigationCase.priority}
+              />
+
+              <CaseStatusBadge
+                status={investigationCase.status}
+              />
+            </div>
+          </header>
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-3 gap-6">
+
+            {/* Case Details */}
+            <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900">
+              <div className="border-b border-zinc-800 p-6">
+                <h3 className="font-medium">
+                  Case Details
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Investigation information associated with this case.
+                </p>
+              </div>
+
+              <div className="p-6">
+                <DetailField
+                  label="Description"
+                  value={
+                    investigationCase.description ??
+                    "No case description provided."
+                  }
+                  large
+                />
+
+                <div className="mt-8 grid grid-cols-2 gap-8">
+                  <DetailField
+                    label="Priority"
+                    value={investigationCase.priority.toUpperCase()}
+                  />
+
+                  <DetailField
+                    label="Status"
+                    value={investigationCase.status.toUpperCase()}
+                  />
+
+                  <DetailField
+                    label="Assigned Analyst"
+                    value={
+                      investigationCase.assigned_analyst ??
+                      "Unassigned"
+                    }
+                  />
+
+                  <DetailField
+                    label="Linked Alerts"
+                    value={String(
+                      investigationCase.alerts.length
+                    )}
+                  />
+
+                  <DetailField
+                    label="Created"
+                    value={formatCaseTime(
+                      investigationCase.created_at
+                    )}
+                  />
+
+                  <DetailField
+                    label="Last Updated"
+                    value={formatCaseTime(
+                      investigationCase.updated_at
+                    )}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Investigation Summary */}
+            <section className="rounded-xl border border-zinc-800 bg-zinc-900">
+              <div className="border-b border-zinc-800 p-6">
+                <h3 className="font-medium">
+                  Investigation
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Current case workflow
+                </p>
+              </div>
+
+              <div className="space-y-6 p-6">
+
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Current Status
+                  </p>
+
+                  <div className="mt-3">
+                    <CaseStatusBadge
+                      status={investigationCase.status}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-6">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Assigned Analyst
+                  </p>
+
+                  <p className="mt-2 text-sm font-medium text-zinc-200">
+                    {investigationCase.assigned_analyst ??
+                      "Unassigned"}
+                  </p>
+
+                  {investigationCase.assigned_analyst ===
+                    "Daniel Guillaumont" && (
+                    <p className="mt-1 text-xs text-emerald-400">
+                      Assigned to you
+                    </p>
+                  )}
+                </div>
+
+                <div className="border-t border-zinc-800 pt-6">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Priority
+                  </p>
+
+                  <div className="mt-3">
+                    <PriorityBadge
+                      priority={investigationCase.priority}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-6">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Alert Count
+                  </p>
+
+                  <p className="mt-2 text-2xl font-semibold text-zinc-200">
+                    {investigationCase.alerts.length}
+                  </p>
+                </div>
+
+              </div>
+            </section>
+          </div>
+
+          {/* Linked Alerts */}
+          <section className="mt-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+
+            <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+              <div>
+                <h3 className="font-medium">
+                  Linked Alerts
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Security alerts associated with this investigation.
+                </p>
+              </div>
+
+              <p className="text-xs text-zinc-500">
+                {investigationCase.alerts.length} total
+              </p>
+            </div>
+
+            {investigationCase.alerts.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <p className="text-sm text-zinc-400">
+                  No alerts are linked to this case.
+                </p>
+              </div>
+            ) : (
+              <div>
+                {/* Table Header */}
+                <div className="grid grid-cols-[120px_1fr_160px_160px_190px] gap-4 border-b border-zinc-800 px-6 py-3 text-xs uppercase tracking-wider text-zinc-600">
+                  <div>
+                    Severity
+                  </div>
+
+                  <div>
+                    Alert
+                  </div>
+
+                  <div>
+                    Source
+                  </div>
+
+                  <div>
+                    Status
+                  </div>
+
+                  <div>
+                    Created
+                  </div>
+                </div>
+
+                {/* Alert Rows */}
+                <div className="divide-y divide-zinc-800">
+                  {investigationCase.alerts.map((alert) => (
+                    <LinkedAlertRow
+                      key={alert.id}
+                      alert={alert}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </section>
+
+          {/* Technical Metadata */}
+          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <h3 className="font-medium">
+              Technical Metadata
+            </h3>
+
+            <p className="mt-1 text-sm text-zinc-500">
+              Internal CASE//ZERO case identifiers.
+            </p>
+
+            <div className="mt-6">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">
+                Case ID
+              </p>
+
+              <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                {investigationCase.id}
+              </code>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  );
+}
+
+
+function LinkedAlertRow({
+  alert,
+}: {
+  alert: CaseAlert;
+}) {
+  return (
+    <Link
+      href={`/alerts/${alert.id}`}
+      className="grid grid-cols-[120px_1fr_160px_160px_190px] items-center gap-4 px-6 py-5 transition hover:bg-zinc-800/40"
+    >
+
+      <div>
+        <SeverityBadge
+          severity={alert.severity}
+        />
+      </div>
+
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-zinc-200">
+          {alert.title}
+        </p>
+
+        <p className="mt-1 truncate text-xs text-zinc-500">
+          {alert.description ??
+            "No alert description provided."}
+        </p>
+      </div>
+
+      <div>
+        <p className="truncate text-sm text-zinc-400">
+          {alert.source}
+        </p>
+      </div>
+
+      <div>
+        <AlertStatusBadge
+          status={alert.status}
+        />
+      </div>
+
+      <div>
+        <p className="text-sm text-zinc-500">
+          {formatCaseTime(alert.created_at)}
+        </p>
+      </div>
+
+    </Link>
+  );
+}
+
+
+function DetailField({
+  label,
+  value,
+  large = false,
+}: {
+  label: string;
+  value: string;
+  large?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wider text-zinc-500">
+        {label}
+      </p>
+
+      <p
+        className={`mt-2 text-zinc-300 ${
+          large
+            ? "text-sm leading-7"
+            : "text-sm"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+
+function PriorityBadge({
+  priority,
+}: {
+  priority: string;
+}) {
+  const normalizedPriority =
+    priority.toLowerCase();
+
+  const styles: Record<string, string> = {
+    low:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    medium:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    high:
+      "border-orange-900 bg-orange-950 text-orange-400",
+
+    critical:
+      "border-red-900 bg-red-950 text-red-400",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
+        styles[normalizedPriority] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {priority}
+    </span>
+  );
+}
+
+
+function CaseStatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const normalizedStatus =
+    status.toLowerCase();
+
+  const styles: Record<string, string> = {
+    open:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    investigating:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    resolved:
+      "border-emerald-900 bg-emerald-950 text-emerald-400",
+
+    closed:
+      "border-zinc-800 bg-zinc-950 text-zinc-500",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
+        styles[normalizedStatus] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
+
+function SeverityBadge({
+  severity,
+}: {
+  severity: string;
+}) {
+  const normalizedSeverity =
+    severity.toLowerCase();
+
+  const styles: Record<string, string> = {
+    low:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    medium:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    high:
+      "border-orange-900 bg-orange-950 text-orange-400",
+
+    critical:
+      "border-red-900 bg-red-950 text-red-400",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
+        styles[normalizedSeverity] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {severity}
+    </span>
+  );
+}
+
+
+function AlertStatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const normalizedStatus =
+    status.toLowerCase();
+
+  const styles: Record<string, string> = {
+    new:
+      "border-zinc-700 bg-zinc-800 text-zinc-300",
+
+    assigned:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    investigating:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    resolved:
+      "border-emerald-900 bg-emerald-950 text-emerald-400",
+
+    closed:
+      "border-zinc-800 bg-zinc-950 text-zinc-500",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
+        styles[normalizedStatus] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
+
+function formatCaseTime(timestamp: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(timestamp));
+}
