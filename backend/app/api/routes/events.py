@@ -43,14 +43,15 @@ async def create_security_event(
 
     session.add(security_event)
 
-    # Flush the event first so it receives its UUID.
-    # Detection-generated alerts can then reference
-    # the originating security event ID.
+    # Flush first so the current event receives
+    # its UUID and becomes visible to correlation
+    # queries inside this database transaction.
     await session.flush()
 
     generated_alerts = (
-        evaluate_security_event(
-            security_event
+        await evaluate_security_event(
+            security_event,
+            session,
         )
     )
 

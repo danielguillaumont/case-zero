@@ -1,4 +1,8 @@
 import re
+from datetime import timedelta
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.alert import Alert
 from app.models.security_event import SecurityEvent
@@ -29,8 +33,13 @@ POWERSHELL_DOWNLOAD_INDICATORS = (
 )
 
 
-def evaluate_security_event(
+BRUTE_FORCE_WINDOW_MINUTES = 5
+BRUTE_FORCE_FAILURE_THRESHOLD = 5
+
+
+async def evaluate_security_event(
     security_event: SecurityEvent,
+    session: AsyncSession,
 ) -> list[Alert]:
     generated_alerts: list[Alert] = []
 
@@ -49,6 +58,22 @@ def evaluate_security_event(
         generated_alerts.append(
             create_powershell_download_cradle_alert(
                 security_event
+            )
+        )
+
+    (
+        brute_force_matched,
+        failure_count,
+    ) = await matches_brute_force_authentication(
+        security_event,
+        session,
+    )
+
+    if brute_force_matched:
+        generated_alerts.append(
+            create_brute_force_alert(
+                security_event,
+                failure_count,
             )
         )
 
@@ -82,6 +107,34 @@ def is_process_creation_event(
         security_event.event_type.lower()
         == "process_creation"
     )
+
+
+def is_authentication_failure(
+    security_event: SecurityEvent,
+) -> bool:
+    if (
+        security_event.event_type.lower()
+        != "authentication"
+    ):
+        return False
+
+    raw_data = (
+        security_event.raw_data or {}
+    )
+
+    outcome = str(
+        raw_data.get(
+            "outcome",
+            "",
+        )
+    ).lower()
+
+    return outcome in {
+        "failure",
+        "failed",
+        "denied",
+        "invalid",
+    }
 
 
 def matches_encoded_powershell(
@@ -129,6 +182,72 @@ def matches_powershell_download_cradle(
         indicator in command_line
         for indicator
         in POWERSHELL_DOWNLOAD_INDICATORS
+    )
+
+
+async def matches_brute_force_authentication(
+    security_event: SecurityEvent,
+    session: AsyncSession,
+) -> tuple[bool, int]:
+    if not is_authentication_failure(
+        security_event
+    ):
+        return False, 0
+
+    if not security_event.username:
+        return False, 0
+
+    if not security_event.source_ip:
+        return False, 0
+
+    window_start = (
+        security_event.event_time
+        - timedelta(
+            minutes=BRUTE_FORCE_WINDOW_MINUTES
+        )
+    )
+
+    result = await session.execute(
+        select(SecurityEvent)
+        .where(
+            func.lower(
+                SecurityEvent.event_type
+            )
+            == "authentication",
+            SecurityEvent.username
+            == security_event.username,
+            SecurityEvent.source_ip
+            == security_event.source_ip,
+            SecurityEvent.event_time
+            >= window_start,
+            SecurityEvent.event_time
+            <= security_event.event_time,
+        )
+        .order_by(
+            SecurityEvent.event_time.asc()
+        )
+    )
+
+    recent_events = (
+        result.scalars().all()
+    )
+
+    failure_events = [
+        event
+        for event in recent_events
+        if is_authentication_failure(
+            event
+        )
+    ]
+
+    failure_count = len(
+        failure_events
+    )
+
+    return (
+        failure_count
+        == BRUTE_FORCE_FAILURE_THRESHOLD,
+        failure_count,
     )
 
 
@@ -201,6 +320,46 @@ def create_powershell_download_cradle_alert(
             "Security Event ID: "
             f"{security_event.id}. "
             f"Command Line: {command_line}"
+        ),
+        severity="high",
+        status="new",
+        source="detection-engine",
+        source_event_id=security_event.id,
+    )
+
+
+def create_brute_force_alert(
+    security_event: SecurityEvent,
+    failure_count: int,
+) -> Alert:
+    hostname = (
+        security_event.hostname
+        or "unknown host"
+    )
+
+    username = (
+        security_event.username
+        or "unknown user"
+    )
+
+    source_ip = (
+        security_event.source_ip
+        or "unknown source IP"
+    )
+
+    return Alert(
+        title="Possible Brute Force Attack",
+        description=(
+            "CASE//ZERO correlated repeated "
+            "authentication failures. "
+            f"{failure_count} failed authentication "
+            "attempts were observed within "
+            f"{BRUTE_FORCE_WINDOW_MINUTES} minutes "
+            f"for user {username} "
+            f"from source IP {source_ip}. "
+            f"Host: {hostname}. "
+            "Triggering Security Event ID: "
+            f"{security_event.id}."
         ),
         severity="high",
         status="new",
