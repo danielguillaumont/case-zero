@@ -296,7 +296,10 @@ function SecurityEventRow({
   event: SecurityEvent;
 }) {
   return (
-    <div className="grid grid-cols-[170px_1fr_150px_220px_190px] items-center gap-4 px-6 py-5 transition hover:bg-zinc-800/40">
+    <Link
+      href={`/events/${event.id}`}
+      className="grid grid-cols-[170px_1fr_150px_220px_190px] items-center gap-4 px-6 py-5 transition hover:bg-zinc-800/40"
+    >
 
       <EventTypeBadge
         eventType={event.event_type}
@@ -338,7 +341,7 @@ function SecurityEventRow({
         )}
       </span>
 
-    </div>
+    </Link>
   );
 }
 
