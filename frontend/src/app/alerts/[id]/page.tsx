@@ -7,12 +7,14 @@ import {
   getAlert,
   getCase,
   getCases,
+  getDetectionRule,
   getPlaybooksForRule,
   getSecurityEvent,
   getThreatIndicators,
 } from "@/lib/api";
 
 import type {
+  MitreAttackMapping,
   Playbook,
   ThreatIndicator,
 } from "@/lib/api";
@@ -51,6 +53,13 @@ export default async function AlertDetailPage({
         alert.source_event_id
       )
     : null;
+
+  const detectionRule =
+    alert.detection_rule_id
+      ? await getDetectionRule(
+          alert.detection_rule_id
+        )
+      : null;
 
   const recommendedPlaybooks =
     alert.detection_rule_id
@@ -578,6 +587,54 @@ export default async function AlertDetailPage({
 
           </div>
 
+          {/* MITRE ATT&CK */}
+          {detectionRule &&
+            detectionRule.mitre_attack.length > 0 && (
+            <section className="mt-6 overflow-hidden rounded-xl border border-orange-900/70 bg-zinc-900">
+
+              <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
+
+                <div>
+
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-400">
+                    MITRE ATT&amp;CK
+                  </p>
+
+                  <h3 className="mt-2 font-medium">
+                    Detection Technique Mapping
+                  </h3>
+
+                  <p className="mt-1 text-sm text-zinc-500">
+                    ATT&amp;CK context inherited from the detection rule that generated this alert.
+                  </p>
+
+                </div>
+
+                <Link
+                  href={`/rules/${detectionRule.id}`}
+                  className="rounded-md border border-orange-900 bg-orange-950 px-3 py-1.5 text-xs font-medium text-orange-400 transition hover:bg-orange-900/60"
+                >
+                  View Detection Rule &rarr;
+                </Link>
+
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-2">
+
+                {detectionRule.mitre_attack.map(
+                  (mapping) => (
+                    <MitreAttackCard
+                      key={`${mapping.technique_id}-${mapping.tactic_id}`}
+                      mapping={mapping}
+                    />
+                  )
+                )}
+
+              </div>
+
+            </section>
+          )}
+
           {/* Recommended Response */}
           {alert.detection_rule_id && (
             <section className="mt-6 overflow-hidden rounded-xl border border-emerald-900/70 bg-zinc-900">
@@ -909,6 +966,55 @@ export default async function AlertDetailPage({
       </div>
 
     </div>
+  );
+}
+
+
+function MitreAttackCard({
+  mapping,
+}: {
+  mapping: MitreAttackMapping;
+}) {
+  return (
+    <article className="rounded-xl border border-orange-900/50 bg-zinc-950/70 p-5">
+
+      <div className="flex flex-wrap items-center gap-2">
+
+        <span className="rounded-md border border-orange-900 bg-orange-950 px-2.5 py-1 font-mono text-xs font-medium text-orange-400">
+          {mapping.technique_id}
+        </span>
+
+        <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium uppercase text-zinc-400">
+          Technique
+        </span>
+
+      </div>
+
+      <h4 className="mt-4 text-lg font-medium text-zinc-100">
+        {mapping.technique_name}
+      </h4>
+
+      <div className="mt-5 border-t border-zinc-800 pt-4">
+
+        <p className="text-xs uppercase tracking-wider text-zinc-600">
+          ATT&amp;CK Tactic
+        </p>
+
+        <div className="mt-2 flex items-center gap-3">
+
+          <span className="font-mono text-sm text-orange-300">
+            {mapping.tactic_id}
+          </span>
+
+          <span className="text-sm text-zinc-400">
+            {mapping.tactic_name}
+          </span>
+
+        </div>
+
+      </div>
+
+    </article>
   );
 }
 
