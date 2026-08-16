@@ -17,6 +17,13 @@ DetectionRuleSeverity = Literal[
 ]
 
 
+class MitreAttackMapping(BaseModel):
+    technique_id: str
+    technique_name: str
+    tactic_id: str
+    tactic_name: str
+
+
 class DetectionRuleRead(BaseModel):
     id: str
     name: str
@@ -26,3 +33,6 @@ class DetectionRuleRead(BaseModel):
     enabled: bool
     event_type: str
     logic: str
+    mitre_attack: list[
+        MitreAttackMapping
+    ]

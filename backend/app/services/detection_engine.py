@@ -55,6 +55,14 @@ DETECTION_RULES = {
             "-enc or -encodedcommand in the "
             "command line"
         ),
+        "mitre_attack": [
+            {
+                "technique_id": "T1059.001",
+                "technique_name": "PowerShell",
+                "tactic_id": "TA0002",
+                "tactic_name": "Execution",
+            },
+        ],
     },
     "powershell-download-cradle": {
         "id": "powershell-download-cradle",
@@ -73,6 +81,24 @@ DETECTION_RULES = {
             "such as DownloadString, "
             "Invoke-WebRequest, or Net.WebClient"
         ),
+        "mitre_attack": [
+            {
+                "technique_id": "T1059.001",
+                "technique_name": "PowerShell",
+                "tactic_id": "TA0002",
+                "tactic_name": "Execution",
+            },
+            {
+                "technique_id": "T1105",
+                "technique_name": (
+                    "Ingress Tool Transfer"
+                ),
+                "tactic_id": "TA0011",
+                "tactic_name": (
+                    "Command and Control"
+                ),
+            },
+        ],
     },
     "auth-brute-force": {
         "id": "auth-brute-force",
@@ -92,6 +118,16 @@ DETECTION_RULES = {
             "username and source IP within "
             f"{BRUTE_FORCE_WINDOW_MINUTES} minutes"
         ),
+        "mitre_attack": [
+            {
+                "technique_id": "T1110",
+                "technique_name": "Brute Force",
+                "tactic_id": "TA0006",
+                "tactic_name": (
+                    "Credential Access"
+                ),
+            },
+        ],
     },
 }
 

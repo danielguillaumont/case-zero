@@ -38,15 +38,26 @@ export type SecurityEvent = {
 };
 
 
+export type MitreAttackMapping = {
+  technique_id: string;
+  technique_name: string;
+  tactic_id: string;
+  tactic_name: string;
+};
+
+
 export type DetectionRule = {
   id: string;
   name: string;
   description: string;
   severity: string;
-  rule_type: "single_event" | "correlation";
+  rule_type:
+    | "single_event"
+    | "correlation";
   enabled: boolean;
   event_type: string;
   logic: string;
+  mitre_attack: MitreAttackMapping[];
 };
 
 
@@ -327,7 +338,8 @@ export async function huntSecurityEvents(
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json",
         },
         body: JSON.stringify({
           event_type:
