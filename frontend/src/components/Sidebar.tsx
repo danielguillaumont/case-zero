@@ -35,7 +35,7 @@ const navigationItems = [
   },
   {
     label: "Playbooks",
-    href: null,
+    href: "/playbooks",
   },
 ];
 

@@ -63,6 +63,32 @@ export type HuntQuery = {
 };
 
 
+export type PlaybookStep = {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  category:
+    | "triage"
+    | "investigation"
+    | "containment"
+    | "eradication"
+    | "recovery"
+    | "documentation";
+};
+
+
+export type Playbook = {
+  id: string;
+  name: string;
+  description: string;
+  severity: string;
+  enabled: boolean;
+  trigger_rule_ids: string[];
+  steps: PlaybookStep[];
+};
+
+
 export type Case = {
   id: string;
   title: string;
@@ -291,6 +317,70 @@ export async function huntSecurityEvents(
           limit:
             huntQuery.limit ?? 100,
         }),
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+
+export async function getPlaybooks(): Promise<Playbook[]> {
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/playbooks",
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+
+export async function getPlaybook(
+  playbookId: string
+): Promise<Playbook | null> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/playbooks/${playbookId}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+
+export async function getPlaybooksForRule(
+  ruleId: string
+): Promise<Playbook[]> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/playbooks/rule/${ruleId}`,
+      {
         cache: "no-store",
       }
     );
