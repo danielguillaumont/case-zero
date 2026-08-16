@@ -37,3 +37,41 @@ export async function updateCaseStatus(
     status,
   });
 }
+
+
+export async function addCaseNote(
+  caseId: string,
+  formData: FormData
+) {
+  const content = formData.get("content");
+
+  if (
+    typeof content !== "string" ||
+    content.trim().length === 0
+  ) {
+    throw new Error(
+      "Investigation note cannot be empty."
+    );
+  }
+
+  const response = await fetch(
+    `http://127.0.0.1:8000/api/cases/${caseId}/notes`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content: content.trim(),
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to add investigation note."
+    );
+  }
+
+  revalidatePath(`/cases/${caseId}`);
+}

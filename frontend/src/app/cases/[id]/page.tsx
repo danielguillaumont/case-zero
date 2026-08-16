@@ -1,10 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getCase } from "@/lib/api";
-import type { CaseAlert } from "@/lib/api";
+import {
+  getCase,
+  getCaseNotes,
+} from "@/lib/api";
 
-import { updateCaseStatus } from "./actions";
+import type {
+  CaseAlert,
+  CaseNote,
+} from "@/lib/api";
+
+import {
+  addCaseNote,
+  updateCaseStatus,
+} from "./actions";
 
 
 export default async function CaseDetailPage({
@@ -19,6 +29,8 @@ export default async function CaseDetailPage({
   if (!investigationCase) {
     notFound();
   }
+
+  const caseNotes = await getCaseNotes(id);
 
   const normalizedStatus =
     investigationCase.status.toLowerCase();
@@ -35,6 +47,12 @@ export default async function CaseDetailPage({
       null,
       investigationCase.id,
       "resolved"
+    );
+
+  const addNoteAction =
+    addCaseNote.bind(
+      null,
+      investigationCase.id
     );
 
   const navigationItems = [
@@ -371,6 +389,17 @@ export default async function CaseDetailPage({
                   </p>
                 </div>
 
+                {/* Note Count */}
+                <div className="border-t border-zinc-800 pt-6">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Investigation Notes
+                  </p>
+
+                  <p className="mt-2 text-2xl font-semibold text-zinc-200">
+                    {caseNotes.length}
+                  </p>
+                </div>
+
               </div>
             </section>
           </div>
@@ -450,6 +479,107 @@ export default async function CaseDetailPage({
 
           </section>
 
+          {/* Investigation Notes */}
+          <section className="mt-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+
+            <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+              <div>
+                <h3 className="font-medium">
+                  Investigation Notes
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Analyst findings, observations, and investigation updates.
+                </p>
+              </div>
+
+              <p className="text-xs text-zinc-500">
+                {caseNotes.length}{" "}
+                {caseNotes.length === 1
+                  ? "note"
+                  : "notes"}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-[1fr_360px]">
+
+              {/* Existing Notes */}
+              <div className="border-r border-zinc-800">
+
+                {caseNotes.length === 0 ? (
+                  <div className="px-6 py-16 text-center">
+
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-600">
+                      +
+                    </div>
+
+                    <p className="mt-4 text-sm font-medium text-zinc-300">
+                      No investigation notes yet
+                    </p>
+
+                    <p className="mt-2 text-sm text-zinc-500">
+                      Add the first analyst note to document this investigation.
+                    </p>
+
+                  </div>
+                ) : (
+                  <div className="divide-y divide-zinc-800">
+                    {caseNotes.map(
+                      (note) => (
+                        <CaseNoteRow
+                          key={note.id}
+                          note={note}
+                        />
+                      )
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* Add Note Form */}
+              <div className="bg-zinc-950/30 p-6">
+
+                <p className="text-xs uppercase tracking-wider text-zinc-500">
+                  Add Investigation Note
+                </p>
+
+                <p className="mt-2 text-xs leading-5 text-zinc-600">
+                  Document findings, analyst actions, evidence review, or other investigation context.
+                </p>
+
+                <form
+                  action={addNoteAction}
+                  className="mt-5"
+                >
+                  <textarea
+                    name="content"
+                    required
+                    minLength={1}
+                    maxLength={5000}
+                    rows={8}
+                    placeholder="Enter investigation findings..."
+                    className="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-emerald-700"
+                  />
+
+                  <p className="mt-2 text-xs text-zinc-600">
+                    Maximum 5,000 characters
+                  </p>
+
+                  <button
+                    type="submit"
+                    className="mt-4 w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
+                  >
+                    Add Investigation Note
+                  </button>
+                </form>
+
+              </div>
+
+            </div>
+
+          </section>
+
           {/* Technical Metadata */}
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
             <h3 className="font-medium">
@@ -474,6 +604,58 @@ export default async function CaseDetailPage({
         </main>
       </div>
     </div>
+  );
+}
+
+
+function CaseNoteRow({
+  note,
+}: {
+  note: CaseNote;
+}) {
+  return (
+    <article className="px-6 py-6">
+
+      <div className="flex items-start gap-4">
+
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-900 bg-emerald-950 text-xs font-semibold text-emerald-400">
+          {getInitials(note.author)}
+        </div>
+
+        <div className="min-w-0 flex-1">
+
+          <div className="flex items-center justify-between gap-4">
+
+            <div>
+              <p className="text-sm font-medium text-zinc-200">
+                {note.author}
+              </p>
+
+              <p className="mt-1 text-xs text-zinc-600">
+                Investigation note
+              </p>
+            </div>
+
+            <time
+              dateTime={note.created_at}
+              className="shrink-0 text-xs text-zinc-600"
+            >
+              {formatCaseTime(
+                note.created_at
+              )}
+            </time>
+
+          </div>
+
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">
+            {note.content}
+          </p>
+
+        </div>
+
+      </div>
+
+    </article>
   );
 }
 
@@ -720,6 +902,30 @@ function AlertStatusBadge({
       {status}
     </span>
   );
+}
+
+
+function getInitials(
+  name: string
+) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "?";
+  }
+
+  if (parts.length === 1) {
+    return parts[0]
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  return `${parts[0][0]}${
+    parts[parts.length - 1][0]
+  }`.toUpperCase();
 }
 
 

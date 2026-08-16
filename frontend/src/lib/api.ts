@@ -5,6 +5,7 @@ export type HealthStatus = {
   database: string;
 };
 
+
 export type Alert = {
   id: string;
   title: string;
@@ -18,6 +19,7 @@ export type Alert = {
   updated_at: string;
 };
 
+
 export type Case = {
   id: string;
   title: string;
@@ -28,6 +30,7 @@ export type Case = {
   created_at: string;
   updated_at: string;
 };
+
 
 export type CaseAlert = {
   id: string;
@@ -41,8 +44,18 @@ export type CaseAlert = {
   updated_at: string;
 };
 
+
 export type CaseDetail = Case & {
   alerts: CaseAlert[];
+};
+
+
+export type CaseNote = {
+  id: string;
+  case_id: string;
+  author: string;
+  content: string;
+  created_at: string;
 };
 
 
@@ -146,5 +159,27 @@ export async function getCase(
     return await response.json();
   } catch {
     return null;
+  }
+}
+
+
+export async function getCaseNotes(
+  caseId: string
+): Promise<CaseNote[]> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/cases/${caseId}/notes`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
   }
 }
