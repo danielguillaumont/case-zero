@@ -15,6 +15,9 @@ from app.schemas.security_event import (
     SecurityEventCreate,
     SecurityEventRead,
 )
+from app.services.detection_engine import (
+    evaluate_security_event,
+)
 
 
 router = APIRouter(
@@ -40,8 +43,26 @@ async def create_security_event(
 
     session.add(security_event)
 
+    # Flush the event first so it receives its UUID.
+    # Detection-generated alerts can then reference
+    # the originating security event ID.
+    await session.flush()
+
+    generated_alerts = (
+        evaluate_security_event(
+            security_event
+        )
+    )
+
+    if generated_alerts:
+        session.add_all(
+            generated_alerts
+        )
+
     await session.commit()
-    await session.refresh(security_event)
+    await session.refresh(
+        security_event
+    )
 
     return security_event
 
