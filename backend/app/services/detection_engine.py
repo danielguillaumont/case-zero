@@ -380,6 +380,7 @@ def create_encoded_powershell_alert(
         severity="high",
         status="new",
         source="detection-engine",
+        detection_rule_id="encoded-powershell",
         source_event_id=security_event.id,
     )
 
@@ -419,6 +420,9 @@ def create_powershell_download_cradle_alert(
         severity="high",
         status="new",
         source="detection-engine",
+        detection_rule_id=(
+            "powershell-download-cradle"
+        ),
         source_event_id=security_event.id,
     )
 
@@ -459,5 +463,6 @@ def create_brute_force_alert(
         severity="high",
         status="new",
         source="detection-engine",
+        detection_rule_id="auth-brute-force",
         source_event_id=security_event.id,
     )

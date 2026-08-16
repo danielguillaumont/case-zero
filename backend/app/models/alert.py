@@ -51,6 +51,12 @@ class Alert(Base):
         default="case-zero",
     )
 
+    detection_rule_id: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True,
+    )
+
     assigned_analyst: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,

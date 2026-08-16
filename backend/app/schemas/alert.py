@@ -61,6 +61,7 @@ class AlertRead(BaseModel):
     severity: str
     status: str
     source: str
+    detection_rule_id: str | None
     assigned_analyst: str | None
     case_id: UUID | None
     source_event_id: UUID | None
