@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import Sidebar from "@/components/Sidebar";
+
 import {
   getAlert,
   getCase,
@@ -85,104 +87,32 @@ export default async function AlertDetailPage({
       alert.id
     );
 
-  const navigationItems = [
-    {
-      label: "Dashboard",
-      href: "/",
-    },
-    {
-      label: "Alerts",
-      href: "/alerts",
-    },
-    {
-      label: "Cases",
-      href: "/cases",
-    },
-    {
-      label: "Hunt",
-      href: "#",
-    },
-    {
-      label: "Intelligence",
-      href: "#",
-    },
-    {
-      label: "Rules",
-      href: "#",
-    },
-    {
-      label: "Playbooks",
-      href: "#",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
+
       <div className="flex min-h-screen">
 
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
-          <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight">
-              CASE
-              <span className="text-emerald-400">
-                //ZERO
-              </span>
-            </h1>
+        <Sidebar />
 
-            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-              Security Operations
-            </p>
-          </div>
-
-          <nav className="space-y-2">
-            {navigationItems.map((item) =>
-              item.href === "#" ? (
-                <div
-                  key={item.label}
-                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
-                >
-                  {item.label}
-                </div>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
-                    item.label === "Alerts"
-                      ? "bg-zinc-800 text-white"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </nav>
-
-          <div className="mt-10 border-t border-zinc-800 pt-6">
-            <div className="rounded-lg px-4 py-3 text-sm text-zinc-500">
-              Administration
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content */}
         <main className="flex-1 p-10">
 
           {/* Back Link */}
           <div className="mb-8">
+
             <Link
               href="/alerts"
               className="text-sm text-zinc-500 transition hover:text-zinc-200"
             >
               ← Back to Alerts
             </Link>
+
           </div>
 
           {/* Alert Header */}
           <header className="mb-8 flex items-start justify-between gap-6">
+
             <div>
+
               <p className="text-sm text-emerald-400">
                 CASE//ZERO / ALERT
               </p>
@@ -194,9 +124,11 @@ export default async function AlertDetailPage({
               <p className="mt-3 text-sm text-zinc-500">
                 Review alert context and investigation details.
               </p>
+
             </div>
 
             <div className="flex items-center gap-3">
+
               <SeverityBadge
                 severity={alert.severity}
               />
@@ -204,14 +136,18 @@ export default async function AlertDetailPage({
               <StatusBadge
                 status={alert.status}
               />
+
             </div>
+
           </header>
 
           <div className="grid grid-cols-3 gap-6">
 
             {/* Alert Details */}
             <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900">
+
               <div className="border-b border-zinc-800 p-6">
+
                 <h3 className="font-medium">
                   Alert Details
                 </h3>
@@ -219,6 +155,7 @@ export default async function AlertDetailPage({
                 <p className="mt-1 text-sm text-zinc-500">
                   Detection information associated with this alert.
                 </p>
+
               </div>
 
               <div className="p-6">
@@ -276,12 +213,16 @@ export default async function AlertDetailPage({
                   />
 
                 </div>
+
               </div>
+
             </section>
 
             {/* Investigation Panel */}
             <section className="rounded-xl border border-zinc-800 bg-zinc-900">
+
               <div className="border-b border-zinc-800 p-6">
+
                 <h3 className="font-medium">
                   Investigation
                 </h3>
@@ -289,21 +230,26 @@ export default async function AlertDetailPage({
                 <p className="mt-1 text-sm text-zinc-500">
                   Analyst workflow
                 </p>
+
               </div>
 
               <div className="space-y-6 p-6">
 
                 {/* Current Status */}
                 <div>
+
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Current Status
                   </p>
 
                   <div className="mt-3">
+
                     <StatusBadge
                       status={alert.status}
                     />
+
                   </div>
+
                 </div>
 
                 {/* Workflow Action */}
@@ -354,18 +300,22 @@ export default async function AlertDetailPage({
                   {normalizedStatus ===
                     "resolved" && (
                     <div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
+
                       <p className="text-sm text-emerald-400">
                         Investigation resolved
                       </p>
+
                     </div>
                   )}
 
                   {normalizedStatus ===
                     "closed" && (
                     <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
+
                       <p className="text-sm text-zinc-400">
                         Alert closed
                       </p>
+
                     </div>
                   )}
 
@@ -373,6 +323,7 @@ export default async function AlertDetailPage({
 
                 {/* Analyst Assignment */}
                 <div className="border-t border-zinc-800 pt-6">
+
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Assigned Analyst
                   </p>
@@ -415,6 +366,7 @@ export default async function AlertDetailPage({
 
                     </div>
                   )}
+
                 </div>
 
                 {/* Investigation Case */}
@@ -496,6 +448,7 @@ export default async function AlertDetailPage({
 
                       {/* Divider */}
                       <div className="my-5 flex items-center gap-3">
+
                         <div className="h-px flex-1 bg-zinc-800" />
 
                         <span className="text-xs uppercase tracking-wider text-zinc-600">
@@ -503,6 +456,7 @@ export default async function AlertDetailPage({
                         </span>
 
                         <div className="h-px flex-1 bg-zinc-800" />
+
                       </div>
 
                       {/* Link Existing Case */}
@@ -551,6 +505,7 @@ export default async function AlertDetailPage({
                                 </option>
                               )
                             )}
+
                           </select>
 
                           <button
@@ -559,12 +514,15 @@ export default async function AlertDetailPage({
                           >
                             Link to Existing Case
                           </button>
+
                         </form>
                       ) : (
                         <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3">
+
                           <p className="text-xs leading-5 text-zinc-500">
                             No active investigation cases are currently available.
                           </p>
+
                         </div>
                       )}
 
@@ -574,7 +532,9 @@ export default async function AlertDetailPage({
                 </div>
 
               </div>
+
             </section>
+
           </div>
 
           {/* Source Security Event */}
@@ -582,7 +542,9 @@ export default async function AlertDetailPage({
             <section className="mt-6 overflow-hidden rounded-xl border border-violet-900/70 bg-zinc-900">
 
               <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+
                 <div>
+
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">
                     Detection Evidence
                   </p>
@@ -594,11 +556,13 @@ export default async function AlertDetailPage({
                   <p className="mt-1 text-sm text-zinc-500">
                     Original telemetry that caused this alert to be generated.
                   </p>
+
                 </div>
 
                 <span className="rounded-md border border-violet-900 bg-violet-950 px-3 py-1.5 text-xs font-medium uppercase text-violet-400">
                   Source Event
                 </span>
+
               </div>
 
               {sourceEvent ? (
@@ -608,12 +572,16 @@ export default async function AlertDetailPage({
 
                     <DetailField
                       label="Event Type"
-                      value={sourceEvent.event_type}
+                      value={
+                        sourceEvent.event_type
+                      }
                     />
 
                     <DetailField
                       label="Telemetry Source"
-                      value={sourceEvent.source}
+                      value={
+                        sourceEvent.source
+                      }
                     />
 
                     <DetailField
@@ -673,6 +641,7 @@ export default async function AlertDetailPage({
                   </div>
 
                   <div className="mt-8 border-t border-zinc-800 pt-6">
+
                     <p className="text-xs uppercase tracking-wider text-zinc-500">
                       Command Line
                     </p>
@@ -681,10 +650,12 @@ export default async function AlertDetailPage({
                       {sourceEvent.command_line ??
                         "Command line unavailable."}
                     </pre>
+
                   </div>
 
                   {sourceEvent.raw_data && (
                     <div className="mt-6">
+
                       <p className="text-xs uppercase tracking-wider text-zinc-500">
                         Raw Event Data
                       </p>
@@ -696,6 +667,7 @@ export default async function AlertDetailPage({
                           2
                         )}
                       </pre>
+
                     </div>
                   )}
 
@@ -704,6 +676,7 @@ export default async function AlertDetailPage({
                 <div className="px-6 py-8">
 
                   <div className="rounded-lg border border-yellow-900 bg-yellow-950/30 px-4 py-4">
+
                     <p className="text-sm font-medium text-yellow-400">
                       Source event unavailable
                     </p>
@@ -711,6 +684,7 @@ export default async function AlertDetailPage({
                     <p className="mt-2 text-sm text-zinc-500">
                       This alert contains a source event ID, but the event could not be retrieved from the API.
                     </p>
+
                   </div>
 
                 </div>
@@ -733,6 +707,7 @@ export default async function AlertDetailPage({
             <div className="mt-6 grid grid-cols-3 gap-6">
 
               <div>
+
                 <p className="text-xs uppercase tracking-wider text-zinc-500">
                   Alert ID
                 </p>
@@ -740,9 +715,11 @@ export default async function AlertDetailPage({
                 <code className="mt-2 block overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
                   {alert.id}
                 </code>
+
               </div>
 
               <div>
+
                 <p className="text-xs uppercase tracking-wider text-zinc-500">
                   Case ID
                 </p>
@@ -751,9 +728,11 @@ export default async function AlertDetailPage({
                   {alert.case_id ??
                     "Not linked"}
                 </code>
+
               </div>
 
               <div>
+
                 <p className="text-xs uppercase tracking-wider text-zinc-500">
                   Source Event ID
                 </p>
@@ -762,13 +741,17 @@ export default async function AlertDetailPage({
                   {alert.source_event_id ??
                     "Not linked"}
                 </code>
+
               </div>
 
             </div>
+
           </section>
 
         </main>
+
       </div>
+
     </div>
   );
 }

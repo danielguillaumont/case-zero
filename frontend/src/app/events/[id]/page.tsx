@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import Sidebar from "@/components/Sidebar";
+
 import {
   getAlerts,
   getSecurityEvent,
@@ -33,110 +35,31 @@ export default async function SecurityEventDetailPage({
       securityEvent.id
   );
 
-  const navigationItems = [
-    {
-      label: "Dashboard",
-      href: "/",
-    },
-    {
-      label: "Events",
-      href: "/events",
-    },
-    {
-      label: "Alerts",
-      href: "/alerts",
-    },
-    {
-      label: "Cases",
-      href: "/cases",
-    },
-    {
-      label: "Hunt",
-      href: "#",
-    },
-    {
-      label: "Intelligence",
-      href: "#",
-    },
-    {
-      label: "Rules",
-      href: "#",
-    },
-    {
-      label: "Playbooks",
-      href: "#",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
+
       <div className="flex min-h-screen">
 
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
+        <Sidebar />
 
-          <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight">
-              CASE
-              <span className="text-emerald-400">
-                //ZERO
-              </span>
-            </h1>
-
-            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-              Security Operations
-            </p>
-          </div>
-
-          <nav className="space-y-2">
-            {navigationItems.map((item) =>
-              item.href === "#" ? (
-                <div
-                  key={item.label}
-                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
-                >
-                  {item.label}
-                </div>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
-                    item.label === "Events"
-                      ? "bg-zinc-800 text-white"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </nav>
-
-          <div className="mt-10 border-t border-zinc-800 pt-6">
-            <div className="rounded-lg px-4 py-3 text-sm text-zinc-500">
-              Administration
-            </div>
-          </div>
-
-        </aside>
-
-        {/* Main Content */}
         <main className="flex-1 p-10">
 
           <div className="mb-8">
+
             <Link
               href="/events"
               className="text-sm text-zinc-500 transition hover:text-zinc-200"
             >
               ← Back to Events
             </Link>
+
           </div>
 
           {/* Header */}
           <header className="mb-8 flex items-start justify-between gap-6">
 
             <div>
+
               <p className="text-sm text-emerald-400">
                 CASE//ZERO / SECURITY EVENT
               </p>
@@ -151,6 +74,7 @@ export default async function SecurityEventDetailPage({
               <p className="mt-3 text-sm text-zinc-500">
                 Review normalized security telemetry and detection results.
               </p>
+
             </div>
 
             <EventTypeBadge
@@ -165,6 +89,7 @@ export default async function SecurityEventDetailPage({
           <section className="rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 p-6">
+
               <h3 className="font-medium">
                 Event Details
               </h3>
@@ -172,6 +97,7 @@ export default async function SecurityEventDetailPage({
               <p className="mt-1 text-sm text-zinc-500">
                 Normalized telemetry associated with this security event.
               </p>
+
             </div>
 
             <div className="p-6">
@@ -256,6 +182,7 @@ export default async function SecurityEventDetailPage({
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 p-6">
+
               <h3 className="font-medium">
                 Process Context
               </h3>
@@ -263,6 +190,7 @@ export default async function SecurityEventDetailPage({
               <p className="mt-1 text-sm text-zinc-500">
                 Process execution information captured with this event.
               </p>
+
             </div>
 
             <div className="p-6">
@@ -286,6 +214,7 @@ export default async function SecurityEventDetailPage({
             <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
 
               <div>
+
                 <h3 className="font-medium">
                   Detection Results
                 </h3>
@@ -293,6 +222,7 @@ export default async function SecurityEventDetailPage({
                 <p className="mt-1 text-sm text-zinc-500">
                   Alerts generated from this security event.
                 </p>
+
               </div>
 
               <span className="text-xs text-zinc-500">
@@ -339,6 +269,7 @@ export default async function SecurityEventDetailPage({
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 p-6">
+
               <h3 className="font-medium">
                 Raw Event Data
               </h3>
@@ -346,6 +277,7 @@ export default async function SecurityEventDetailPage({
               <p className="mt-1 text-sm text-zinc-500">
                 Additional telemetry retained from the original event.
               </p>
+
             </div>
 
             <div className="p-6">
@@ -396,6 +328,7 @@ export default async function SecurityEventDetailPage({
         </main>
 
       </div>
+
     </div>
   );
 }

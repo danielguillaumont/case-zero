@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import Sidebar from "@/components/Sidebar";
+
 import {
   getSecurityEvents,
 } from "@/lib/api";
@@ -55,100 +57,19 @@ export default async function EventsPage() {
     },
   ];
 
-  const navigationItems = [
-    {
-      label: "Dashboard",
-      href: "/",
-    },
-    {
-      label: "Events",
-      href: "/events",
-    },
-    {
-      label: "Alerts",
-      href: "/alerts",
-    },
-    {
-      label: "Cases",
-      href: "/cases",
-    },
-    {
-      label: "Hunt",
-      href: "#",
-    },
-    {
-      label: "Intelligence",
-      href: "#",
-    },
-    {
-      label: "Rules",
-      href: "#",
-    },
-    {
-      label: "Playbooks",
-      href: "#",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
+
       <div className="flex min-h-screen">
 
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
+        <Sidebar />
 
-          <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight">
-              CASE
-              <span className="text-emerald-400">
-                //ZERO
-              </span>
-            </h1>
-
-            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-              Security Operations
-            </p>
-          </div>
-
-          <nav className="space-y-2">
-            {navigationItems.map((item) =>
-              item.href === "#" ? (
-                <div
-                  key={item.label}
-                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
-                >
-                  {item.label}
-                </div>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
-                    item.label === "Events"
-                      ? "bg-zinc-800 text-white"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </nav>
-
-          <div className="mt-10 border-t border-zinc-800 pt-6">
-            <div className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500">
-              Administration
-            </div>
-          </div>
-
-        </aside>
-
-        {/* Main Content */}
         <main className="flex-1 p-10">
 
           <header className="mb-10 flex items-center justify-between">
 
             <div>
+
               <p className="text-sm text-emerald-400">
                 CASE//ZERO
               </p>
@@ -160,6 +81,7 @@ export default async function EventsPage() {
               <p className="mt-2 text-sm text-zinc-500">
                 Review normalized security telemetry ingested by the platform.
               </p>
+
             </div>
 
             <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-400">
@@ -168,7 +90,6 @@ export default async function EventsPage() {
 
           </header>
 
-          {/* Metrics */}
           <section>
 
             <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">
@@ -177,26 +98,29 @@ export default async function EventsPage() {
 
             <div className="grid grid-cols-4 gap-4">
 
-              {metrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
-                >
-                  <p className="text-sm text-zinc-500">
-                    {metric.label}
-                  </p>
+              {metrics.map(
+                (metric) => (
+                  <div
+                    key={metric.label}
+                    className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
+                  >
 
-                  <p className="mt-3 text-3xl font-semibold">
-                    {metric.value}
-                  </p>
-                </div>
-              ))}
+                    <p className="text-sm text-zinc-500">
+                      {metric.label}
+                    </p>
+
+                    <p className="mt-3 text-3xl font-semibold">
+                      {metric.value}
+                    </p>
+
+                  </div>
+                )
+              )}
 
             </div>
 
           </section>
 
-          {/* Events Table */}
           <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 p-6">
@@ -204,6 +128,7 @@ export default async function EventsPage() {
               <div className="flex items-center justify-between">
 
                 <div>
+
                   <h3 className="font-medium">
                     Security Events
                   </h3>
@@ -211,6 +136,7 @@ export default async function EventsPage() {
                   <p className="mt-1 text-sm text-zinc-500">
                     Normalized telemetry currently stored in CASE//ZERO.
                   </p>
+
                 </div>
 
                 <span className="text-xs text-zinc-500">
@@ -240,7 +166,6 @@ export default async function EventsPage() {
             ) : (
               <div>
 
-                {/* Table Header */}
                 <div className="grid grid-cols-[170px_1fr_150px_220px_190px] gap-4 border-b border-zinc-800 bg-zinc-950/40 px-6 py-3 text-xs uppercase tracking-wider text-zinc-500">
 
                   <span>
@@ -265,15 +190,16 @@ export default async function EventsPage() {
 
                 </div>
 
-                {/* Event Rows */}
                 <div className="divide-y divide-zinc-800">
 
-                  {events.map((event) => (
-                    <SecurityEventRow
-                      key={event.id}
-                      event={event}
-                    />
-                  ))}
+                  {events.map(
+                    (event) => (
+                      <SecurityEventRow
+                        key={event.id}
+                        event={event}
+                      />
+                    )
+                  )}
 
                 </div>
 
@@ -285,6 +211,7 @@ export default async function EventsPage() {
         </main>
 
       </div>
+
     </div>
   );
 }

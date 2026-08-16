@@ -1,98 +1,138 @@
 import Link from "next/link";
 
-import { getAlerts, getApiHealth } from "@/lib/api";
-import type { Alert } from "@/lib/api";
+import Sidebar from "@/components/Sidebar";
+
+import {
+  getAlerts,
+  getApiHealth,
+  getCases,
+  getDetectionRules,
+  getSecurityEvents,
+} from "@/lib/api";
+
+import type {
+  Alert,
+} from "@/lib/api";
 
 
 export default async function Home() {
-  const [apiHealth, alerts] = await Promise.all([
+  const [
+    apiHealth,
+    alerts,
+    events,
+    cases,
+    rules,
+  ] = await Promise.all([
     getApiHealth(),
     getAlerts(),
+    getSecurityEvents(),
+    getCases(),
+    getDetectionRules(),
   ]);
 
-  const apiOnline = apiHealth?.status === "online";
-  const databaseOnline = apiHealth?.database === "online";
+  const apiOnline =
+    apiHealth?.status === "online";
 
-  const openAlerts = alerts.filter((alert) =>
-    ["new", "assigned", "investigating"].includes(
-      alert.status.toLowerCase()
-    )
+  const databaseOnline =
+    apiHealth?.database === "online";
+
+  const openAlerts = alerts.filter(
+    (alert) =>
+      [
+        "new",
+        "assigned",
+        "investigating",
+      ].includes(
+        alert.status.toLowerCase()
+      )
   );
 
-  const criticalAlerts = openAlerts.filter(
-    (alert) => alert.severity.toLowerCase() === "critical"
+  const criticalAlerts =
+    openAlerts.filter(
+      (alert) =>
+        alert.severity.toLowerCase()
+        === "critical"
+    );
+
+  const activeCases = cases.filter(
+    (investigationCase) =>
+      ![
+        "resolved",
+        "closed",
+      ].includes(
+        investigationCase.status.toLowerCase()
+      )
   );
 
-  const recentAlerts = alerts.slice(0, 5);
+  const investigatingCases =
+    cases.filter(
+      (investigationCase) =>
+        investigationCase.status.toLowerCase()
+        === "investigating"
+    );
 
-  const navigationItems = [
-    { label: "Dashboard", href: "/" },
-    { label: "Alerts", href: "/alerts" },
-    { label: "Cases", href: "#" },
-    { label: "Hunt", href: "#" },
-    { label: "Intelligence", href: "#" },
-    { label: "Rules", href: "#" },
-    { label: "Playbooks", href: "#" },
-  ];
+  const eventsToday = events.filter(
+    (event) =>
+      isToday(
+        event.event_time
+      )
+  );
+
+  const enabledRules = rules.filter(
+    (rule) =>
+      rule.enabled
+  );
+
+  const detectionEngineActive =
+    enabledRules.length > 0;
+
+  const eventPipelineActive =
+    apiOnline;
+
+  const recentAlerts =
+    alerts.slice(0, 5);
 
   const metrics = [
-    { label: "Events Today", value: "0" },
-    { label: "Open Alerts", value: String(openAlerts.length) },
-    { label: "Active Cases", value: "0" },
-    { label: "Critical", value: String(criticalAlerts.length) },
+    {
+      label: "Events Today",
+      value: String(
+        eventsToday.length
+      ),
+    },
+    {
+      label: "Open Alerts",
+      value: String(
+        openAlerts.length
+      ),
+    },
+    {
+      label: "Active Cases",
+      value: String(
+        activeCases.length
+      ),
+    },
+    {
+      label: "Critical",
+      value: String(
+        criticalAlerts.length
+      ),
+    },
   ];
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
+
       <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
-          <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight">
-              CASE<span className="text-emerald-400">//ZERO</span>
-            </h1>
 
-            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-              Security Operations
-            </p>
-          </div>
+        <Sidebar />
 
-          <nav className="space-y-2">
-            {navigationItems.map((item) =>
-              item.href === "#" ? (
-                <div
-                  key={item.label}
-                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
-                >
-                  {item.label}
-                </div>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
-                    item.label === "Dashboard"
-                      ? "bg-zinc-800 text-white"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </nav>
-
-          <div className="mt-10 border-t border-zinc-800 pt-6">
-            <div className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500">
-              Administration
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content */}
         <main className="flex-1 p-10">
+
+          {/* Header */}
           <header className="mb-10 flex items-center justify-between">
+
             <div>
+
               <p className="text-sm text-emerald-400">
                 CASE//ZERO
               </p>
@@ -102,44 +142,57 @@ export default async function Home() {
               </h2>
 
               <p className="mt-2 text-sm text-zinc-500">
-                Monitor alerts, investigations, and platform health.
+                Monitor alerts, investigations, telemetry, and platform health.
               </p>
+
             </div>
 
             <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-400">
               Local Development
             </div>
+
           </header>
 
           {/* Metrics */}
           <section>
+
             <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">
               Security Overview
             </h3>
 
             <div className="grid grid-cols-4 gap-4">
-              {metrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
-                >
-                  <p className="text-sm text-zinc-500">
-                    {metric.label}
-                  </p>
 
-                  <p className="mt-3 text-3xl font-semibold">
-                    {metric.value}
-                  </p>
-                </div>
-              ))}
+              {metrics.map(
+                (metric) => (
+                  <div
+                    key={metric.label}
+                    className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
+                  >
+
+                    <p className="text-sm text-zinc-500">
+                      {metric.label}
+                    </p>
+
+                    <p className="mt-3 text-3xl font-semibold">
+                      {metric.value}
+                    </p>
+
+                  </div>
+                )
+              )}
+
             </div>
+
           </section>
 
           {/* Lower Dashboard */}
           <div className="mt-8 grid grid-cols-3 gap-6">
+
             {/* System Status */}
             <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+
               <div className="mb-6">
+
                 <h3 className="font-medium">
                   System Status
                 </h3>
@@ -147,48 +200,83 @@ export default async function Home() {
                 <p className="mt-1 text-sm text-zinc-500">
                   CASE//ZERO platform services
                 </p>
+
               </div>
 
               <div className="divide-y divide-zinc-800">
+
                 <StatusRow
                   name="CASE//ZERO API"
-                  status={apiOnline ? "ONLINE" : "OFFLINE"}
-                  active={apiOnline}
+                  status={
+                    apiOnline
+                      ? "ONLINE"
+                      : "OFFLINE"
+                  }
+                  active={
+                    apiOnline
+                  }
                 />
 
                 <StatusRow
                   name="PostgreSQL Database"
-                  status={databaseOnline ? "ONLINE" : "OFFLINE"}
-                  active={databaseOnline}
+                  status={
+                    databaseOnline
+                      ? "ONLINE"
+                      : "OFFLINE"
+                  }
+                  active={
+                    databaseOnline
+                  }
                 />
 
                 <StatusRow
                   name="Detection Engine"
-                  status="NOT CONFIGURED"
+                  status={
+                    detectionEngineActive
+                      ? `${enabledRules.length} RULES ACTIVE`
+                      : "NOT CONFIGURED"
+                  }
+                  active={
+                    detectionEngineActive
+                  }
                 />
 
                 <StatusRow
                   name="Event Pipeline"
-                  status="NOT CONFIGURED"
+                  status={
+                    eventPipelineActive
+                      ? "ACTIVE"
+                      : "OFFLINE"
+                  }
+                  active={
+                    eventPipelineActive
+                  }
                 />
 
                 <StatusRow
                   name="Threat Intelligence"
                   status="NOT CONFIGURED"
                 />
+
               </div>
 
-              {apiOnline && apiHealth && (
+              {apiOnline &&
+                apiHealth && (
                 <div className="mt-4 border-t border-zinc-800 pt-4">
+
                   <p className="text-xs text-zinc-600">
-                    API Version: {apiHealth.version}
+                    API Version:{" "}
+                    {apiHealth.version}
                   </p>
+
                 </div>
               )}
+
             </section>
 
             {/* Investigation Queue */}
             <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+
               <h3 className="font-medium">
                 Investigation Queue
               </h3>
@@ -198,24 +286,43 @@ export default async function Home() {
               </p>
 
               <div className="flex min-h-52 items-center justify-center">
+
                 <div className="text-center">
+
                   <p className="text-4xl font-semibold">
-                    0
+                    {
+                      investigatingCases.length
+                    }
                   </p>
 
                   <p className="mt-2 text-sm text-zinc-500">
-                    Active investigations
+                    Cases investigating
                   </p>
+
+                  <Link
+                    href="/cases"
+                    className="mt-4 inline-flex text-sm font-medium text-emerald-400 transition hover:text-emerald-300"
+                  >
+                    View Cases →
+                  </Link>
+
                 </div>
+
               </div>
+
             </section>
+
           </div>
 
           {/* Recent Alerts */}
           <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+
             <div className="border-b border-zinc-800 p-6">
+
               <div className="flex items-center justify-between">
+
                 <div>
+
                   <h3 className="font-medium">
                     Recent Alerts
                   </h3>
@@ -223,17 +330,34 @@ export default async function Home() {
                   <p className="mt-1 text-sm text-zinc-500">
                     Latest security detections
                   </p>
+
                 </div>
 
-                <span className="text-xs text-zinc-500">
-                  {alerts.length} total
-                </span>
+                <div className="flex items-center gap-4">
+
+                  <span className="text-xs text-zinc-500">
+                    {alerts.length} total
+                  </span>
+
+                  <Link
+                    href="/alerts"
+                    className="text-sm font-medium text-emerald-400 transition hover:text-emerald-300"
+                  >
+                    View All →
+                  </Link>
+
+                </div>
+
               </div>
+
             </div>
 
-            {recentAlerts.length === 0 ? (
+            {recentAlerts.length ===
+            0 ? (
               <div className="flex min-h-48 items-center justify-center">
+
                 <div className="text-center">
+
                   <p className="text-sm text-zinc-400">
                     No alerts detected
                   </p>
@@ -241,21 +365,31 @@ export default async function Home() {
                   <p className="mt-1 text-xs text-zinc-600">
                     Detection events will appear here.
                   </p>
+
                 </div>
+
               </div>
             ) : (
               <div className="divide-y divide-zinc-800">
-                {recentAlerts.map((alert) => (
-                  <AlertRow
-                    key={alert.id}
-                    alert={alert}
-                  />
-                ))}
+
+                {recentAlerts.map(
+                  (alert) => (
+                    <AlertRow
+                      key={alert.id}
+                      alert={alert}
+                    />
+                  )
+                )}
+
               </div>
             )}
+
           </section>
+
         </main>
+
       </div>
+
     </div>
   );
 }
@@ -272,7 +406,9 @@ function StatusRow({
 }) {
   return (
     <div className="flex items-center justify-between py-4">
+
       <div className="flex items-center gap-3">
+
         <div
           className={`h-2.5 w-2.5 rounded-full ${
             active
@@ -284,6 +420,7 @@ function StatusRow({
         <span className="text-sm">
           {name}
         </span>
+
       </div>
 
       <span
@@ -295,38 +432,70 @@ function StatusRow({
       >
         {status}
       </span>
+
     </div>
   );
 }
 
 
-function AlertRow({ alert }: { alert: Alert }) {
+function AlertRow({
+  alert,
+}: {
+  alert: Alert;
+}) {
   return (
-    <div className="flex items-center justify-between gap-6 px-6 py-5">
+    <Link
+      href={`/alerts/${alert.id}`}
+      className="flex items-center justify-between gap-6 px-6 py-5 transition hover:bg-zinc-800/40"
+    >
+
       <div className="flex min-w-0 items-center gap-4">
-        <SeverityBadge severity={alert.severity} />
+
+        <SeverityBadge
+          severity={
+            alert.severity
+          }
+        />
 
         <div className="min-w-0">
+
           <p className="truncate text-sm font-medium text-zinc-100">
             {alert.title}
           </p>
 
           <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
-            <span>{alert.source}</span>
-
-            <span>•</span>
 
             <span>
-              {formatAlertTime(alert.created_at)}
+              {alert.source}
             </span>
+
+            <span>
+              •
+            </span>
+
+            <span>
+              {formatAlertTime(
+                alert.created_at
+              )}
+            </span>
+
           </div>
+
         </div>
+
       </div>
 
       <div className="shrink-0">
-        <StatusBadge status={alert.status} />
+
+        <StatusBadge
+          status={
+            alert.status
+          }
+        />
+
       </div>
-    </div>
+
+    </Link>
   );
 }
 
@@ -339,11 +508,19 @@ function SeverityBadge({
   const normalizedSeverity =
     severity.toLowerCase();
 
-  const styles: Record<string, string> = {
-    low: "border-blue-900 bg-blue-950 text-blue-400",
+  const styles: Record<
+    string,
+    string
+  > = {
+    low:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
     medium:
       "border-yellow-900 bg-yellow-950 text-yellow-400",
-    high: "border-orange-900 bg-orange-950 text-orange-400",
+
+    high:
+      "border-orange-900 bg-orange-950 text-orange-400",
+
     critical:
       "border-red-900 bg-red-950 text-red-400",
   };
@@ -351,7 +528,9 @@ function SeverityBadge({
   return (
     <span
       className={`w-20 rounded-md border px-2.5 py-1 text-center text-xs font-medium uppercase ${
-        styles[normalizedSeverity] ??
+        styles[
+          normalizedSeverity
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -369,14 +548,22 @@ function StatusBadge({
   const normalizedStatus =
     status.toLowerCase();
 
-  const styles: Record<string, string> = {
-    new: "border-zinc-700 bg-zinc-800 text-zinc-300",
+  const styles: Record<
+    string,
+    string
+  > = {
+    new:
+      "border-zinc-700 bg-zinc-800 text-zinc-300",
+
     assigned:
       "border-blue-900 bg-blue-950 text-blue-400",
+
     investigating:
       "border-yellow-900 bg-yellow-950 text-yellow-400",
+
     resolved:
       "border-emerald-900 bg-emerald-950 text-emerald-400",
+
     closed:
       "border-zinc-800 bg-zinc-950 text-zinc-500",
   };
@@ -384,7 +571,9 @@ function StatusBadge({
   return (
     <span
       className={`w-fit rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
-        styles[normalizedStatus] ??
+        styles[
+          normalizedStatus
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -394,9 +583,38 @@ function StatusBadge({
 }
 
 
-function formatAlertTime(timestamp: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(timestamp));
+function isToday(
+  timestamp: string
+) {
+  const eventDate =
+    new Date(timestamp);
+
+  const today =
+    new Date();
+
+  return (
+    eventDate.getFullYear()
+      === today.getFullYear()
+    &&
+    eventDate.getMonth()
+      === today.getMonth()
+    &&
+    eventDate.getDate()
+      === today.getDate()
+  );
+}
+
+
+function formatAlertTime(
+  timestamp: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }
+  ).format(
+    new Date(timestamp)
+  );
 }

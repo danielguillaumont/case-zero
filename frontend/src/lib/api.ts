@@ -37,6 +37,18 @@ export type SecurityEvent = {
 };
 
 
+export type DetectionRule = {
+  id: string;
+  name: string;
+  description: string;
+  severity: string;
+  rule_type: "single_event" | "correlation";
+  enabled: boolean;
+  event_type: string;
+  logic: string;
+};
+
+
 export type Case = {
   id: string;
   title: string;
@@ -174,6 +186,48 @@ export async function getSecurityEvent(
   try {
     const response = await fetch(
       `http://127.0.0.1:8000/api/events/${eventId}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+
+export async function getDetectionRules(): Promise<DetectionRule[]> {
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/rules",
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+
+export async function getDetectionRule(
+  ruleId: string
+): Promise<DetectionRule | null> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/rules/${ruleId}`,
       {
         cache: "no-store",
       }
