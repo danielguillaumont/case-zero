@@ -51,7 +51,9 @@ class AlertUpdate(BaseModel):
 
 
 class AlertRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
     id: UUID
     title: str
@@ -61,5 +63,6 @@ class AlertRead(BaseModel):
     source: str
     assigned_analyst: str | None
     case_id: UUID | None
+    source_event_id: UUID | None
     created_at: datetime
     updated_at: datetime

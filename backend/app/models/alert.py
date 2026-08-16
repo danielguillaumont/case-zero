@@ -66,6 +66,17 @@ class Alert(Base):
         nullable=True,
     )
 
+    source_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey(
+            "security_events.id",
+            name="fk_alerts_source_event_id_security_events",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

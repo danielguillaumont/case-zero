@@ -100,4 +100,5 @@ def create_encoded_powershell_alert(
         severity="high",
         status="new",
         source="detection-engine",
+        source_event_id=security_event.id,
     )
