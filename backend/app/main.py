@@ -12,6 +12,9 @@ from app.api.routes.events import (
 from app.api.routes.hunt import (
     router as hunt_router,
 )
+from app.api.routes.playbooks import (
+    router as playbooks_router,
+)
 from app.api.routes.rules import (
     router as rules_router,
 )
@@ -34,6 +37,7 @@ app.include_router(alerts_router)
 app.include_router(cases_router)
 app.include_router(events_router)
 app.include_router(hunt_router)
+app.include_router(playbooks_router)
 app.include_router(rules_router)
 
 
