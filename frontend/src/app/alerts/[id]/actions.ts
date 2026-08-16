@@ -72,3 +72,26 @@ export async function createCaseFromAlert(
   revalidatePath("/cases");
   revalidatePath("/");
 }
+
+
+export async function linkAlertToExistingCase(
+  alertId: string,
+  formData: FormData
+) {
+  const caseId = formData.get("case_id");
+
+  if (
+    typeof caseId !== "string" ||
+    caseId.trim().length === 0
+  ) {
+    throw new Error(
+      "An investigation case must be selected."
+    );
+  }
+
+  await patchAlert(alertId, {
+    case_id: caseId,
+  });
+
+  revalidatePath(`/cases/${caseId}`);
+}

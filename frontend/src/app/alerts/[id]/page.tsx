@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 import {
   getAlert,
   getCase,
+  getCases,
 } from "@/lib/api";
 
 import {
   assignAlertToMe,
   createCaseFromAlert,
+  linkAlertToExistingCase,
   updateAlertStatus,
 } from "./actions";
 
@@ -29,6 +31,17 @@ export default async function AlertDetailPage({
   const linkedCase = alert.case_id
     ? await getCase(alert.case_id)
     : null;
+
+  const existingCases = alert.case_id
+    ? []
+    : await getCases();
+
+  const linkableCases = existingCases.filter(
+    (investigationCase) =>
+      !["resolved", "closed"].includes(
+        investigationCase.status.toLowerCase()
+      )
+  );
 
   const normalizedStatus =
     alert.status.toLowerCase();
@@ -55,6 +68,12 @@ export default async function AlertDetailPage({
 
   const createCaseAction =
     createCaseFromAlert.bind(
+      null,
+      alert.id
+    );
+
+  const linkExistingCaseAction =
+    linkAlertToExistingCase.bind(
       null,
       alert.id
     );
@@ -351,9 +370,7 @@ export default async function AlertDetailPage({
                     <div className="mt-3">
 
                       <p className="text-sm font-medium text-zinc-200">
-                        {
-                          alert.assigned_analyst
-                        }
+                        {alert.assigned_analyst}
                       </p>
 
                       {alert.assigned_analyst ===
@@ -448,9 +465,10 @@ export default async function AlertDetailPage({
                       </p>
 
                       <p className="mt-1 text-xs leading-5 text-zinc-600">
-                        Create a case to escalate this alert into a tracked investigation.
+                        Create a new case or associate this alert with an existing investigation.
                       </p>
 
+                      {/* Create New Case */}
                       <form
                         action={
                           createCaseAction
@@ -461,9 +479,83 @@ export default async function AlertDetailPage({
                           type="submit"
                           className="w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
                         >
-                          Create Investigation Case
+                          Create New Investigation Case
                         </button>
                       </form>
+
+                      {/* Divider */}
+                      <div className="my-5 flex items-center gap-3">
+                        <div className="h-px flex-1 bg-zinc-800" />
+
+                        <span className="text-xs uppercase tracking-wider text-zinc-600">
+                          or
+                        </span>
+
+                        <div className="h-px flex-1 bg-zinc-800" />
+                      </div>
+
+                      {/* Link Existing Case */}
+                      {linkableCases.length > 0 ? (
+                        <form
+                          action={
+                            linkExistingCaseAction
+                          }
+                        >
+                          <label
+                            htmlFor="case_id"
+                            className="text-xs uppercase tracking-wider text-zinc-500"
+                          >
+                            Existing Case
+                          </label>
+
+                          <select
+                            id="case_id"
+                            name="case_id"
+                            required
+                            defaultValue=""
+                            className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-zinc-300 outline-none transition focus:border-emerald-700"
+                          >
+                            <option
+                              value=""
+                              disabled
+                            >
+                              Select investigation...
+                            </option>
+
+                            {linkableCases.map(
+                              (
+                                investigationCase
+                              ) => (
+                                <option
+                                  key={
+                                    investigationCase.id
+                                  }
+                                  value={
+                                    investigationCase.id
+                                  }
+                                >
+                                  {
+                                    investigationCase.title
+                                  }
+                                </option>
+                              )
+                            )}
+                          </select>
+
+                          <button
+                            type="submit"
+                            className="mt-3 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                          >
+                            Link to Existing Case
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3">
+                          <p className="text-xs leading-5 text-zinc-500">
+                            No active investigation cases are currently available.
+                          </p>
+                        </div>
+                      )}
 
                     </div>
                   )}
