@@ -90,6 +90,39 @@ export type Playbook = {
 };
 
 
+export type ThreatIndicator = {
+  id: string;
+  indicator_type:
+    | "ip"
+    | "domain"
+    | "url"
+    | "hash";
+  value: string;
+  reputation:
+    | "benign"
+    | "unknown"
+    | "suspicious"
+    | "malicious";
+  confidence: number;
+  source: string;
+  description: string | null;
+  tags: string[];
+  first_seen: string;
+  last_seen: string;
+  created_at: string;
+  updated_at: string;
+};
+
+
+export type ThreatIndicatorQuery = {
+  indicator_type?: string | null;
+  reputation?: string | null;
+  source?: string | null;
+  search?: string | null;
+  limit?: number;
+};
+
+
 export type Case = {
   id: string;
   title: string;
@@ -393,6 +426,88 @@ export async function getPlaybooksForRule(
     return await response.json();
   } catch {
     return [];
+  }
+}
+
+
+export async function getThreatIndicators(
+  query: ThreatIndicatorQuery = {}
+): Promise<ThreatIndicator[]> {
+  try {
+    const searchParams =
+      new URLSearchParams();
+
+    if (query.indicator_type) {
+      searchParams.set(
+        "indicator_type",
+        query.indicator_type
+      );
+    }
+
+    if (query.reputation) {
+      searchParams.set(
+        "reputation",
+        query.reputation
+      );
+    }
+
+    if (query.source) {
+      searchParams.set(
+        "source",
+        query.source
+      );
+    }
+
+    if (query.search) {
+      searchParams.set(
+        "search",
+        query.search
+      );
+    }
+
+    searchParams.set(
+      "limit",
+      String(
+        query.limit ?? 100
+      )
+    );
+
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/intelligence?${searchParams.toString()}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+
+export async function getThreatIndicator(
+  indicatorId: string
+): Promise<ThreatIndicator | null> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/intelligence/${indicatorId}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
   }
 }
 

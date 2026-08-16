@@ -27,7 +27,7 @@ const navigationItems = [
   },
   {
     label: "Intelligence",
-    href: null,
+    href: "/intelligence",
   },
   {
     label: "Rules",
@@ -85,17 +85,6 @@ export default function Sidebar() {
 
         {navigationItems.map(
           (item) => {
-            if (item.href === null) {
-              return (
-                <div
-                  key={item.label}
-                  className="w-full rounded-lg px-4 py-3 text-sm text-zinc-500"
-                >
-                  {item.label}
-                </div>
-              );
-            }
-
             const active =
               isActive(item.href);
 
