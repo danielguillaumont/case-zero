@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 
 import {
   getCase,
+  getCaseActivities,
   getCaseNotes,
 } from "@/lib/api";
 
 import type {
+  CaseActivity,
   CaseAlert,
   CaseNote,
 } from "@/lib/api";
@@ -30,7 +32,13 @@ export default async function CaseDetailPage({
     notFound();
   }
 
-  const caseNotes = await getCaseNotes(id);
+  const [
+    caseNotes,
+    caseActivities,
+  ] = await Promise.all([
+    getCaseNotes(id),
+    getCaseActivities(id),
+  ]);
 
   const normalizedStatus =
     investigationCase.status.toLowerCase();
@@ -400,6 +408,17 @@ export default async function CaseDetailPage({
                   </p>
                 </div>
 
+                {/* Activity Count */}
+                <div className="border-t border-zinc-800 pt-6">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Activity Events
+                  </p>
+
+                  <p className="mt-2 text-2xl font-semibold text-zinc-200">
+                    {caseActivities.length}
+                  </p>
+                </div>
+
               </div>
             </section>
           </div>
@@ -474,6 +493,61 @@ export default async function CaseDetailPage({
                   )}
                 </div>
 
+              </div>
+            )}
+
+          </section>
+
+          {/* Case Activity Timeline */}
+          <section className="mt-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+
+            <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+              <div>
+                <h3 className="font-medium">
+                  Case Activity
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  System-recorded investigation events and analyst actions.
+                </p>
+              </div>
+
+              <p className="text-xs text-zinc-500">
+                {caseActivities.length}{" "}
+                {caseActivities.length === 1
+                  ? "event"
+                  : "events"}
+              </p>
+            </div>
+
+            {caseActivities.length === 0 ? (
+              <div className="px-6 py-14 text-center">
+
+                <div className="mx-auto h-3 w-3 rounded-full border border-zinc-700 bg-zinc-800" />
+
+                <p className="mt-4 text-sm font-medium text-zinc-300">
+                  No activity recorded yet
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-500">
+                  New case actions will automatically appear in this timeline.
+                </p>
+
+              </div>
+            ) : (
+              <div className="px-6 py-2">
+                {caseActivities.map(
+                  (activity, index) => (
+                    <CaseActivityRow
+                      key={activity.id}
+                      activity={activity}
+                      isLast={
+                        index ===
+                        caseActivities.length - 1
+                      }
+                    />
+                  )
+                )}
               </div>
             )}
 
@@ -604,6 +678,87 @@ export default async function CaseDetailPage({
         </main>
       </div>
     </div>
+  );
+}
+
+
+function CaseActivityRow({
+  activity,
+  isLast,
+}: {
+  activity: CaseActivity;
+  isLast: boolean;
+}) {
+  const presentation =
+    getActivityPresentation(
+      activity.event_type
+    );
+
+  return (
+    <article className="relative flex gap-5">
+
+      {/* Timeline rail */}
+      <div className="relative flex w-10 shrink-0 justify-center">
+
+        {!isLast && (
+          <div className="absolute bottom-0 top-8 w-px bg-zinc-800" />
+        )}
+
+        <div
+          className={`relative z-10 mt-6 h-3.5 w-3.5 rounded-full border ${
+            presentation.dotStyle
+          }`}
+        />
+
+      </div>
+
+      {/* Activity Content */}
+      <div
+        className={`min-w-0 flex-1 py-5 ${
+          !isLast
+            ? "border-b border-zinc-800"
+            : ""
+        }`}
+      >
+        <div className="flex items-start justify-between gap-6">
+
+          <div className="min-w-0">
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+                  presentation.badgeStyle
+                }`}
+              >
+                {presentation.label}
+              </span>
+
+              {activity.actor && (
+                <span className="text-xs text-zinc-500">
+                  by {activity.actor}
+                </span>
+              )}
+            </div>
+
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              {activity.message}
+            </p>
+
+          </div>
+
+          <time
+            dateTime={activity.created_at}
+            className="shrink-0 text-xs text-zinc-600"
+          >
+            {formatCaseTime(
+              activity.created_at
+            )}
+          </time>
+
+        </div>
+      </div>
+
+    </article>
   );
 }
 
@@ -901,6 +1056,63 @@ function AlertStatusBadge({
     >
       {status}
     </span>
+  );
+}
+
+
+function getActivityPresentation(
+  eventType: string
+) {
+  const presentations: Record<
+    string,
+    {
+      label: string;
+      badgeStyle: string;
+      dotStyle: string;
+    }
+  > = {
+    case_created: {
+      label: "Case Created",
+      badgeStyle:
+        "border-blue-900 bg-blue-950 text-blue-400",
+      dotStyle:
+        "border-blue-700 bg-blue-500",
+    },
+
+    alert_linked: {
+      label: "Alert Linked",
+      badgeStyle:
+        "border-orange-900 bg-orange-950 text-orange-400",
+      dotStyle:
+        "border-orange-700 bg-orange-500",
+    },
+
+    note_added: {
+      label: "Note Added",
+      badgeStyle:
+        "border-emerald-900 bg-emerald-950 text-emerald-400",
+      dotStyle:
+        "border-emerald-700 bg-emerald-500",
+    },
+
+    status_changed: {
+      label: "Status Changed",
+      badgeStyle:
+        "border-yellow-900 bg-yellow-950 text-yellow-400",
+      dotStyle:
+        "border-yellow-700 bg-yellow-500",
+    },
+  };
+
+  return (
+    presentations[eventType] ?? {
+      label: eventType
+        .replaceAll("_", " "),
+      badgeStyle:
+        "border-zinc-700 bg-zinc-800 text-zinc-400",
+      dotStyle:
+        "border-zinc-600 bg-zinc-500",
+    }
   );
 }
 

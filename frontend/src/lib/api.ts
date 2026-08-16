@@ -59,6 +59,16 @@ export type CaseNote = {
 };
 
 
+export type CaseActivity = {
+  id: string;
+  case_id: string;
+  event_type: string;
+  actor: string | null;
+  message: string;
+  created_at: string;
+};
+
+
 export async function getApiHealth(): Promise<HealthStatus | null> {
   try {
     const response = await fetch(
@@ -169,6 +179,28 @@ export async function getCaseNotes(
   try {
     const response = await fetch(
       `http://127.0.0.1:8000/api/cases/${caseId}/notes`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+
+export async function getCaseActivities(
+  caseId: string
+): Promise<CaseActivity[]> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/cases/${caseId}/activities`,
       {
         cache: "no-store",
       }
