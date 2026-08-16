@@ -49,6 +49,20 @@ export type DetectionRule = {
 };
 
 
+export type HuntQuery = {
+  event_type?: string | null;
+  source?: string | null;
+  hostname?: string | null;
+  username?: string | null;
+  source_ip?: string | null;
+  process_name?: string | null;
+  contains?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  limit?: number;
+};
+
+
 export type Case = {
   id: string;
   title: string;
@@ -240,6 +254,54 @@ export async function getDetectionRule(
     return await response.json();
   } catch {
     return null;
+  }
+}
+
+
+export async function huntSecurityEvents(
+  huntQuery: HuntQuery
+): Promise<SecurityEvent[]> {
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/hunt",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          event_type:
+            huntQuery.event_type ?? null,
+          source:
+            huntQuery.source ?? null,
+          hostname:
+            huntQuery.hostname ?? null,
+          username:
+            huntQuery.username ?? null,
+          source_ip:
+            huntQuery.source_ip ?? null,
+          process_name:
+            huntQuery.process_name ?? null,
+          contains:
+            huntQuery.contains ?? null,
+          start_time:
+            huntQuery.start_time ?? null,
+          end_time:
+            huntQuery.end_time ?? null,
+          limit:
+            huntQuery.limit ?? 100,
+        }),
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
   }
 }
 

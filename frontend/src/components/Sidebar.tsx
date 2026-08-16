@@ -23,7 +23,7 @@ const navigationItems = [
   },
   {
     label: "Hunt",
-    href: null,
+    href: "/hunt",
   },
   {
     label: "Intelligence",
