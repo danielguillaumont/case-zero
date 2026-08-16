@@ -1,15 +1,31 @@
 from fastapi import FastAPI
 
-from app.api.routes.alerts import router as alerts_router
-from app.api.routes.cases import router as cases_router
-from app.api.routes.events import router as events_router
-from app.api.routes.rules import router as rules_router
-from app.database import check_database_connection
+from app.api.routes.alerts import (
+    router as alerts_router,
+)
+from app.api.routes.cases import (
+    router as cases_router,
+)
+from app.api.routes.events import (
+    router as events_router,
+)
+from app.api.routes.hunt import (
+    router as hunt_router,
+)
+from app.api.routes.rules import (
+    router as rules_router,
+)
+from app.database import (
+    check_database_connection,
+)
 
 
 app = FastAPI(
     title="CASE//ZERO API",
-    description="Backend API for the CASE//ZERO cybersecurity platform.",
+    description=(
+        "Backend API for the CASE//ZERO "
+        "cybersecurity platform."
+    ),
     version="0.1.0",
 )
 
@@ -17,6 +33,7 @@ app = FastAPI(
 app.include_router(alerts_router)
 app.include_router(cases_router)
 app.include_router(events_router)
+app.include_router(hunt_router)
 app.include_router(rules_router)
 
 
@@ -24,17 +41,25 @@ app.include_router(rules_router)
 async def root():
     return {
         "name": "CASE//ZERO",
-        "message": "Security Operations Platform API",
+        "message": (
+            "Security Operations Platform API"
+        ),
     }
 
 
 @app.get("/api/health")
 async def health_check():
-    database_online = await check_database_connection()
+    database_online = (
+        await check_database_connection()
+    )
 
     return {
         "status": "online",
         "service": "CASE//ZERO API",
         "version": "0.1.0",
-        "database": "online" if database_online else "offline",
+        "database": (
+            "online"
+            if database_online
+            else "offline"
+        ),
     }
