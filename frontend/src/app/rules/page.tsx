@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import Sidebar from "@/components/Sidebar";
 
 import {
@@ -200,9 +202,12 @@ function DetectionRuleRow({
 
           </div>
 
-          <h4 className="mt-4 text-lg font-medium text-zinc-100">
+          <Link
+            href={`/rules/${rule.id}`}
+            className="mt-4 inline-flex text-lg font-medium text-zinc-100 transition hover:text-emerald-400"
+          >
             {rule.name}
-          </h4>
+          </Link>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500">
             {rule.description}
@@ -219,6 +224,13 @@ function DetectionRuleRow({
             </p>
 
           </div>
+
+          <Link
+            href={`/rules/${rule.id}`}
+            className="mt-5 inline-flex rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-emerald-800 hover:bg-emerald-950 hover:text-emerald-400"
+          >
+            View Rule Details &rarr;
+          </Link>
 
         </div>
 

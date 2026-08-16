@@ -56,17 +56,19 @@ export default async function PlaybookDetailPage({
 
         <main className="flex-1 p-10">
 
+          {/* Back */}
           <div className="mb-8">
 
             <Link
               href="/playbooks"
               className="text-sm text-zinc-500 transition hover:text-zinc-200"
             >
-              ← Back to Playbooks
+              &larr; Back to Playbooks
             </Link>
 
           </div>
 
+          {/* Header */}
           <header className="mb-8 flex items-start justify-between gap-8">
 
             <div className="min-w-0">
@@ -103,6 +105,7 @@ export default async function PlaybookDetailPage({
 
           </header>
 
+          {/* Overview */}
           <section className="rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 px-6 py-5">
@@ -153,6 +156,7 @@ export default async function PlaybookDetailPage({
 
           </section>
 
+          {/* Trigger Mapping */}
           <section className="mt-6 rounded-xl border border-violet-900/60 bg-zinc-900">
 
             <div className="border-b border-zinc-800 px-6 py-5">
@@ -177,9 +181,10 @@ export default async function PlaybookDetailPage({
 
                 {playbook.trigger_rule_ids.map(
                   (ruleId) => (
-                    <div
+                    <Link
                       key={ruleId}
-                      className="rounded-lg border border-violet-900 bg-violet-950/50 px-4 py-3"
+                      href={`/rules/${ruleId}`}
+                      className="rounded-lg border border-violet-900 bg-violet-950/50 px-4 py-3 transition hover:bg-violet-900/60"
                     >
 
                       <p className="text-xs uppercase tracking-wider text-violet-500">
@@ -187,10 +192,10 @@ export default async function PlaybookDetailPage({
                       </p>
 
                       <p className="mt-1 text-sm font-medium text-violet-300">
-                        {ruleId}
+                        {ruleId} &rarr;
                       </p>
 
-                    </div>
+                    </Link>
                   )
                 )}
 
@@ -200,13 +205,14 @@ export default async function PlaybookDetailPage({
                 href="/rules"
                 className="mt-5 inline-flex text-sm font-medium text-emerald-400 transition hover:text-emerald-300"
               >
-                Review Detection Rules →
+                Review Detection Rules &rarr;
               </Link>
 
             </div>
 
           </section>
 
+          {/* Response Workflow */}
           <section className="mt-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
@@ -267,6 +273,7 @@ export default async function PlaybookDetailPage({
 
           </section>
 
+          {/* Analyst Resources */}
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 px-6 py-5">
@@ -308,6 +315,7 @@ export default async function PlaybookDetailPage({
 
           </section>
 
+          {/* Metadata */}
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
 
             <h3 className="font-medium">
@@ -428,7 +436,7 @@ function ResourceCard({
       </p>
 
       <p className="mt-4 text-sm font-medium text-emerald-400">
-        {action} →
+        {action} &rarr;
       </p>
 
     </Link>

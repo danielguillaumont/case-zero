@@ -202,13 +202,20 @@ export default async function AlertDetailPage({
                     }
                   />
 
-                  <DetailField
-                    label="Detection Rule"
-                    value={
-                      alert.detection_rule_id ??
-                      "Not linked"
-                    }
-                  />
+                  {alert.detection_rule_id ? (
+                    <LinkedDetailField
+                      label="Detection Rule"
+                      value={
+                        alert.detection_rule_id
+                      }
+                      href={`/rules/${alert.detection_rule_id}`}
+                    />
+                  ) : (
+                    <DetailField
+                      label="Detection Rule"
+                      value="Not linked"
+                    />
+                  )}
 
                   <DetailField
                     label="Assigned Analyst"
@@ -255,7 +262,6 @@ export default async function AlertDetailPage({
 
               <div className="space-y-6 p-6">
 
-                {/* Current Status */}
                 <div>
 
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
@@ -272,7 +278,6 @@ export default async function AlertDetailPage({
 
                 </div>
 
-                {/* Workflow Action */}
                 <div className="border-t border-zinc-800 pt-6">
 
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
@@ -341,7 +346,6 @@ export default async function AlertDetailPage({
 
                 </div>
 
-                {/* Analyst Assignment */}
                 <div className="border-t border-zinc-800 pt-6">
 
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
@@ -389,7 +393,6 @@ export default async function AlertDetailPage({
 
                 </div>
 
-                {/* Investigation Case */}
                 <div className="border-t border-zinc-800 pt-6">
 
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
@@ -576,9 +579,12 @@ export default async function AlertDetailPage({
 
                 </div>
 
-                <div className="rounded-md border border-violet-900 bg-violet-950 px-3 py-1.5 text-xs font-medium text-violet-400">
-                  {alert.detection_rule_id}
-                </div>
+                <Link
+                  href={`/rules/${alert.detection_rule_id}`}
+                  className="rounded-md border border-violet-900 bg-violet-950 px-3 py-1.5 text-xs font-medium text-violet-400 transition hover:bg-violet-900"
+                >
+                  {alert.detection_rule_id} &rarr;
+                </Link>
 
               </div>
 
@@ -902,9 +908,12 @@ function RecommendedPlaybookCard({
             Triggered By
           </p>
 
-          <p className="mt-2 break-words text-sm font-medium text-violet-400">
-            {detectionRuleId}
-          </p>
+          <Link
+            href={`/rules/${detectionRuleId}`}
+            className="mt-2 inline-flex break-words text-sm font-medium text-violet-400 transition hover:text-violet-300"
+          >
+            {detectionRuleId} &rarr;
+          </Link>
 
           <p className="mt-5 text-xs uppercase tracking-wider text-zinc-600">
             Playbook ID
@@ -982,6 +991,34 @@ function DetailField({
       >
         {value}
       </p>
+
+    </div>
+  );
+}
+
+
+function LinkedDetailField({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href: string;
+}) {
+  return (
+    <div>
+
+      <p className="text-xs uppercase tracking-wider text-zinc-500">
+        {label}
+      </p>
+
+      <Link
+        href={href}
+        className="mt-2 inline-flex break-words text-sm font-medium text-violet-400 transition hover:text-violet-300"
+      >
+        {value} &rarr;
+      </Link>
 
     </div>
   );
