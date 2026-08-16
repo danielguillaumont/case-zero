@@ -15,8 +15,25 @@ export type Alert = {
   source: string;
   assigned_analyst: string | null;
   case_id: string | null;
+  source_event_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+
+export type SecurityEvent = {
+  id: string;
+  event_type: string;
+  source: string;
+  event_time: string;
+  hostname: string | null;
+  username: string | null;
+  source_ip: string | null;
+  destination_ip: string | null;
+  process_name: string | null;
+  command_line: string | null;
+  raw_data: Record<string, unknown> | null;
+  created_at: string;
 };
 
 
@@ -115,6 +132,28 @@ export async function getAlert(
   try {
     const response = await fetch(
       `http://127.0.0.1:8000/api/alerts/${alertId}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+
+export async function getSecurityEvent(
+  eventId: string
+): Promise<SecurityEvent | null> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/events/${eventId}`,
       {
         cache: "no-store",
       }

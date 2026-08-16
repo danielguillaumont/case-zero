@@ -5,6 +5,7 @@ import {
   getAlert,
   getCase,
   getCases,
+  getSecurityEvent,
 } from "@/lib/api";
 
 import {
@@ -30,6 +31,12 @@ export default async function AlertDetailPage({
 
   const linkedCase = alert.case_id
     ? await getCase(alert.case_id)
+    : null;
+
+  const sourceEvent = alert.source_event_id
+    ? await getSecurityEvent(
+        alert.source_event_id
+      )
     : null;
 
   const existingCases = alert.case_id
@@ -234,12 +241,16 @@ export default async function AlertDetailPage({
 
                   <DetailField
                     label="Severity"
-                    value={alert.severity.toUpperCase()}
+                    value={
+                      alert.severity.toUpperCase()
+                    }
                   />
 
                   <DetailField
                     label="Status"
-                    value={alert.status.toUpperCase()}
+                    value={
+                      alert.status.toUpperCase()
+                    }
                   />
 
                   <DetailField
@@ -566,6 +577,148 @@ export default async function AlertDetailPage({
             </section>
           </div>
 
+          {/* Source Security Event */}
+          {alert.source_event_id && (
+            <section className="mt-6 overflow-hidden rounded-xl border border-violet-900/70 bg-zinc-900">
+
+              <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">
+                    Detection Evidence
+                  </p>
+
+                  <h3 className="mt-2 font-medium">
+                    Triggered By Security Event
+                  </h3>
+
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Original telemetry that caused this alert to be generated.
+                  </p>
+                </div>
+
+                <span className="rounded-md border border-violet-900 bg-violet-950 px-3 py-1.5 text-xs font-medium uppercase text-violet-400">
+                  Source Event
+                </span>
+              </div>
+
+              {sourceEvent ? (
+                <div className="p-6">
+
+                  <div className="grid grid-cols-3 gap-x-8 gap-y-7">
+
+                    <DetailField
+                      label="Event Type"
+                      value={sourceEvent.event_type}
+                    />
+
+                    <DetailField
+                      label="Telemetry Source"
+                      value={sourceEvent.source}
+                    />
+
+                    <DetailField
+                      label="Event Time"
+                      value={formatAlertTime(
+                        sourceEvent.event_time
+                      )}
+                    />
+
+                    <DetailField
+                      label="Hostname"
+                      value={
+                        sourceEvent.hostname ??
+                        "Unavailable"
+                      }
+                    />
+
+                    <DetailField
+                      label="Username"
+                      value={
+                        sourceEvent.username ??
+                        "Unavailable"
+                      }
+                    />
+
+                    <DetailField
+                      label="Source IP"
+                      value={
+                        sourceEvent.source_ip ??
+                        "Unavailable"
+                      }
+                    />
+
+                    <DetailField
+                      label="Destination IP"
+                      value={
+                        sourceEvent.destination_ip ??
+                        "Unavailable"
+                      }
+                    />
+
+                    <DetailField
+                      label="Process"
+                      value={
+                        sourceEvent.process_name ??
+                        "Unavailable"
+                      }
+                    />
+
+                    <DetailField
+                      label="Ingested"
+                      value={formatAlertTime(
+                        sourceEvent.created_at
+                      )}
+                    />
+
+                  </div>
+
+                  <div className="mt-8 border-t border-zinc-800 pt-6">
+                    <p className="text-xs uppercase tracking-wider text-zinc-500">
+                      Command Line
+                    </p>
+
+                    <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-sm leading-6 text-orange-300">
+                      {sourceEvent.command_line ??
+                        "Command line unavailable."}
+                    </pre>
+                  </div>
+
+                  {sourceEvent.raw_data && (
+                    <div className="mt-6">
+                      <p className="text-xs uppercase tracking-wider text-zinc-500">
+                        Raw Event Data
+                      </p>
+
+                      <pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-xs leading-6 text-zinc-400">
+                        {JSON.stringify(
+                          sourceEvent.raw_data,
+                          null,
+                          2
+                        )}
+                      </pre>
+                    </div>
+                  )}
+
+                </div>
+              ) : (
+                <div className="px-6 py-8">
+
+                  <div className="rounded-lg border border-yellow-900 bg-yellow-950/30 px-4 py-4">
+                    <p className="text-sm font-medium text-yellow-400">
+                      Source event unavailable
+                    </p>
+
+                    <p className="mt-2 text-sm text-zinc-500">
+                      This alert contains a source event ID, but the event could not be retrieved from the API.
+                    </p>
+                  </div>
+
+                </div>
+              )}
+
+            </section>
+          )}
+
           {/* Technical Metadata */}
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
 
@@ -577,14 +730,14 @@ export default async function AlertDetailPage({
               Internal CASE//ZERO alert identifiers.
             </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-6">
+            <div className="mt-6 grid grid-cols-3 gap-6">
 
               <div>
                 <p className="text-xs uppercase tracking-wider text-zinc-500">
                   Alert ID
                 </p>
 
-                <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                <code className="mt-2 block overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
                   {alert.id}
                 </code>
               </div>
@@ -594,8 +747,19 @@ export default async function AlertDetailPage({
                   Case ID
                 </p>
 
-                <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                <code className="mt-2 block overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
                   {alert.case_id ??
+                    "Not linked"}
+                </code>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500">
+                  Source Event ID
+                </p>
+
+                <code className="mt-2 block overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                  {alert.source_event_id ??
                     "Not linked"}
                 </code>
               </div>
@@ -627,7 +791,7 @@ function DetailField({
       </p>
 
       <p
-        className={`mt-2 text-zinc-300 ${
+        className={`mt-2 break-words text-zinc-300 ${
           large
             ? "text-sm leading-7"
             : "text-sm"
