@@ -15,6 +15,7 @@ from app.models.case import Case
 from app.models.case_activity import CaseActivity
 from app.models.case_note import CaseNote
 from app.models.security_event import SecurityEvent
+from app.models.threat_indicator import ThreatIndicator
 
 
 config = context.config
@@ -46,7 +47,9 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def do_run_migrations(connection: Connection) -> None:
+def do_run_migrations(
+    connection: Connection
+) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
