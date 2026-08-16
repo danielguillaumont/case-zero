@@ -8,6 +8,7 @@ import {
 
 import {
   assignAlertToMe,
+  createCaseFromAlert,
   updateAlertStatus,
 } from "./actions";
 
@@ -48,6 +49,12 @@ export default async function AlertDetailPage({
 
   const assignToMeAction =
     assignAlertToMe.bind(
+      null,
+      alert.id
+    );
+
+  const createCaseAction =
+    createCaseFromAlert.bind(
       null,
       alert.id
     );
@@ -342,6 +349,7 @@ export default async function AlertDetailPage({
 
                   {alert.assigned_analyst ? (
                     <div className="mt-3">
+
                       <p className="text-sm font-medium text-zinc-200">
                         {
                           alert.assigned_analyst
@@ -354,9 +362,11 @@ export default async function AlertDetailPage({
                           Assigned to you
                         </p>
                       )}
+
                     </div>
                   ) : (
                     <div className="mt-3">
+
                       <p className="text-sm text-zinc-500">
                         Unassigned
                       </p>
@@ -374,12 +384,14 @@ export default async function AlertDetailPage({
                           Assign to Me
                         </button>
                       </form>
+
                     </div>
                   )}
                 </div>
 
                 {/* Investigation Case */}
                 <div className="border-t border-zinc-800 pt-6">
+
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Investigation Case
                   </p>
@@ -392,6 +404,7 @@ export default async function AlertDetailPage({
                       </p>
 
                       <div className="mt-3 flex items-center gap-2">
+
                         <CaseStatusBadge
                           status={
                             linkedCase.status
@@ -403,6 +416,7 @@ export default async function AlertDetailPage({
                             linkedCase.priority
                           }
                         />
+
                       </div>
 
                       <Link
@@ -415,6 +429,7 @@ export default async function AlertDetailPage({
                     </div>
                   ) : alert.case_id ? (
                     <div className="mt-3">
+
                       <p className="text-sm text-yellow-400">
                         Linked case unavailable
                       </p>
@@ -423,12 +438,36 @@ export default async function AlertDetailPage({
                         Case ID:{" "}
                         {alert.case_id}
                       </p>
+
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-zinc-400">
-                      No case created
-                    </p>
+                    <div className="mt-3">
+
+                      <p className="text-sm text-zinc-400">
+                        No investigation case linked.
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-zinc-600">
+                        Create a case to escalate this alert into a tracked investigation.
+                      </p>
+
+                      <form
+                        action={
+                          createCaseAction
+                        }
+                        className="mt-4"
+                      >
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
+                        >
+                          Create Investigation Case
+                        </button>
+                      </form>
+
+                    </div>
                   )}
+
                 </div>
 
               </div>
@@ -437,6 +476,7 @@ export default async function AlertDetailPage({
 
           {/* Technical Metadata */}
           <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+
             <h3 className="font-medium">
               Technical Metadata
             </h3>
@@ -489,6 +529,7 @@ function DetailField({
 }) {
   return (
     <div>
+
       <p className="text-xs uppercase tracking-wider text-zinc-500">
         {label}
       </p>
@@ -502,6 +543,7 @@ function DetailField({
       >
         {value}
       </p>
+
     </div>
   );
 }

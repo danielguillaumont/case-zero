@@ -8,6 +8,7 @@ from app.database import get_database_session
 from app.models.alert import Alert
 from app.models.case import Case
 from app.schemas.alert import AlertCreate, AlertRead, AlertUpdate
+from app.schemas.case import CaseRead
 
 
 router = APIRouter(
@@ -79,6 +80,57 @@ async def get_alert(
         )
 
     return alert
+
+
+@router.post(
+    "/{alert_id}/case",
+    response_model=CaseRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_case_from_alert(
+    alert_id: UUID,
+    session: AsyncSession = Depends(get_database_session),
+) -> Case:
+    alert = await session.get(
+        Alert,
+        alert_id,
+    )
+
+    if alert is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Alert not found",
+        )
+
+    if alert.case_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Alert is already linked to a case",
+        )
+
+    investigation_case = Case(
+        title=f"Investigation: {alert.title}",
+        description=(
+            alert.description
+            or f"Investigation created from alert: {alert.title}"
+        ),
+        status="open",
+        priority=alert.severity,
+        assigned_analyst=alert.assigned_analyst,
+    )
+
+    session.add(investigation_case)
+
+    await session.flush()
+
+    alert.case_id = investigation_case.id
+
+    await session.commit()
+
+    await session.refresh(investigation_case)
+    await session.refresh(alert)
+
+    return investigation_case
 
 
 @router.patch(

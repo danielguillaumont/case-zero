@@ -24,6 +24,7 @@ async function patchAlert(
 
   revalidatePath(`/alerts/${alertId}`);
   revalidatePath("/alerts");
+  revalidatePath("/cases");
   revalidatePath("/");
 }
 
@@ -46,4 +47,28 @@ export async function assignAlertToMe(
   await patchAlert(alertId, {
     assigned_analyst: "Daniel Guillaumont",
   });
+}
+
+
+export async function createCaseFromAlert(
+  alertId: string,
+  _formData: FormData
+) {
+  const response = await fetch(
+    `http://127.0.0.1:8000/api/alerts/${alertId}/case`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to create investigation case."
+    );
+  }
+
+  revalidatePath(`/alerts/${alertId}`);
+  revalidatePath("/alerts");
+  revalidatePath("/cases");
+  revalidatePath("/");
 }
