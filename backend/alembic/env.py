@@ -14,6 +14,7 @@ from app.models.base import Base
 from app.models.case import Case
 from app.models.case_activity import CaseActivity
 from app.models.case_note import CaseNote
+from app.models.security_event import SecurityEvent
 
 
 config = context.config
