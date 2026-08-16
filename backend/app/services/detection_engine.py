@@ -37,14 +37,99 @@ BRUTE_FORCE_WINDOW_MINUTES = 5
 BRUTE_FORCE_FAILURE_THRESHOLD = 5
 
 
+DETECTION_RULES = {
+    "encoded-powershell": {
+        "id": "encoded-powershell",
+        "name": "Encoded PowerShell Command",
+        "description": (
+            "Detects PowerShell process creation "
+            "events that use encoded command "
+            "execution."
+        ),
+        "severity": "high",
+        "rule_type": "single_event",
+        "enabled": True,
+        "event_type": "process_creation",
+        "logic": (
+            "PowerShell or pwsh process with "
+            "-enc or -encodedcommand in the "
+            "command line"
+        ),
+    },
+    "powershell-download-cradle": {
+        "id": "powershell-download-cradle",
+        "name": "PowerShell Download Cradle",
+        "description": (
+            "Detects PowerShell activity capable "
+            "of retrieving remote content."
+        ),
+        "severity": "high",
+        "rule_type": "single_event",
+        "enabled": True,
+        "event_type": "process_creation",
+        "logic": (
+            "PowerShell command line contains "
+            "download or web retrieval indicators "
+            "such as DownloadString, "
+            "Invoke-WebRequest, or Net.WebClient"
+        ),
+    },
+    "auth-brute-force": {
+        "id": "auth-brute-force",
+        "name": "Possible Brute Force Attack",
+        "description": (
+            "Detects repeated authentication "
+            "failures involving the same username "
+            "and source IP address."
+        ),
+        "severity": "high",
+        "rule_type": "correlation",
+        "enabled": True,
+        "event_type": "authentication",
+        "logic": (
+            f"{BRUTE_FORCE_FAILURE_THRESHOLD} "
+            "failed authentications from the same "
+            "username and source IP within "
+            f"{BRUTE_FORCE_WINDOW_MINUTES} minutes"
+        ),
+    },
+}
+
+
+def get_detection_rules() -> list[dict]:
+    return list(
+        DETECTION_RULES.values()
+    )
+
+
+def is_rule_enabled(
+    rule_id: str,
+) -> bool:
+    rule = DETECTION_RULES.get(
+        rule_id
+    )
+
+    if rule is None:
+        return False
+
+    return bool(
+        rule["enabled"]
+    )
+
+
 async def evaluate_security_event(
     security_event: SecurityEvent,
     session: AsyncSession,
 ) -> list[Alert]:
     generated_alerts: list[Alert] = []
 
-    if matches_encoded_powershell(
-        security_event
+    if (
+        is_rule_enabled(
+            "encoded-powershell"
+        )
+        and matches_encoded_powershell(
+            security_event
+        )
     ):
         generated_alerts.append(
             create_encoded_powershell_alert(
@@ -52,8 +137,13 @@ async def evaluate_security_event(
             )
         )
 
-    if matches_powershell_download_cradle(
-        security_event
+    if (
+        is_rule_enabled(
+            "powershell-download-cradle"
+        )
+        and matches_powershell_download_cradle(
+            security_event
+        )
     ):
         generated_alerts.append(
             create_powershell_download_cradle_alert(
@@ -61,21 +151,26 @@ async def evaluate_security_event(
             )
         )
 
-    (
-        brute_force_matched,
-        failure_count,
-    ) = await matches_brute_force_authentication(
-        security_event,
-        session,
-    )
-
-    if brute_force_matched:
-        generated_alerts.append(
-            create_brute_force_alert(
+    if is_rule_enabled(
+        "auth-brute-force"
+    ):
+        (
+            brute_force_matched,
+            failure_count,
+        ) = (
+            await matches_brute_force_authentication(
                 security_event,
-                failure_count,
+                session,
             )
         )
+
+        if brute_force_matched:
+            generated_alerts.append(
+                create_brute_force_alert(
+                    security_event,
+                    failure_count,
+                )
+            )
 
     return generated_alerts
 
