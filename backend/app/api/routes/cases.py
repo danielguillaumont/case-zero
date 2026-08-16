@@ -307,6 +307,10 @@ async def update_case(
         investigation_case.status
     )
 
+    previous_analyst = (
+        investigation_case.assigned_analyst
+    )
+
     for field, value in update_data.items():
         setattr(
             investigation_case,
@@ -316,6 +320,10 @@ async def update_case(
 
     new_status = (
         investigation_case.status
+    )
+
+    new_analyst = (
+        investigation_case.assigned_analyst
     )
 
     if (
@@ -335,6 +343,44 @@ async def update_case(
         )
 
         session.add(case_activity)
+
+    if (
+        "assigned_analyst" in update_data
+        and previous_analyst != new_analyst
+    ):
+        if (
+            previous_analyst is None
+            and new_analyst is not None
+        ):
+            assignment_message = (
+                f"Case assigned to {new_analyst}."
+            )
+
+        elif (
+            previous_analyst is not None
+            and new_analyst is None
+        ):
+            assignment_message = (
+                "Case analyst assignment removed "
+                f"from {previous_analyst}."
+            )
+
+        else:
+            assignment_message = (
+                "Case assignment changed from "
+                f"{previous_analyst} "
+                "to "
+                f"{new_analyst}."
+            )
+
+        assignment_activity = CaseActivity(
+            case_id=case_id,
+            event_type="analyst_assigned",
+            actor=ACTIVITY_ACTOR,
+            message=assignment_message,
+        )
+
+        session.add(assignment_activity)
 
     await session.commit()
     await session.refresh(investigation_case)

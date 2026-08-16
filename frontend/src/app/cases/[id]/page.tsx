@@ -222,7 +222,6 @@ export default async function CaseDetailPage({
               </div>
 
               <div className="p-6">
-
                 <DetailField
                   label="Description"
                   value={
@@ -233,7 +232,6 @@ export default async function CaseDetailPage({
                 />
 
                 <div className="mt-8 grid grid-cols-2 gap-8">
-
                   <DetailField
                     label="Priority"
                     value={
@@ -276,7 +274,6 @@ export default async function CaseDetailPage({
                       investigationCase.updated_at
                     )}
                   />
-
                 </div>
               </div>
             </section>
@@ -423,7 +420,6 @@ export default async function CaseDetailPage({
 
                   {investigationCase.assigned_analyst ? (
                     <div className="mt-2">
-
                       <p className="text-sm font-medium text-zinc-200">
                         {
                           investigationCase.assigned_analyst
@@ -436,11 +432,9 @@ export default async function CaseDetailPage({
                           Assigned to you
                         </p>
                       )}
-
                     </div>
                   ) : (
                     <div className="mt-2">
-
                       <p className="text-sm text-zinc-500">
                         Unassigned
                       </p>
@@ -458,7 +452,6 @@ export default async function CaseDetailPage({
                           Assign to Me
                         </button>
                       </form>
-
                     </div>
                   )}
                 </div>
@@ -486,8 +479,7 @@ export default async function CaseDetailPage({
 
                   <p className="mt-2 text-2xl font-semibold text-zinc-200">
                     {
-                      investigationCase.alerts
-                        .length
+                      investigationCase.alerts.length
                     }
                   </p>
                 </div>
@@ -534,15 +526,13 @@ export default async function CaseDetailPage({
 
               <p className="text-xs text-zinc-500">
                 {
-                  investigationCase.alerts
-                    .length
+                  investigationCase.alerts.length
                 }{" "}
                 total
               </p>
             </div>
 
-            {investigationCase.alerts
-              .length === 0 ? (
+            {investigationCase.alerts.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <p className="text-sm text-zinc-400">
                   No alerts are linked to this case.
@@ -550,9 +540,7 @@ export default async function CaseDetailPage({
               </div>
             ) : (
               <div>
-
                 <div className="grid grid-cols-[120px_1fr_160px_160px_190px] gap-4 border-b border-zinc-800 px-6 py-3 text-xs uppercase tracking-wider text-zinc-600">
-
                   <div>
                     Severity
                   </div>
@@ -572,7 +560,6 @@ export default async function CaseDetailPage({
                   <div>
                     Created
                   </div>
-
                 </div>
 
                 <div className="divide-y divide-zinc-800">
@@ -585,7 +572,6 @@ export default async function CaseDetailPage({
                     )
                   )}
                 </div>
-
               </div>
             )}
 
@@ -615,7 +601,6 @@ export default async function CaseDetailPage({
 
             {caseActivities.length === 0 ? (
               <div className="px-6 py-14 text-center">
-
                 <div className="mx-auto h-3 w-3 rounded-full border border-zinc-700 bg-zinc-800" />
 
                 <p className="mt-4 text-sm font-medium text-zinc-300">
@@ -625,7 +610,6 @@ export default async function CaseDetailPage({
                 <p className="mt-2 text-sm text-zinc-500">
                   New case actions will automatically appear in this timeline.
                 </p>
-
               </div>
             ) : (
               <div className="px-6 py-2">
@@ -672,10 +656,8 @@ export default async function CaseDetailPage({
 
               {/* Existing Notes */}
               <div className="border-r border-zinc-800">
-
                 {caseNotes.length === 0 ? (
                   <div className="px-6 py-16 text-center">
-
                     <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-600">
                       +
                     </div>
@@ -687,7 +669,6 @@ export default async function CaseDetailPage({
                     <p className="mt-2 text-sm text-zinc-500">
                       Add the first analyst note to document this investigation.
                     </p>
-
                   </div>
                 ) : (
                   <div className="divide-y divide-zinc-800">
@@ -701,7 +682,6 @@ export default async function CaseDetailPage({
                     )}
                   </div>
                 )}
-
               </div>
 
               {/* Add Note Form */}
@@ -740,7 +720,6 @@ export default async function CaseDetailPage({
                     Add Investigation Note
                   </button>
                 </form>
-
               </div>
 
             </div>
@@ -791,7 +770,6 @@ function CaseActivityRow({
     <article className="relative flex gap-5">
 
       <div className="relative flex w-10 shrink-0 justify-center">
-
         {!isLast && (
           <div className="absolute bottom-0 top-8 w-px bg-zinc-800" />
         )}
@@ -801,7 +779,6 @@ function CaseActivityRow({
             presentation.dotStyle
           }`}
         />
-
       </div>
 
       <div
@@ -834,7 +811,6 @@ function CaseActivityRow({
             <p className="mt-3 text-sm leading-6 text-zinc-300">
               {activity.message}
             </p>
-
           </div>
 
           <time
@@ -1176,6 +1152,14 @@ function getActivityPresentation(
         "border-orange-900 bg-orange-950 text-orange-400",
       dotStyle:
         "border-orange-700 bg-orange-500",
+    },
+
+    analyst_assigned: {
+      label: "Analyst Assigned",
+      badgeStyle:
+        "border-violet-900 bg-violet-950 text-violet-400",
+      dotStyle:
+        "border-violet-700 bg-violet-500",
     },
 
     note_added: {
