@@ -1,13 +1,23 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_database_session
 from app.models.alert import Alert
 from app.models.case import Case
-from app.schemas.alert import AlertCreate, AlertRead, AlertUpdate
+from app.models.case_activity import CaseActivity
+from app.schemas.alert import (
+    AlertCreate,
+    AlertRead,
+    AlertUpdate,
+)
 from app.schemas.case import CaseRead
 
 
@@ -17,6 +27,9 @@ router = APIRouter(
 )
 
 
+ACTIVITY_ACTOR = "Daniel Guillaumont"
+
+
 @router.post(
     "",
     response_model=AlertRead,
@@ -24,7 +37,9 @@ router = APIRouter(
 )
 async def create_alert(
     alert_data: AlertCreate,
-    session: AsyncSession = Depends(get_database_session),
+    session: AsyncSession = Depends(
+        get_database_session
+    ),
 ) -> Alert:
     alert = Alert(
         title=alert_data.title,
@@ -47,7 +62,9 @@ async def create_alert(
     response_model=list[AlertRead],
 )
 async def get_alerts(
-    session: AsyncSession = Depends(get_database_session),
+    session: AsyncSession = Depends(
+        get_database_session
+    ),
 ) -> list[Alert]:
     result = await session.execute(
         select(Alert).order_by(
@@ -66,7 +83,9 @@ async def get_alerts(
 )
 async def get_alert(
     alert_id: UUID,
-    session: AsyncSession = Depends(get_database_session),
+    session: AsyncSession = Depends(
+        get_database_session
+    ),
 ) -> Alert:
     alert = await session.get(
         Alert,
@@ -89,7 +108,9 @@ async def get_alert(
 )
 async def create_case_from_alert(
     alert_id: UUID,
-    session: AsyncSession = Depends(get_database_session),
+    session: AsyncSession = Depends(
+        get_database_session
+    ),
 ) -> Case:
     alert = await session.get(
         Alert,
@@ -112,7 +133,10 @@ async def create_case_from_alert(
         title=f"Investigation: {alert.title}",
         description=(
             alert.description
-            or f"Investigation created from alert: {alert.title}"
+            or (
+                "Investigation created from alert: "
+                f"{alert.title}"
+            )
         ),
         status="open",
         priority=alert.severity,
@@ -121,9 +145,33 @@ async def create_case_from_alert(
 
     session.add(investigation_case)
 
+    # Generate the new case UUID before
+    # linking the alert and activities.
     await session.flush()
 
     alert.case_id = investigation_case.id
+
+    case_created_activity = CaseActivity(
+        case_id=investigation_case.id,
+        event_type="case_created",
+        actor=ACTIVITY_ACTOR,
+        message=(
+            "Investigation case created from alert "
+            f'"{alert.title}".'
+        ),
+    )
+
+    alert_linked_activity = CaseActivity(
+        case_id=investigation_case.id,
+        event_type="alert_linked",
+        actor=ACTIVITY_ACTOR,
+        message=(
+            f'Alert "{alert.title}" linked to case.'
+        ),
+    )
+
+    session.add(case_created_activity)
+    session.add(alert_linked_activity)
 
     await session.commit()
 
@@ -140,7 +188,9 @@ async def create_case_from_alert(
 async def update_alert(
     alert_id: UUID,
     alert_data: AlertUpdate,
-    session: AsyncSession = Depends(get_database_session),
+    session: AsyncSession = Depends(
+        get_database_session
+    ),
 ) -> Alert:
     alert = await session.get(
         Alert,
@@ -157,16 +207,20 @@ async def update_alert(
         exclude_unset=True
     )
 
+    previous_case_id = alert.case_id
+
+    target_case: Case | None = None
+
     if (
         "case_id" in update_data
         and update_data["case_id"] is not None
     ):
-        investigation_case = await session.get(
+        target_case = await session.get(
             Case,
             update_data["case_id"],
         )
 
-        if investigation_case is None:
+        if target_case is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Case not found",
@@ -178,6 +232,24 @@ async def update_alert(
             field,
             value,
         )
+
+    new_case_id = alert.case_id
+
+    if (
+        "case_id" in update_data
+        and new_case_id is not None
+        and new_case_id != previous_case_id
+    ):
+        alert_linked_activity = CaseActivity(
+            case_id=new_case_id,
+            event_type="alert_linked",
+            actor=ACTIVITY_ACTOR,
+            message=(
+                f'Alert "{alert.title}" linked to case.'
+            ),
+        )
+
+        session.add(alert_linked_activity)
 
     await session.commit()
     await session.refresh(alert)

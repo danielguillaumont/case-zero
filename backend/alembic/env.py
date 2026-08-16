@@ -12,6 +12,7 @@ from app.config import DATABASE_URL
 from app.models.alert import Alert
 from app.models.base import Base
 from app.models.case import Case
+from app.models.case_activity import CaseActivity
 from app.models.case_note import CaseNote
 
 

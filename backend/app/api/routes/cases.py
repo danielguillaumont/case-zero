@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_database_session
 from app.models.alert import Alert
 from app.models.case import Case
+from app.models.case_activity import CaseActivity
 from app.models.case_note import CaseNote
 from app.schemas.case import (
     CaseAlertRead,
@@ -19,6 +20,9 @@ from app.schemas.case import (
     CaseDetailRead,
     CaseRead,
     CaseUpdate,
+)
+from app.schemas.case_activity import (
+    CaseActivityRead,
 )
 from app.schemas.case_note import (
     CaseNoteCreate,
@@ -30,6 +34,9 @@ router = APIRouter(
     prefix="/api/cases",
     tags=["Cases"],
 )
+
+
+ACTIVITY_ACTOR = "Daniel Guillaumont"
 
 
 @router.post(
@@ -52,6 +59,20 @@ async def create_case(
     )
 
     session.add(investigation_case)
+
+    # Flush first so PostgreSQL/SQLAlchemy gives
+    # the new case its UUID before we create
+    # the related activity record.
+    await session.flush()
+
+    case_activity = CaseActivity(
+        case_id=investigation_case.id,
+        event_type="case_created",
+        actor=ACTIVITY_ACTOR,
+        message="Investigation case created.",
+    )
+
+    session.add(case_activity)
 
     await session.commit()
     await session.refresh(investigation_case)
@@ -148,16 +169,61 @@ async def create_case_note(
 
     case_note = CaseNote(
         case_id=case_id,
-        author="Daniel Guillaumont",
+        author=ACTIVITY_ACTOR,
         content=note_content,
     )
 
     session.add(case_note)
 
+    case_activity = CaseActivity(
+        case_id=case_id,
+        event_type="note_added",
+        actor=ACTIVITY_ACTOR,
+        message="Investigation note added.",
+    )
+
+    session.add(case_activity)
+
     await session.commit()
     await session.refresh(case_note)
 
     return case_note
+
+
+@router.get(
+    "/{case_id}/activities",
+    response_model=list[CaseActivityRead],
+)
+async def get_case_activities(
+    case_id: UUID,
+    session: AsyncSession = Depends(
+        get_database_session
+    ),
+) -> list[CaseActivity]:
+    investigation_case = await session.get(
+        Case,
+        case_id,
+    )
+
+    if investigation_case is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case not found",
+        )
+
+    result = await session.execute(
+        select(CaseActivity)
+        .where(
+            CaseActivity.case_id == case_id
+        )
+        .order_by(
+            CaseActivity.created_at.desc()
+        )
+    )
+
+    activities = result.scalars().all()
+
+    return list(activities)
 
 
 @router.get(
@@ -237,12 +303,38 @@ async def update_case(
         exclude_unset=True
     )
 
+    previous_status = (
+        investigation_case.status
+    )
+
     for field, value in update_data.items():
         setattr(
             investigation_case,
             field,
             value,
         )
+
+    new_status = (
+        investigation_case.status
+    )
+
+    if (
+        "status" in update_data
+        and previous_status != new_status
+    ):
+        case_activity = CaseActivity(
+            case_id=case_id,
+            event_type="status_changed",
+            actor=ACTIVITY_ACTOR,
+            message=(
+                "Case status changed from "
+                f"{previous_status.upper()} "
+                "to "
+                f"{new_status.upper()}."
+            ),
+        )
+
+        session.add(case_activity)
 
     await session.commit()
     await session.refresh(investigation_case)
