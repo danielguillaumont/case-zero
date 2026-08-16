@@ -35,6 +35,17 @@ export default async function SecurityEventDetailPage({
       securityEvent.id
   );
 
+  const normalizedEventType =
+    securityEvent.event_type.toLowerCase();
+
+  const isAuthenticationEvent =
+    normalizedEventType ===
+    "authentication";
+
+  const isProcessCreationEvent =
+    normalizedEventType ===
+    "process_creation";
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
 
@@ -178,35 +189,144 @@ export default async function SecurityEventDetailPage({
 
           </section>
 
+          {/* Authentication Context */}
+          {isAuthenticationEvent && (
+            <section className="mt-6 rounded-xl border border-blue-900/60 bg-zinc-900">
+
+              <div className="border-b border-zinc-800 p-6">
+
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-blue-400">
+                  Identity Telemetry
+                </p>
+
+                <h3 className="mt-2 font-medium">
+                  Authentication Context
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Authentication outcome and identity information associated with this event.
+                </p>
+
+              </div>
+
+              <div className="p-6">
+
+                <div className="grid grid-cols-3 gap-x-8 gap-y-8">
+
+                  <DetailField
+                    label="Outcome"
+                    value={getRawDataValue(
+                      securityEvent.raw_data,
+                      "outcome"
+                    )}
+                  />
+
+                  <DetailField
+                    label="Authentication Method"
+                    value={getRawDataValue(
+                      securityEvent.raw_data,
+                      "authentication_method"
+                    )}
+                  />
+
+                  <DetailField
+                    label="Username"
+                    value={
+                      securityEvent.username ??
+                      "Unavailable"
+                    }
+                  />
+
+                  <DetailField
+                    label="Source IP"
+                    value={
+                      securityEvent.source_ip ??
+                      "Unavailable"
+                    }
+                  />
+
+                  <DetailField
+                    label="Hostname"
+                    value={
+                      securityEvent.hostname ??
+                      "Unavailable"
+                    }
+                  />
+
+                  <DetailField
+                    label="Test Sequence"
+                    value={getRawDataValue(
+                      securityEvent.raw_data,
+                      "test_sequence"
+                    )}
+                  />
+
+                </div>
+
+              </div>
+
+            </section>
+          )}
+
           {/* Process Context */}
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
+          {isProcessCreationEvent && (
+            <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
 
-            <div className="border-b border-zinc-800 p-6">
+              <div className="border-b border-zinc-800 p-6">
 
-              <h3 className="font-medium">
-                Process Context
-              </h3>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">
+                  Endpoint Telemetry
+                </p>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Process execution information captured with this event.
-              </p>
+                <h3 className="mt-2 font-medium">
+                  Process Context
+                </h3>
 
-            </div>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Process execution information captured with this event.
+                </p>
 
-            <div className="p-6">
+              </div>
 
-              <p className="text-xs uppercase tracking-wider text-zinc-500">
-                Command Line
-              </p>
+              <div className="p-6">
 
-              <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-sm leading-6 text-orange-300">
-                {securityEvent.command_line ??
-                  "Command line unavailable."}
-              </pre>
+                <div className="grid grid-cols-2 gap-8">
 
-            </div>
+                  <DetailField
+                    label="Process"
+                    value={
+                      securityEvent.process_name ??
+                      "Unavailable"
+                    }
+                  />
 
-          </section>
+                  <DetailField
+                    label="Hostname"
+                    value={
+                      securityEvent.hostname ??
+                      "Unavailable"
+                    }
+                  />
+
+                </div>
+
+                <div className="mt-8">
+
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Command Line
+                  </p>
+
+                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-sm leading-6 text-orange-300">
+                    {securityEvent.command_line ??
+                      "Command line unavailable."}
+                  </pre>
+
+                </div>
+
+              </div>
+
+            </section>
+          )}
 
           {/* Detection Results */}
           <section className="mt-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
@@ -547,8 +667,11 @@ function getEventTitle(
   eventType: string,
   processName: string | null
 ) {
+  const normalizedEventType =
+    eventType.toLowerCase();
+
   if (
-    eventType.toLowerCase() ===
+    normalizedEventType ===
     "process_creation"
   ) {
     return (
@@ -557,10 +680,54 @@ function getEventTitle(
     );
   }
 
-  return eventType.replaceAll(
-    "_",
-    " "
-  );
+  if (
+    normalizedEventType ===
+    "authentication"
+  ) {
+    return "Authentication Event";
+  }
+
+  return eventType
+    .replaceAll(
+      "_",
+      " "
+    )
+    .replace(
+      /\b\w/g,
+      (character) =>
+        character.toUpperCase()
+    );
+}
+
+
+function getRawDataValue(
+  rawData: Record<string, unknown> | null,
+  key: string
+): string {
+  if (!rawData) {
+    return "Unavailable";
+  }
+
+  const value =
+    rawData[key];
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "Unavailable";
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return String(value);
+  }
+
+  return JSON.stringify(value);
 }
 
 
