@@ -148,6 +148,26 @@ export async function getAlert(
 }
 
 
+export async function getSecurityEvents(): Promise<SecurityEvent[]> {
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/events",
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+
 export async function getSecurityEvent(
   eventId: string
 ): Promise<SecurityEvent | null> {
