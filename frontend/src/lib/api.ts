@@ -13,6 +13,7 @@ export type Alert = {
   severity: string;
   status: string;
   source: string;
+  detection_rule_id: string | null;
   assigned_analyst: string | null;
   case_id: string | null;
   source_event_id: string | null;
