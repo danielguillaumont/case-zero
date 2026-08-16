@@ -7,16 +7,17 @@
 ![Frontend](https://img.shields.io/badge/frontend-Next.js-black)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-4169E1)
 ![Languages](https://img.shields.io/badge/languages-Python%20%7C%20TypeScript-blue)
+![Containers](https://img.shields.io/badge/containers-Docker-2496ED)
 
 ---
 
-## What is CASE//ZERO?
+## Overview
 
 **CASE//ZERO** is a cybersecurity engineering project that models the workflow of a modern Security Operations Center.
 
-The goal is to build a working security platform where telemetry can eventually move through detection, alert triage, investigation, case management, threat hunting, and response.
+The platform is being built as a connected investigation environment where analysts can review alerts, assign ownership, investigate suspicious activity, create cases, group related alerts, and track investigations through resolution.
 
-Instead of being a static dashboard, CASE//ZERO uses a real full-stack architecture with persistent security data and interactive analyst workflows.
+Rather than functioning as a static dashboard, CASE//ZERO uses a real full-stack architecture with persistent security data and interactive analyst workflows.
 
 ```text
 Security Events
@@ -34,13 +35,15 @@ Cases
 Resolution
 ```
 
+CASE//ZERO is currently under **active development**.
+
 ---
 
-## What Works Today
+## Current Capabilities
 
-### Dashboard
+### SOC Dashboard
 
-The SOC-style dashboard currently displays live application data including:
+The dashboard displays live application data including:
 
 - API health
 - PostgreSQL health
@@ -48,24 +51,42 @@ The SOC-style dashboard currently displays live application data including:
 - Critical alerts
 - Recent alert activity
 - Investigation metrics
+- Platform module status
+
+Dashboard metrics are calculated from backend data rather than static values.
+
+---
 
 ### Alert Management
 
-Security alerts can be created, viewed, updated, assigned, and investigated.
+Security alerts support a persistent analyst workflow.
 
-Current workflow:
+Current functionality includes:
+
+- Create alerts through the API
+- View all alerts
+- Open individual alert details
+- Severity classification
+- Alert status tracking
+- Analyst assignment
+- Start investigations
+- Resolve alerts
+- Link alerts to cases
+- Create cases directly from alerts
+- Link alerts to existing cases
+- Persistent PostgreSQL storage
+
+Current lifecycle:
 
 ```text
 NEW
- ↓
-Assign Analyst
  ↓
 INVESTIGATING
  ↓
 RESOLVED
 ```
 
-Analyst actions made in the interface are persisted through the full application stack:
+Analyst actions flow through the full application stack:
 
 ```text
 Next.js
@@ -79,20 +100,89 @@ SQLAlchemy
 PostgreSQL
 ```
 
-### Case Management
+---
 
-The backend case-management foundation currently supports:
+## Case Management
 
-- Creating investigation cases
-- Listing cases
-- Retrieving individual cases
-- Updating cases
-- Priority and status tracking
+CASE//ZERO now includes a working Case Management interface.
+
+Current functionality includes:
+
+- Case list view
+- Case detail view
+- Case priority
+- Case status
 - Analyst ownership
-- Linking alerts to cases
-- Multiple alerts per investigation case
+- Linked alert count
+- Linked alert table
+- Case lifecycle actions
+- Alert-to-case navigation
+- Case-to-alert navigation
+- Multiple alerts grouped under one case
+- Create a case directly from an alert
+- Add an alert to an existing active case
 
-The Cases frontend is currently under development.
+Current case lifecycle:
+
+```text
+OPEN
+ ↓
+INVESTIGATING
+ ↓
+RESOLVED
+```
+
+A case can contain multiple related security alerts:
+
+```text
+Investigation Case
+        │
+        ├── Alert A
+        ├── Alert B
+        └── Alert C
+```
+
+This allows related detections to be grouped into a single investigation rather than treating every alert as an isolated event.
+
+---
+
+## Alert-to-Case Workflow
+
+CASE//ZERO currently supports an end-to-end analyst workflow entirely from the application interface.
+
+```text
+Alert Detected
+      ↓
+Assign to Me
+      ↓
+Start Investigation
+      ↓
+Create New Case
+      OR
+Link to Existing Case
+      ↓
+Case Investigation
+      ↓
+Linked Alerts
+      ↓
+Resolve Investigation
+```
+
+Alerts and cases are linked through a persistent PostgreSQL foreign-key relationship.
+
+An analyst can navigate in both directions:
+
+```text
+Alert Detail
+    ↓
+View Case
+    ↓
+Case Detail
+    ↓
+Linked Alert
+    ↓
+Alert Detail
+```
 
 ---
 
@@ -101,16 +191,38 @@ The Cases frontend is currently under development.
 ```mermaid
 flowchart LR
     UI["Next.js / TypeScript"]
+    ACTIONS["Server Actions"]
     API["FastAPI / Python"]
     ORM["SQLAlchemy"]
     DB[("PostgreSQL")]
     MIG["Alembic"]
 
-    UI --> API
+    UI --> ACTIONS
+    ACTIONS --> API
     API --> ORM
     ORM --> DB
     MIG --> DB
 ```
+
+The application currently follows this flow:
+
+```text
+Frontend
+   ↓
+Next.js / React / TypeScript
+   ↓
+Server Actions
+   ↓
+FastAPI REST API
+   ↓
+Pydantic Validation
+   ↓
+SQLAlchemy ORM
+   ↓
+PostgreSQL
+```
+
+Database schema changes are managed independently through Alembic migrations.
 
 ---
 
@@ -124,10 +236,12 @@ flowchart LR
 | Validation | Pydantic |
 | ORM | SQLAlchemy |
 | Database | PostgreSQL |
+| Database Driver | Psycopg |
 | Migrations | Alembic |
 | Containers | Docker / Docker Compose |
 | API Docs | Swagger / OpenAPI |
 | Version Control | Git / GitHub |
+| Development | VS Code |
 
 ---
 
@@ -140,6 +254,7 @@ GET    /api/alerts
 POST   /api/alerts
 GET    /api/alerts/{alert_id}
 PATCH  /api/alerts/{alert_id}
+POST   /api/alerts/{alert_id}/case
 ```
 
 ### Cases
@@ -157,11 +272,68 @@ PATCH  /api/cases/{case_id}
 GET    /api/health
 ```
 
-Interactive Swagger documentation is available at:
+Interactive Swagger documentation is available while the backend is running:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+---
+
+## Database
+
+CASE//ZERO currently uses two core PostgreSQL tables:
+
+```text
+alerts
+cases
+```
+
+### Alert Data
+
+```text
+id
+title
+description
+severity
+status
+source
+assigned_analyst
+case_id
+created_at
+updated_at
+```
+
+### Case Data
+
+```text
+id
+title
+description
+status
+priority
+assigned_analyst
+created_at
+updated_at
+```
+
+The alert `case_id` references `cases.id`.
+
+```text
+CASE
+  │
+  ├── Alert
+  ├── Alert
+  └── Alert
+```
+
+The relationship uses:
+
+```text
+ON DELETE SET NULL
+```
+
+so alerts remain preserved if their associated investigation case is removed.
 
 ---
 
@@ -172,21 +344,45 @@ case-zero/
 │
 ├── backend/
 │   ├── alembic/
+│   │   └── versions/
+│   │
 │   └── app/
-│       ├── api/routes/
+│       ├── api/
+│       │   └── routes/
+│       │       ├── alerts.py
+│       │       └── cases.py
+│       │
 │       ├── models/
+│       │   ├── alert.py
+│       │   ├── case.py
+│       │   └── base.py
+│       │
 │       ├── schemas/
+│       │   ├── alert.py
+│       │   └── case.py
+│       │
 │       ├── database.py
 │       └── main.py
 │
 ├── frontend/
 │   └── src/
 │       ├── app/
-│       │   └── alerts/
+│       │   ├── alerts/
+│       │   │   ├── [id]/
+│       │   │   └── page.tsx
+│       │   │
+│       │   ├── cases/
+│       │   │   ├── [id]/
+│       │   │   └── page.tsx
+│       │   │
+│       │   └── page.tsx
+│       │
 │       └── lib/
+│           └── api.ts
 │
 ├── compose.yaml
 ├── .env.example
+├── .gitignore
 └── README.md
 ```
 
@@ -245,9 +441,15 @@ Backend:
 http://127.0.0.1:8000
 ```
 
+Swagger:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
 ### 5. Frontend
 
-In another terminal:
+Open another terminal:
 
 ```powershell
 cd frontend
@@ -265,52 +467,71 @@ http://localhost:3000
 
 ---
 
-## Development Roadmap
+## Development Progress
 
 ### Completed
 
 - [x] Full-stack project foundation
-- [x] PostgreSQL persistence
+- [x] PostgreSQL development database
+- [x] Docker development environment
+- [x] SQLAlchemy ORM
 - [x] Alembic migrations
+- [x] API and database health checks
 - [x] SOC dashboard
 - [x] Alert API
-- [x] Alert management interface
-- [x] Alert investigation workflow
+- [x] Alert Management interface
+- [x] Alert Detail interface
+- [x] Alert lifecycle
 - [x] Analyst assignment
+- [x] Persistent alert state
 - [x] Case database model
 - [x] Case API
-- [x] Alert-to-case relationships
+- [x] Cases frontend
+- [x] Case Detail interface
+- [x] Case lifecycle
+- [x] Alert-to-case relationship
+- [x] Create case from alert
+- [x] Link alert to existing case
+- [x] Multiple alerts per case
+- [x] Bidirectional Alert ↔ Case navigation
 
-### In Progress
+### Current Focus
 
-- [ ] Linked alerts inside case details
-- [ ] Cases frontend
-- [ ] Case detail interface
-- [ ] Create case directly from an alert
-- [ ] Investigation notes and timeline
+- [ ] Investigation notes
+- [ ] Case activity timeline
+- [ ] Case evidence / artifacts
+- [ ] Improved case resolution workflow
 
 ### Planned
 
+- [ ] Alert search and filtering
+- [ ] Alert creation interface
 - [ ] Security event ingestion
+- [ ] Event normalization
 - [ ] Detection rule engine
 - [ ] Automatic alert generation
-- [ ] Threat hunting
+- [ ] MITRE ATT&CK mappings
+- [ ] Threat hunting interface
 - [ ] Threat intelligence
 - [ ] Investigation playbooks
-- [ ] Authentication and RBAC
-- [ ] Automated testing and CI/CD
+- [ ] Authentication
+- [ ] Role-based access control
+- [ ] Automated testing
+- [ ] CI/CD
 - [ ] Production deployment
 
 ---
 
-## Long-Term Goal
+## Planned Platform Flow
 
-The completed CASE//ZERO workflow is intended to support:
+The long-term CASE//ZERO architecture is intended to support:
 
 ```text
 Security Telemetry
         ↓
 Event Ingestion
+        ↓
+Event Normalization
         ↓
 Detection Rules
         ↓
@@ -320,24 +541,70 @@ Analyst Triage
         ↓
 Investigation Case
         ↓
-Threat Hunting
+Linked Alerts
+        ↓
+Investigation Notes
+        ↓
+Threat Hunting / Enrichment
         ↓
 Evidence & Findings
         ↓
 Resolution
 ```
 
-The project is being developed to explore both **cybersecurity operations** and the **software engineering behind security platforms**.
+---
+
+## Project Goals
+
+CASE//ZERO is being developed to explore both cybersecurity operations and the software engineering behind modern security platforms.
+
+The project focuses on practical concepts including:
+
+- Security alert triage
+- Incident investigation
+- Case management
+- Detection engineering
+- Threat hunting
+- Security automation
+- SOC workflow design
+- REST API development
+- Relational database design
+- Full-stack application development
+- Containerized environments
+- Database migrations
+- Persistent analyst workflows
 
 ---
 
-## Project Status
+## Current Status
 
-CASE//ZERO is under active development.
+CASE//ZERO has progressed beyond a static SOC dashboard prototype.
 
-The project currently has a working Next.js frontend, FastAPI backend, PostgreSQL database, alert investigation workflow, analyst assignment, case-management API, and persistent alert-to-case relationships.
+The platform currently supports:
 
-**Current focus:** completing the Case Management interface before beginning the event pipeline and detection engine.
+```text
+Live Dashboard
+      +
+Persistent Alerts
+      +
+Analyst Assignment
+      +
+Alert Investigation
+      +
+Case Management
+      +
+Case Lifecycle
+      +
+Alert-to-Case Linking
+      +
+Multiple Alerts per Case
+      +
+Bidirectional Investigation Navigation
+```
+
+The current development focus is turning the Case Detail page into a deeper analyst workspace by adding **persistent investigation notes and activity history**.
+
+After the Case Management module is more complete, development will move toward the **Security Event Pipeline** and **Detection Engine**.
 
 ---
 
@@ -345,4 +612,4 @@ The project currently has a working Next.js frontend, FastAPI backend, PostgreSQ
 
 CASE//ZERO is an independent educational and portfolio project designed to simulate cybersecurity operations workflows.
 
-It is not intended to replace a production SIEM, SOAR, EDR, or enterprise incident-response platform.
+It is not intended to replace a production SIEM, SOAR, EDR, threat intelligence platform, or enterprise incident-response system.
