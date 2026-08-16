@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getAlert } from "@/lib/api";
+import {
+  getAlert,
+  getCase,
+} from "@/lib/api";
+
 import {
   assignAlertToMe,
   updateAlertStatus,
@@ -21,33 +25,62 @@ export default async function AlertDetailPage({
     notFound();
   }
 
-  const normalizedStatus = alert.status.toLowerCase();
+  const linkedCase = alert.case_id
+    ? await getCase(alert.case_id)
+    : null;
 
-  const startInvestigationAction = updateAlertStatus.bind(
-    null,
-    alert.id,
-    "investigating"
-  );
+  const normalizedStatus =
+    alert.status.toLowerCase();
 
-  const resolveAlertAction = updateAlertStatus.bind(
-    null,
-    alert.id,
-    "resolved"
-  );
+  const startInvestigationAction =
+    updateAlertStatus.bind(
+      null,
+      alert.id,
+      "investigating"
+    );
 
-  const assignToMeAction = assignAlertToMe.bind(
-    null,
-    alert.id
-  );
+  const resolveAlertAction =
+    updateAlertStatus.bind(
+      null,
+      alert.id,
+      "resolved"
+    );
+
+  const assignToMeAction =
+    assignAlertToMe.bind(
+      null,
+      alert.id
+    );
 
   const navigationItems = [
-    { label: "Dashboard", href: "/" },
-    { label: "Alerts", href: "/alerts" },
-    { label: "Cases", href: "#" },
-    { label: "Hunt", href: "#" },
-    { label: "Intelligence", href: "#" },
-    { label: "Rules", href: "#" },
-    { label: "Playbooks", href: "#" },
+    {
+      label: "Dashboard",
+      href: "/",
+    },
+    {
+      label: "Alerts",
+      href: "/alerts",
+    },
+    {
+      label: "Cases",
+      href: "/cases",
+    },
+    {
+      label: "Hunt",
+      href: "#",
+    },
+    {
+      label: "Intelligence",
+      href: "#",
+    },
+    {
+      label: "Rules",
+      href: "#",
+    },
+    {
+      label: "Playbooks",
+      href: "#",
+    },
   ];
 
   return (
@@ -58,7 +91,10 @@ export default async function AlertDetailPage({
         <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
           <div className="mb-10">
             <h1 className="text-2xl font-bold tracking-tight">
-              CASE<span className="text-emerald-400">//ZERO</span>
+              CASE
+              <span className="text-emerald-400">
+                //ZERO
+              </span>
             </h1>
 
             <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
@@ -128,9 +164,13 @@ export default async function AlertDetailPage({
             </div>
 
             <div className="flex items-center gap-3">
-              <SeverityBadge severity={alert.severity} />
+              <SeverityBadge
+                severity={alert.severity}
+              />
 
-              <StatusBadge status={alert.status} />
+              <StatusBadge
+                status={alert.status}
+              />
             </div>
           </header>
 
@@ -186,12 +226,16 @@ export default async function AlertDetailPage({
 
                   <DetailField
                     label="Created"
-                    value={formatAlertTime(alert.created_at)}
+                    value={formatAlertTime(
+                      alert.created_at
+                    )}
                   />
 
                   <DetailField
                     label="Last Updated"
-                    value={formatAlertTime(alert.updated_at)}
+                    value={formatAlertTime(
+                      alert.updated_at
+                    )}
                   />
 
                 </div>
@@ -219,7 +263,9 @@ export default async function AlertDetailPage({
                   </p>
 
                   <div className="mt-3">
-                    <StatusBadge status={alert.status} />
+                    <StatusBadge
+                      status={alert.status}
+                    />
                   </div>
                 </div>
 
@@ -230,9 +276,16 @@ export default async function AlertDetailPage({
                     Analyst Action
                   </p>
 
-                  {["new", "assigned"].includes(normalizedStatus) && (
+                  {[
+                    "new",
+                    "assigned",
+                  ].includes(
+                    normalizedStatus
+                  ) && (
                     <form
-                      action={startInvestigationAction}
+                      action={
+                        startInvestigationAction
+                      }
                       className="mt-3"
                     >
                       <button
@@ -244,9 +297,12 @@ export default async function AlertDetailPage({
                     </form>
                   )}
 
-                  {normalizedStatus === "investigating" && (
+                  {normalizedStatus ===
+                    "investigating" && (
                     <form
-                      action={resolveAlertAction}
+                      action={
+                        resolveAlertAction
+                      }
                       className="mt-3"
                     >
                       <button
@@ -258,7 +314,8 @@ export default async function AlertDetailPage({
                     </form>
                   )}
 
-                  {normalizedStatus === "resolved" && (
+                  {normalizedStatus ===
+                    "resolved" && (
                     <div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
                       <p className="text-sm text-emerald-400">
                         Investigation resolved
@@ -266,7 +323,8 @@ export default async function AlertDetailPage({
                     </div>
                   )}
 
-                  {normalizedStatus === "closed" && (
+                  {normalizedStatus ===
+                    "closed" && (
                     <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
                       <p className="text-sm text-zinc-400">
                         Alert closed
@@ -285,10 +343,13 @@ export default async function AlertDetailPage({
                   {alert.assigned_analyst ? (
                     <div className="mt-3">
                       <p className="text-sm font-medium text-zinc-200">
-                        {alert.assigned_analyst}
+                        {
+                          alert.assigned_analyst
+                        }
                       </p>
 
-                      {alert.assigned_analyst === "Daniel Guillaumont" && (
+                      {alert.assigned_analyst ===
+                        "Daniel Guillaumont" && (
                         <p className="mt-1 text-xs text-emerald-400">
                           Assigned to you
                         </p>
@@ -301,7 +362,9 @@ export default async function AlertDetailPage({
                       </p>
 
                       <form
-                        action={assignToMeAction}
+                        action={
+                          assignToMeAction
+                        }
                         className="mt-4"
                       >
                         <button
@@ -315,15 +378,57 @@ export default async function AlertDetailPage({
                   )}
                 </div>
 
-                {/* Case */}
+                {/* Investigation Case */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Investigation Case
                   </p>
 
-                  <p className="mt-2 text-sm text-zinc-400">
-                    No case created
-                  </p>
+                  {linkedCase ? (
+                    <div className="mt-3">
+
+                      <p className="text-sm font-medium text-zinc-200">
+                        {linkedCase.title}
+                      </p>
+
+                      <div className="mt-3 flex items-center gap-2">
+                        <CaseStatusBadge
+                          status={
+                            linkedCase.status
+                          }
+                        />
+
+                        <PriorityBadge
+                          priority={
+                            linkedCase.priority
+                          }
+                        />
+                      </div>
+
+                      <Link
+                        href={`/cases/${linkedCase.id}`}
+                        className="mt-4 inline-flex text-sm font-medium text-emerald-400 transition hover:text-emerald-300"
+                      >
+                        View Case →
+                      </Link>
+
+                    </div>
+                  ) : alert.case_id ? (
+                    <div className="mt-3">
+                      <p className="text-sm text-yellow-400">
+                        Linked case unavailable
+                      </p>
+
+                      <p className="mt-1 text-xs text-zinc-600">
+                        Case ID:{" "}
+                        {alert.case_id}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-zinc-400">
+                      No case created
+                    </p>
+                  )}
                 </div>
 
               </div>
@@ -340,14 +445,29 @@ export default async function AlertDetailPage({
               Internal CASE//ZERO alert identifiers.
             </p>
 
-            <div className="mt-6">
-              <p className="text-xs uppercase tracking-wider text-zinc-500">
-                Alert ID
-              </p>
+            <div className="mt-6 grid grid-cols-2 gap-6">
 
-              <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-                {alert.id}
-              </code>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500">
+                  Alert ID
+                </p>
+
+                <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                  {alert.id}
+                </code>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500">
+                  Case ID
+                </p>
+
+                <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                  {alert.case_id ??
+                    "Not linked"}
+                </code>
+              </div>
+
             </div>
           </section>
 
@@ -375,7 +495,9 @@ function DetailField({
 
       <p
         className={`mt-2 text-zinc-300 ${
-          large ? "text-sm leading-7" : "text-sm"
+          large
+            ? "text-sm leading-7"
+            : "text-sm"
         }`}
       >
         {value}
@@ -393,7 +515,10 @@ function SeverityBadge({
   const normalizedSeverity =
     severity.toLowerCase();
 
-  const styles: Record<string, string> = {
+  const styles: Record<
+    string,
+    string
+  > = {
     low:
       "border-blue-900 bg-blue-950 text-blue-400",
 
@@ -410,7 +535,9 @@ function SeverityBadge({
   return (
     <span
       className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[normalizedSeverity] ??
+        styles[
+          normalizedSeverity
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -428,7 +555,10 @@ function StatusBadge({
   const normalizedStatus =
     status.toLowerCase();
 
-  const styles: Record<string, string> = {
+  const styles: Record<
+    string,
+    string
+  > = {
     new:
       "border-zinc-700 bg-zinc-800 text-zinc-300",
 
@@ -448,7 +578,9 @@ function StatusBadge({
   return (
     <span
       className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[normalizedStatus] ??
+        styles[
+          normalizedStatus
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -458,9 +590,96 @@ function StatusBadge({
 }
 
 
-function formatAlertTime(timestamp: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(timestamp));
+function CaseStatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const normalizedStatus =
+    status.toLowerCase();
+
+  const styles: Record<
+    string,
+    string
+  > = {
+    open:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    investigating:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    resolved:
+      "border-emerald-900 bg-emerald-950 text-emerald-400",
+
+    closed:
+      "border-zinc-800 bg-zinc-950 text-zinc-500",
+  };
+
+  return (
+    <span
+      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+        styles[
+          normalizedStatus
+        ] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
+
+function PriorityBadge({
+  priority,
+}: {
+  priority: string;
+}) {
+  const normalizedPriority =
+    priority.toLowerCase();
+
+  const styles: Record<
+    string,
+    string
+  > = {
+    low:
+      "border-blue-900 bg-blue-950 text-blue-400",
+
+    medium:
+      "border-yellow-900 bg-yellow-950 text-yellow-400",
+
+    high:
+      "border-orange-900 bg-orange-950 text-orange-400",
+
+    critical:
+      "border-red-900 bg-red-950 text-red-400",
+  };
+
+  return (
+    <span
+      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+        styles[
+          normalizedPriority
+        ] ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {priority}
+    </span>
+  );
+}
+
+
+function formatAlertTime(
+  timestamp: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }
+  ).format(
+    new Date(timestamp)
+  );
 }

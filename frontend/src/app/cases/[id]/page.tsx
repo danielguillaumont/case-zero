@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { getCase } from "@/lib/api";
 import type { CaseAlert } from "@/lib/api";
 
+import { updateCaseStatus } from "./actions";
+
 
 export default async function CaseDetailPage({
   params,
@@ -17,6 +19,23 @@ export default async function CaseDetailPage({
   if (!investigationCase) {
     notFound();
   }
+
+  const normalizedStatus =
+    investigationCase.status.toLowerCase();
+
+  const startInvestigationAction =
+    updateCaseStatus.bind(
+      null,
+      investigationCase.id,
+      "investigating"
+    );
+
+  const resolveCaseAction =
+    updateCaseStatus.bind(
+      null,
+      investigationCase.id,
+      "resolved"
+    );
 
   const navigationItems = [
     {
@@ -156,6 +175,7 @@ export default async function CaseDetailPage({
               </div>
 
               <div className="p-6">
+
                 <DetailField
                   label="Description"
                   value={
@@ -166,14 +186,19 @@ export default async function CaseDetailPage({
                 />
 
                 <div className="mt-8 grid grid-cols-2 gap-8">
+
                   <DetailField
                     label="Priority"
-                    value={investigationCase.priority.toUpperCase()}
+                    value={
+                      investigationCase.priority.toUpperCase()
+                    }
                   />
 
                   <DetailField
                     label="Status"
-                    value={investigationCase.status.toUpperCase()}
+                    value={
+                      investigationCase.status.toUpperCase()
+                    }
                   />
 
                   <DetailField
@@ -204,11 +229,12 @@ export default async function CaseDetailPage({
                       investigationCase.updated_at
                     )}
                   />
+
                 </div>
               </div>
             </section>
 
-            {/* Investigation Summary */}
+            {/* Investigation Panel */}
             <section className="rounded-xl border border-zinc-800 bg-zinc-900">
               <div className="border-b border-zinc-800 p-6">
                 <h3 className="font-medium">
@@ -222,6 +248,7 @@ export default async function CaseDetailPage({
 
               <div className="space-y-6 p-6">
 
+                {/* Current Status */}
                 <div>
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Current Status
@@ -229,19 +256,82 @@ export default async function CaseDetailPage({
 
                   <div className="mt-3">
                     <CaseStatusBadge
-                      status={investigationCase.status}
+                      status={
+                        investigationCase.status
+                      }
                     />
                   </div>
                 </div>
 
+                {/* Case Action */}
+                <div className="border-t border-zinc-800 pt-6">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">
+                    Analyst Action
+                  </p>
+
+                  {normalizedStatus === "open" && (
+                    <form
+                      action={
+                        startInvestigationAction
+                      }
+                      className="mt-3"
+                    >
+                      <button
+                        type="submit"
+                        className="w-full rounded-lg border border-yellow-800 bg-yellow-950 px-4 py-3 text-sm font-medium text-yellow-400 transition hover:bg-yellow-900"
+                      >
+                        Start Investigation
+                      </button>
+                    </form>
+                  )}
+
+                  {normalizedStatus ===
+                    "investigating" && (
+                    <form
+                      action={
+                        resolveCaseAction
+                      }
+                      className="mt-3"
+                    >
+                      <button
+                        type="submit"
+                        className="w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
+                      >
+                        Resolve Case
+                      </button>
+                    </form>
+                  )}
+
+                  {normalizedStatus ===
+                    "resolved" && (
+                    <div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
+                      <p className="text-sm text-emerald-400">
+                        Investigation resolved
+                      </p>
+                    </div>
+                  )}
+
+                  {normalizedStatus ===
+                    "closed" && (
+                    <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
+                      <p className="text-sm text-zinc-400">
+                        Case closed
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Assigned Analyst */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Assigned Analyst
                   </p>
 
                   <p className="mt-2 text-sm font-medium text-zinc-200">
-                    {investigationCase.assigned_analyst ??
-                      "Unassigned"}
+                    {
+                      investigationCase.assigned_analyst ??
+                      "Unassigned"
+                    }
                   </p>
 
                   {investigationCase.assigned_analyst ===
@@ -252,6 +342,7 @@ export default async function CaseDetailPage({
                   )}
                 </div>
 
+                {/* Priority */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Priority
@@ -259,18 +350,24 @@ export default async function CaseDetailPage({
 
                   <div className="mt-3">
                     <PriorityBadge
-                      priority={investigationCase.priority}
+                      priority={
+                        investigationCase.priority
+                      }
                     />
                   </div>
                 </div>
 
+                {/* Alert Count */}
                 <div className="border-t border-zinc-800 pt-6">
                   <p className="text-xs uppercase tracking-wider text-zinc-500">
                     Alert Count
                   </p>
 
                   <p className="mt-2 text-2xl font-semibold text-zinc-200">
-                    {investigationCase.alerts.length}
+                    {
+                      investigationCase.alerts
+                        .length
+                    }
                   </p>
                 </div>
 
@@ -293,11 +390,16 @@ export default async function CaseDetailPage({
               </div>
 
               <p className="text-xs text-zinc-500">
-                {investigationCase.alerts.length} total
+                {
+                  investigationCase.alerts
+                    .length
+                }{" "}
+                total
               </p>
             </div>
 
-            {investigationCase.alerts.length === 0 ? (
+            {investigationCase.alerts
+              .length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <p className="text-sm text-zinc-400">
                   No alerts are linked to this case.
@@ -305,8 +407,10 @@ export default async function CaseDetailPage({
               </div>
             ) : (
               <div>
+
                 {/* Table Header */}
                 <div className="grid grid-cols-[120px_1fr_160px_160px_190px] gap-4 border-b border-zinc-800 px-6 py-3 text-xs uppercase tracking-wider text-zinc-600">
+
                   <div>
                     Severity
                   </div>
@@ -326,17 +430,21 @@ export default async function CaseDetailPage({
                   <div>
                     Created
                   </div>
+
                 </div>
 
                 {/* Alert Rows */}
                 <div className="divide-y divide-zinc-800">
-                  {investigationCase.alerts.map((alert) => (
-                    <LinkedAlertRow
-                      key={alert.id}
-                      alert={alert}
-                    />
-                  ))}
+                  {investigationCase.alerts.map(
+                    (alert) => (
+                      <LinkedAlertRow
+                        key={alert.id}
+                        alert={alert}
+                      />
+                    )
+                  )}
                 </div>
+
               </div>
             )}
 
@@ -412,7 +520,9 @@ function LinkedAlertRow({
 
       <div>
         <p className="text-sm text-zinc-500">
-          {formatCaseTime(alert.created_at)}
+          {formatCaseTime(
+            alert.created_at
+          )}
         </p>
       </div>
 
@@ -458,7 +568,10 @@ function PriorityBadge({
   const normalizedPriority =
     priority.toLowerCase();
 
-  const styles: Record<string, string> = {
+  const styles: Record<
+    string,
+    string
+  > = {
     low:
       "border-blue-900 bg-blue-950 text-blue-400",
 
@@ -475,7 +588,9 @@ function PriorityBadge({
   return (
     <span
       className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[normalizedPriority] ??
+        styles[
+          normalizedPriority
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -493,7 +608,10 @@ function CaseStatusBadge({
   const normalizedStatus =
     status.toLowerCase();
 
-  const styles: Record<string, string> = {
+  const styles: Record<
+    string,
+    string
+  > = {
     open:
       "border-blue-900 bg-blue-950 text-blue-400",
 
@@ -510,7 +628,9 @@ function CaseStatusBadge({
   return (
     <span
       className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[normalizedStatus] ??
+        styles[
+          normalizedStatus
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -528,7 +648,10 @@ function SeverityBadge({
   const normalizedSeverity =
     severity.toLowerCase();
 
-  const styles: Record<string, string> = {
+  const styles: Record<
+    string,
+    string
+  > = {
     low:
       "border-blue-900 bg-blue-950 text-blue-400",
 
@@ -545,7 +668,9 @@ function SeverityBadge({
   return (
     <span
       className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[normalizedSeverity] ??
+        styles[
+          normalizedSeverity
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -563,7 +688,10 @@ function AlertStatusBadge({
   const normalizedStatus =
     status.toLowerCase();
 
-  const styles: Record<string, string> = {
+  const styles: Record<
+    string,
+    string
+  > = {
     new:
       "border-zinc-700 bg-zinc-800 text-zinc-300",
 
@@ -583,7 +711,9 @@ function AlertStatusBadge({
   return (
     <span
       className={`inline-flex rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[normalizedStatus] ??
+        styles[
+          normalizedStatus
+        ] ??
         "border-zinc-700 bg-zinc-800 text-zinc-400"
       }`}
     >
@@ -593,9 +723,16 @@ function AlertStatusBadge({
 }
 
 
-function formatCaseTime(timestamp: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(timestamp));
+function formatCaseTime(
+  timestamp: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }
+  ).format(
+    new Date(timestamp)
+  );
 }
