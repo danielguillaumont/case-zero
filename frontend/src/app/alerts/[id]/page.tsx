@@ -9,11 +9,17 @@ import {
   getCases,
   getPlaybooksForRule,
   getSecurityEvent,
+  getThreatIndicators,
 } from "@/lib/api";
 
 import type {
   Playbook,
+  ThreatIndicator,
 } from "@/lib/api";
+
+import {
+  matchThreatIndicatorsToEvent,
+} from "@/lib/intelligence";
 
 import {
   assignAlertToMe,
@@ -50,6 +56,21 @@ export default async function AlertDetailPage({
     alert.detection_rule_id
       ? await getPlaybooksForRule(
           alert.detection_rule_id
+        )
+      : [];
+
+  const threatIndicators =
+    sourceEvent
+      ? await getThreatIndicators({
+          limit: 500,
+        })
+      : [];
+
+  const threatMatches =
+    sourceEvent
+      ? matchThreatIndicatorsToEvent(
+          sourceEvent,
+          threatIndicators
         )
       : [];
 
@@ -629,6 +650,58 @@ export default async function AlertDetailPage({
             </section>
           )}
 
+          {/* Threat Intelligence */}
+          {threatMatches.length > 0 && (
+            <section className="mt-6 overflow-hidden rounded-xl border border-red-900/70 bg-zinc-900">
+
+              <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
+
+                <div>
+
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-red-400">
+                    Threat Intelligence Match
+                  </p>
+
+                  <h3 className="mt-2 font-medium">
+                    Known Indicators
+                  </h3>
+
+                  <p className="mt-1 text-sm text-zinc-500">
+                    CASE//ZERO matched values from the source security event against the local IOC registry.
+                  </p>
+
+                </div>
+
+                <div className="rounded-md border border-red-900 bg-red-950 px-3 py-1.5 text-xs font-medium text-red-400">
+                  {threatMatches.length}{" "}
+                  {threatMatches.length === 1
+                    ? "Match"
+                    : "Matches"}
+                </div>
+
+              </div>
+
+              <div className="space-y-4 p-6">
+
+                {threatMatches.map(
+                  (match) => (
+                    <ThreatIntelligenceMatchCard
+                      key={match.indicator.id}
+                      indicator={
+                        match.indicator
+                      }
+                      matchedFields={
+                        match.matchedFields
+                      }
+                    />
+                  )
+                )}
+
+              </div>
+
+            </section>
+          )}
+
           {/* Source Security Event */}
           {alert.source_event_id && (
             <section className="mt-6 overflow-hidden rounded-xl border border-violet-900/70 bg-zinc-900">
@@ -836,6 +909,118 @@ export default async function AlertDetailPage({
       </div>
 
     </div>
+  );
+}
+
+
+function ThreatIntelligenceMatchCard({
+  indicator,
+  matchedFields,
+}: {
+  indicator: ThreatIndicator;
+  matchedFields: string[];
+}) {
+  return (
+    <article className="rounded-xl border border-red-900/60 bg-zinc-950/70 p-6">
+
+      <div className="flex items-start justify-between gap-8">
+
+        <div className="min-w-0 flex-1">
+
+          <div className="flex flex-wrap items-center gap-2">
+
+            <IndicatorTypeBadge
+              indicatorType={
+                indicator.indicator_type
+              }
+            />
+
+            <ReputationBadge
+              reputation={
+                indicator.reputation
+              }
+            />
+
+            <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-400">
+              {indicator.confidence}% confidence
+            </span>
+
+          </div>
+
+          <code className="mt-4 block break-all font-mono text-lg font-semibold text-red-300">
+            {indicator.value}
+          </code>
+
+          {indicator.description && (
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-500">
+              {indicator.description}
+            </p>
+          )}
+
+          <div className="mt-5">
+
+            <p className="text-xs uppercase tracking-wider text-zinc-600">
+              Matched Event Fields
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+
+              {matchedFields.map(
+                (field) => (
+                  <span
+                    key={field}
+                    className="rounded-md border border-violet-900 bg-violet-950 px-2.5 py-1 text-xs text-violet-400"
+                  >
+                    {formatMatchedField(
+                      field
+                    )}
+                  </span>
+                )
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="w-64 shrink-0 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+
+          <p className="text-xs uppercase tracking-wider text-zinc-600">
+            Intelligence Source
+          </p>
+
+          <p className="mt-2 text-sm font-medium text-zinc-300">
+            {indicator.source}
+          </p>
+
+          <p className="mt-5 text-xs uppercase tracking-wider text-zinc-600">
+            Confidence
+          </p>
+
+          <p className="mt-2 text-lg font-semibold text-zinc-100">
+            {indicator.confidence}
+            <span className="ml-1 text-xs font-normal text-zinc-600">
+              / 100
+            </span>
+          </p>
+
+        </div>
+
+      </div>
+
+      <div className="mt-6 border-t border-zinc-800 pt-5">
+
+        <Link
+          href={`/intelligence/${indicator.id}`}
+          className="inline-flex rounded-lg border border-red-900 bg-red-950 px-5 py-3 text-sm font-medium text-red-400 transition hover:bg-red-900/60"
+        >
+          Open Intelligence Record &rarr;
+        </Link>
+
+      </div>
+
+    </article>
   );
 }
 
@@ -1229,6 +1414,94 @@ function CategoryBadge({
     >
       {category}
     </span>
+  );
+}
+
+
+function IndicatorTypeBadge({
+  indicatorType,
+}: {
+  indicatorType: string;
+}) {
+  const labels: Record<
+    string,
+    string
+  > = {
+    ip: "IP",
+    domain: "DOMAIN",
+    url: "URL",
+    hash: "HASH",
+  };
+
+  return (
+    <span className="rounded-md border border-blue-900 bg-blue-950 px-2.5 py-1 text-xs font-medium text-blue-400">
+      {
+        labels[indicatorType]
+        ?? indicatorType.toUpperCase()
+      }
+    </span>
+  );
+}
+
+
+function ReputationBadge({
+  reputation,
+}: {
+  reputation: string;
+}) {
+  const styles: Record<
+    string,
+    string
+  > = {
+    malicious:
+      "border-red-900 bg-red-950 text-red-400",
+
+    suspicious:
+      "border-orange-900 bg-orange-950 text-orange-400",
+
+    unknown:
+      "border-zinc-700 bg-zinc-800 text-zinc-400",
+
+    benign:
+      "border-emerald-900 bg-emerald-950 text-emerald-400",
+  };
+
+  const normalized =
+    reputation.toLowerCase();
+
+  return (
+    <span
+      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+        styles[normalized]
+        ??
+        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      }`}
+    >
+      {reputation}
+    </span>
+  );
+}
+
+
+function formatMatchedField(
+  field: string
+) {
+  const labels: Record<
+    string,
+    string
+  > = {
+    source_ip: "Source IP",
+    destination_ip: "Destination IP",
+    command_line: "Command Line",
+    raw_data: "Raw Event Data",
+  };
+
+  return (
+    labels[field]
+    ?? field.replaceAll(
+      "_",
+      " "
+    )
   );
 }
 
