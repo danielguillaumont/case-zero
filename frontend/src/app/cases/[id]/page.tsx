@@ -15,6 +15,7 @@ import type {
 
 import {
   addCaseNote,
+  assignCaseToMe,
   updateCaseStatus,
 } from "./actions";
 
@@ -55,6 +56,26 @@ export default async function CaseDetailPage({
       null,
       investigationCase.id,
       "resolved"
+    );
+
+  const closeCaseAction =
+    updateCaseStatus.bind(
+      null,
+      investigationCase.id,
+      "closed"
+    );
+
+  const reopenCaseAction =
+    updateCaseStatus.bind(
+      null,
+      investigationCase.id,
+      "investigating"
+    );
+
+  const assignToMeAction =
+    assignCaseToMe.bind(
+      null,
+      investigationCase.id
     );
 
   const addNoteAction =
@@ -330,19 +351,66 @@ export default async function CaseDetailPage({
 
                   {normalizedStatus ===
                     "resolved" && (
-                    <div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
-                      <p className="text-sm text-emerald-400">
-                        Investigation resolved
-                      </p>
+                    <div className="mt-3 space-y-3">
+
+                      <div className="rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
+                        <p className="text-sm text-emerald-400">
+                          Investigation resolved
+                        </p>
+                      </div>
+
+                      <form
+                        action={
+                          closeCaseAction
+                        }
+                      >
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                        >
+                          Close Case
+                        </button>
+                      </form>
+
+                      <form
+                        action={
+                          reopenCaseAction
+                        }
+                      >
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg border border-yellow-900 bg-yellow-950/40 px-4 py-3 text-sm font-medium text-yellow-400 transition hover:bg-yellow-950"
+                        >
+                          Reopen Investigation
+                        </button>
+                      </form>
+
                     </div>
                   )}
 
                   {normalizedStatus ===
                     "closed" && (
-                    <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
-                      <p className="text-sm text-zinc-400">
-                        Case closed
-                      </p>
+                    <div className="mt-3 space-y-3">
+
+                      <div className="rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
+                        <p className="text-sm text-zinc-400">
+                          Case closed
+                        </p>
+                      </div>
+
+                      <form
+                        action={
+                          reopenCaseAction
+                        }
+                      >
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg border border-yellow-900 bg-yellow-950/40 px-4 py-3 text-sm font-medium text-yellow-400 transition hover:bg-yellow-950"
+                        >
+                          Reopen Investigation
+                        </button>
+                      </form>
+
                     </div>
                   )}
                 </div>
@@ -353,18 +421,45 @@ export default async function CaseDetailPage({
                     Assigned Analyst
                   </p>
 
-                  <p className="mt-2 text-sm font-medium text-zinc-200">
-                    {
-                      investigationCase.assigned_analyst ??
-                      "Unassigned"
-                    }
-                  </p>
+                  {investigationCase.assigned_analyst ? (
+                    <div className="mt-2">
 
-                  {investigationCase.assigned_analyst ===
-                    "Daniel Guillaumont" && (
-                    <p className="mt-1 text-xs text-emerald-400">
-                      Assigned to you
-                    </p>
+                      <p className="text-sm font-medium text-zinc-200">
+                        {
+                          investigationCase.assigned_analyst
+                        }
+                      </p>
+
+                      {investigationCase.assigned_analyst ===
+                        "Daniel Guillaumont" && (
+                        <p className="mt-1 text-xs text-emerald-400">
+                          Assigned to you
+                        </p>
+                      )}
+
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+
+                      <p className="text-sm text-zinc-500">
+                        Unassigned
+                      </p>
+
+                      <form
+                        action={
+                          assignToMeAction
+                        }
+                        className="mt-4"
+                      >
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                        >
+                          Assign to Me
+                        </button>
+                      </form>
+
+                    </div>
                   )}
                 </div>
 
@@ -456,7 +551,6 @@ export default async function CaseDetailPage({
             ) : (
               <div>
 
-                {/* Table Header */}
                 <div className="grid grid-cols-[120px_1fr_160px_160px_190px] gap-4 border-b border-zinc-800 px-6 py-3 text-xs uppercase tracking-wider text-zinc-600">
 
                   <div>
@@ -481,7 +575,6 @@ export default async function CaseDetailPage({
 
                 </div>
 
-                {/* Alert Rows */}
                 <div className="divide-y divide-zinc-800">
                   {investigationCase.alerts.map(
                     (alert) => (
@@ -697,7 +790,6 @@ function CaseActivityRow({
   return (
     <article className="relative flex gap-5">
 
-      {/* Timeline rail */}
       <div className="relative flex w-10 shrink-0 justify-center">
 
         {!isLast && (
@@ -712,7 +804,6 @@ function CaseActivityRow({
 
       </div>
 
-      {/* Activity Content */}
       <div
         className={`min-w-0 flex-1 py-5 ${
           !isLast

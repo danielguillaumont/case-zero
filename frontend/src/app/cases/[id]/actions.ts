@@ -39,6 +39,16 @@ export async function updateCaseStatus(
 }
 
 
+export async function assignCaseToMe(
+  caseId: string,
+  _formData: FormData
+) {
+  await patchCase(caseId, {
+    assigned_analyst: "Daniel Guillaumont",
+  });
+}
+
+
 export async function addCaseNote(
   caseId: string,
   formData: FormData
