@@ -9,10 +9,12 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_roles
 from app.database import get_database_session
 from app.models.alert import Alert
 from app.models.case import Case
 from app.models.case_activity import CaseActivity
+from app.models.user import User
 from app.schemas.alert import (
     AlertCreate,
     AlertRead,
@@ -27,9 +29,6 @@ router = APIRouter(
 )
 
 
-ACTIVITY_ACTOR = "Daniel Guillaumont"
-
-
 @router.post(
     "",
     response_model=AlertRead,
@@ -37,6 +36,12 @@ ACTIVITY_ACTOR = "Daniel Guillaumont"
 )
 async def create_alert(
     alert_data: AlertCreate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -108,6 +113,12 @@ async def get_alert(
 )
 async def create_case_from_alert(
     alert_id: UUID,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -126,57 +137,91 @@ async def create_case_from_alert(
     if alert.case_id is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Alert is already linked to a case",
+            detail=(
+                "Alert is already linked "
+                "to a case"
+            ),
         )
 
     investigation_case = Case(
-        title=f"Investigation: {alert.title}",
+        title=(
+            f"Investigation: {alert.title}"
+        ),
         description=(
             alert.description
             or (
-                "Investigation created from alert: "
+                "Investigation created "
+                "from alert: "
                 f"{alert.title}"
             )
         ),
         status="open",
         priority=alert.severity,
-        assigned_analyst=alert.assigned_analyst,
+        assigned_analyst=(
+            alert.assigned_analyst
+        ),
     )
 
-    session.add(investigation_case)
+    session.add(
+        investigation_case
+    )
 
-    # Generate the new case UUID before
-    # linking the alert and activities.
     await session.flush()
 
-    alert.case_id = investigation_case.id
-
-    case_created_activity = CaseActivity(
-        case_id=investigation_case.id,
-        event_type="case_created",
-        actor=ACTIVITY_ACTOR,
-        message=(
-            "Investigation case created from alert "
-            f'"{alert.title}".'
-        ),
+    alert.case_id = (
+        investigation_case.id
     )
 
-    alert_linked_activity = CaseActivity(
-        case_id=investigation_case.id,
-        event_type="alert_linked",
-        actor=ACTIVITY_ACTOR,
-        message=(
-            f'Alert "{alert.title}" linked to case.'
-        ),
+    case_created_activity = (
+        CaseActivity(
+            case_id=(
+                investigation_case.id
+            ),
+            event_type="case_created",
+            actor=(
+                current_user.display_name
+            ),
+            message=(
+                "Investigation case "
+                "created from alert "
+                f'"{alert.title}".'
+            ),
+        )
     )
 
-    session.add(case_created_activity)
-    session.add(alert_linked_activity)
+    alert_linked_activity = (
+        CaseActivity(
+            case_id=(
+                investigation_case.id
+            ),
+            event_type="alert_linked",
+            actor=(
+                current_user.display_name
+            ),
+            message=(
+                f'Alert "{alert.title}" '
+                "linked to case."
+            ),
+        )
+    )
+
+    session.add(
+        case_created_activity
+    )
+
+    session.add(
+        alert_linked_activity
+    )
 
     await session.commit()
 
-    await session.refresh(investigation_case)
-    await session.refresh(alert)
+    await session.refresh(
+        investigation_case
+    )
+
+    await session.refresh(
+        alert
+    )
 
     return investigation_case
 
@@ -188,6 +233,12 @@ async def create_case_from_alert(
 async def update_alert(
     alert_id: UUID,
     alert_data: AlertUpdate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -203,17 +254,22 @@ async def update_alert(
             detail="Alert not found",
         )
 
-    update_data = alert_data.model_dump(
-        exclude_unset=True
+    update_data = (
+        alert_data.model_dump(
+            exclude_unset=True
+        )
     )
 
-    previous_case_id = alert.case_id
+    previous_case_id = (
+        alert.case_id
+    )
 
     target_case: Case | None = None
 
     if (
         "case_id" in update_data
-        and update_data["case_id"] is not None
+        and update_data["case_id"]
+        is not None
     ):
         target_case = await session.get(
             Case,
@@ -222,11 +278,15 @@ async def update_alert(
 
         if target_case is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=(
+                    status.HTTP_404_NOT_FOUND
+                ),
                 detail="Case not found",
             )
 
-    for field, value in update_data.items():
+    for field, value in (
+        update_data.items()
+    ):
         setattr(
             alert,
             field,
@@ -238,18 +298,28 @@ async def update_alert(
     if (
         "case_id" in update_data
         and new_case_id is not None
-        and new_case_id != previous_case_id
+        and new_case_id
+        != previous_case_id
     ):
-        alert_linked_activity = CaseActivity(
-            case_id=new_case_id,
-            event_type="alert_linked",
-            actor=ACTIVITY_ACTOR,
-            message=(
-                f'Alert "{alert.title}" linked to case.'
-            ),
+        alert_linked_activity = (
+            CaseActivity(
+                case_id=new_case_id,
+                event_type=(
+                    "alert_linked"
+                ),
+                actor=(
+                    current_user.display_name
+                ),
+                message=(
+                    f'Alert "{alert.title}" '
+                    "linked to case."
+                ),
+            )
         )
 
-        session.add(alert_linked_activity)
+        session.add(
+            alert_linked_activity
+        )
 
     await session.commit()
     await session.refresh(alert)
