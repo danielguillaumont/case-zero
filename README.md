@@ -14,9 +14,9 @@
 
 ## Overview
 
-**CASE//ZERO** is a portfolio cybersecurity engineering project that models the workflow of a modern Security Operations Center.
+**CASE//ZERO** is a cybersecurity engineering portfolio project that models the workflow of a modern Security Operations Center.
 
-It combines security telemetry, detection engineering, alert triage, case management, threat hunting, MITRE ATT&CK context, response playbooks, and threat intelligence in one connected investigation platform.
+It connects security telemetry, detection engineering, alert investigation, threat hunting, case management, MITRE ATT&CK, threat intelligence, response playbooks, authentication, and role-based access control in one application.
 
 ```text
 Security Events
@@ -29,130 +29,122 @@ Alerts
    ↙       ↘
 Evidence   Investigation
           ↙     ↓      ↘
-    Threat Hunt Case  Playbook
+       Hunt   Case   Playbook
           ↓
    Threat Intelligence
 ```
 
 ---
 
-## Current Capabilities
+## Core Capabilities
 
-### Security Events
+### Detection & Telemetry
 
 - Normalized security-event ingestion
-- Endpoint, process, and authentication telemetry
-- Event explorer and detail views
-- Raw event evidence
-- Event-to-alert navigation
-
-### Detection Engine
-
+- Process and authentication telemetry
 - Single-event detections
 - Multi-event correlation
 - Automatic alert generation
-- Detection-rule provenance stored on alerts
-- MITRE ATT&CK technique and tactic mappings
+- Source-event and detection-rule linkage
+- MITRE ATT&CK mappings
 
-Current detections include:
+Current detections:
 
 - Encoded PowerShell
 - PowerShell Download Cradle
 - Authentication Brute Force
 
-### Alert Investigation
+### Investigation
 
 - Alert lifecycle and analyst assignment
-- Detection evidence
-- Linked source events
-- Linked detection rules
+- Source evidence
+- Detection-rule context
 - MITRE ATT&CK context
 - Threat-intelligence matches
 - Recommended response playbooks
-- Case creation and linking
-
-### Case Management
-
 - Investigation cases
-- Analyst ownership
-- Priority and lifecycle tracking
-- Linked alerts
-- Investigation notes
-- Activity timeline
+- Notes and activity timelines
 
 ### Threat Hunting
 
-- Structured telemetry queries
-- Free-text searches
+- Structured telemetry searches
+- Free-text queries
 - Host, user, IP, process, source, and event filters
 - Direct navigation into event evidence
-
-### Detection Rules & Playbooks
-
-- Detection-rule catalog and detail views
-- Detection logic visibility
-- MITRE ATT&CK mappings
-- Rule-to-playbook mapping
-- Ordered incident-response procedures
-- Bidirectional Rule ↔ Playbook navigation
 
 ### Threat Intelligence
 
 - Persistent IOC registry
 - IP, domain, URL, and hash indicators
 - Reputation and confidence scoring
-- Tags and analyst context
-- Search and filtering
-- IOC detail pages
+- Search, filters, and tags
 - IOC-to-event correlation
-- Alert-to-IOC intelligence matching
+- Alert-to-IOC matching
+
+### Detection Rules & Playbooks
+
+- Detection-rule catalog
+- Detection logic visibility
+- ATT&CK mappings
+- Rule-to-playbook relationships
+- Ordered incident-response procedures
+- Bidirectional Rule ↔ Playbook navigation
+
+### Authentication & RBAC
+
+- PostgreSQL-backed user accounts
+- Argon2 password hashing
+- JWT bearer authentication
+- OAuth2 password login
+- Current-user API
+- Active/inactive account enforcement
+- Administrator, Analyst, and Viewer roles
+- Reusable role-based authorization dependency
+- Administrator provisioning utility
+
+Route-level RBAC enforcement is currently being applied across the platform.
 
 ---
 
-## Investigation Flow
-
-CASE//ZERO supports a connected analyst workflow:
+## Authentication Flow
 
 ```text
-Telemetry
-   ↓
-Detection Engine
-   ↓
-Detection Rule
-   ↓
-Alert
-   ├── Source Evidence
-   ├── MITRE ATT&CK
-   ├── Threat Intelligence
-   ├── Response Playbook
-   ├── Threat Hunt
-   └── Investigation Case
+Email + Password
+       ↓
+User Lookup
+       ↓
+Argon2 Verification
+       ↓
+JWT Access Token
+       ↓
+Authenticated User
+       ↓
+Role Authorization
 ```
 
-The goal is to preserve context as an analyst moves from detection through investigation and response.
+| Role | Intended Access |
+|---|---|
+| Administrator | Full platform and administrative access |
+| Analyst | Investigation and security operations |
+| Viewer | Read-only visibility |
 
 ---
 
-## Testing & Continuous Integration
+## Testing & CI
 
-CASE//ZERO includes automated validation across the detection engine, API, database, and frontend.
+CASE//ZERO currently has **37 passing backend tests** covering:
 
-### Backend
+- Detection-engine logic
+- Multi-event correlation
+- API behavior
+- PostgreSQL-backed end-to-end pipelines
+- Password hashing
+- JWT creation and validation
+- Authentication APIs
+- Inactive-user handling
+- RBAC authorization
 
-- Detection-engine unit tests
-- Detection-rule behavior tests
-- API integration tests
-- PostgreSQL-backed end-to-end pipeline tests
-- Detection and event-linkage validation
-- Multi-event correlation testing
-
-Current backend suite:
-
-```text
-22 tests passing
-```
-
-Database-backed tests validate workflows such as:
+Example tested pipeline:
 
 ```text
 Security Event
@@ -166,29 +158,18 @@ Persisted Alert
 API Retrieval
 ```
 
-The test suite also verifies that benign telemetry does not generate alerts and that multi-event authentication correlation triggers only after the configured threshold.
-
-### GitHub Actions
-
-Every push and pull request to `main` runs the CASE//ZERO CI workflow.
-
-The pipeline:
+GitHub Actions runs on pushes and pull requests to `main`:
 
 ```text
-Backend Tests
-├── PostgreSQL 18 service
-├── Python environment
-├── Backend dependencies
+Backend
+├── PostgreSQL 18
 ├── Alembic migrations
-└── Pytest suite
+└── Pytest
 
-Frontend Build
-├── Node.js environment
-├── npm dependencies
+Frontend
+├── npm install
 └── Next.js production build
 ```
-
-This provides automated database migration, backend regression, detection-pipeline, and frontend build validation.
 
 ---
 
@@ -202,13 +183,14 @@ This provides automated database migration, backend regression, detection-pipeli
 | Validation | Pydantic |
 | ORM | SQLAlchemy |
 | Database | PostgreSQL |
-| Database Driver | Psycopg |
 | Migrations | Alembic |
+| Authentication | OAuth2, JWT, PyJWT |
+| Password Security | Argon2, pwdlib |
+| Authorization | RBAC |
 | Testing | Pytest, FastAPI TestClient |
 | CI/CD | GitHub Actions |
-| Containers | Docker / Docker Compose |
+| Containers | Docker Compose |
 | API Docs | Swagger / OpenAPI |
-| Version Control | Git / GitHub |
 
 ---
 
@@ -216,22 +198,25 @@ This provides automated database migration, backend regression, detection-pipeli
 
 ```mermaid
 flowchart LR
-    UI["Next.js / TypeScript"]
-    API["FastAPI / Python"]
+    USER["User"]
+    UI["Next.js"]
+    AUTH["Auth / RBAC"]
+    API["FastAPI"]
     DET["Detection Engine"]
-    ORM["SQLAlchemy"]
     DB[("PostgreSQL")]
 
-    UI --> API
+    USER --> UI
+    UI --> AUTH
+    AUTH --> API
     API --> DET
-    API --> ORM
-    DET --> ORM
-    ORM --> DB
+    API --> DB
+    DET --> DB
 ```
 
-Core API modules:
+Core APIs:
 
 ```text
+/api/auth
 /api/events
 /api/alerts
 /api/cases
@@ -243,35 +228,26 @@ Core API modules:
 
 ---
 
-## Running Locally
+## Run Locally
 
 ### Requirements
 
 - Python 3.12+
-- Node.js / npm
+- Node.js
 - Docker Desktop
 - Git
 
-### Clone
+### Setup
 
 ```powershell
 git clone https://github.com/danielguillaumont/case-zero.git
 cd case-zero
-```
 
-### Environment
-
-```powershell
 Copy-Item .env.example .env
-```
-
-Configure the PostgreSQL values in `.env` before starting the application.
-
-### PostgreSQL
-
-```powershell
 docker compose up -d postgres
 ```
+
+Configure PostgreSQL and JWT values in `.env`.
 
 ### Backend
 
@@ -287,7 +263,7 @@ alembic upgrade head
 fastapi dev app\main.py
 ```
 
-Backend:
+API:
 
 ```text
 http://127.0.0.1:8000
@@ -299,9 +275,13 @@ Swagger:
 http://127.0.0.1:8000/docs
 ```
 
-### Frontend
+### Create First Administrator
 
-In another terminal:
+```powershell
+python -m scripts.create_admin
+```
+
+### Frontend
 
 ```powershell
 cd frontend
@@ -321,58 +301,44 @@ http://localhost:3000
 
 ### Implemented
 
-- [x] Full-stack application architecture
-- [x] PostgreSQL persistence and Alembic migrations
-- [x] SOC dashboard
+- [x] Full-stack SOC application
+- [x] PostgreSQL + Alembic
 - [x] Security-event ingestion
-- [x] Security Event Explorer
 - [x] Detection engine
-- [x] Automatic alert generation
 - [x] Multi-event correlation
-- [x] Alert investigation workflow
+- [x] Alert investigation
 - [x] Case management
-- [x] Investigation notes
-- [x] Case activity timeline
 - [x] Threat hunting
-- [x] Detection Rules workspace
 - [x] MITRE ATT&CK mappings
-- [x] Incident Response Playbooks
-- [x] Rule ↔ Alert ↔ Playbook navigation
+- [x] Incident-response playbooks
 - [x] Threat Intelligence registry
-- [x] IOC-to-event correlation
-- [x] Alert-to-IOC intelligence matching
-- [x] Automated unit and API testing
-- [x] PostgreSQL-backed end-to-end testing
-- [x] GitHub Actions continuous integration
+- [x] IOC correlation
+- [x] JWT authentication
+- [x] Argon2 password hashing
+- [x] Administrator / Analyst / Viewer roles
+- [x] RBAC foundation
+- [x] Database-backed integration tests
+- [x] GitHub Actions CI
+
+### In Progress
+
+- [ ] Route-level RBAC enforcement
+- [ ] Frontend login/logout and session handling
 
 ### Next
 
-- [ ] Authentication and role-based access control
-- [ ] Additional detections and telemetry types
 - [ ] Production deployment
 - [ ] Production security hardening
-- [ ] Portfolio screenshots and demonstration workflow
+- [ ] Portfolio screenshots and investigation demo
+- [ ] Additional detections and telemetry
 
 ---
 
 ## Project Goal
 
-CASE//ZERO is designed to demonstrate both defensive cybersecurity concepts and the software engineering behind modern security platforms.
+CASE//ZERO demonstrates the intersection of:
 
-The project combines:
-
-- Detection engineering
-- Security operations
-- Incident response
-- Threat hunting
-- Threat intelligence
-- MITRE ATT&CK
-- Security automation
-- API development
-- Relational data modeling
-- Automated testing
-- CI/CD
-- Full-stack application design
+**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · RBAC · API Development · Database Engineering · Automated Testing · CI/CD**
 
 ---
 
@@ -380,4 +346,4 @@ The project combines:
 
 CASE//ZERO is an independent educational and portfolio project designed to simulate cybersecurity operations workflows.
 
-It is not intended to replace a production SIEM, SOAR, EDR, threat-intelligence platform, or enterprise incident-response system.
+It is not intended to replace a production SIEM, SOAR, EDR, identity provider, or enterprise incident-response platform.
