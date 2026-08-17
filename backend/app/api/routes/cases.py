@@ -9,11 +9,13 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_roles
 from app.database import get_database_session
 from app.models.alert import Alert
 from app.models.case import Case
 from app.models.case_activity import CaseActivity
 from app.models.case_note import CaseNote
+from app.models.user import User
 from app.schemas.case import (
     CaseAlertRead,
     CaseCreate,
@@ -36,9 +38,6 @@ router = APIRouter(
 )
 
 
-ACTIVITY_ACTOR = "Daniel Guillaumont"
-
-
 @router.post(
     "",
     response_model=CaseRead,
@@ -46,6 +45,12 @@ ACTIVITY_ACTOR = "Daniel Guillaumont"
 )
 async def create_case(
     case_data: CaseCreate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -60,22 +65,24 @@ async def create_case(
 
     session.add(investigation_case)
 
-    # Flush first so PostgreSQL/SQLAlchemy gives
-    # the new case its UUID before we create
-    # the related activity record.
+    # Flush first so the new case receives
+    # its UUID before the related activity
+    # record is created.
     await session.flush()
 
     case_activity = CaseActivity(
         case_id=investigation_case.id,
         event_type="case_created",
-        actor=ACTIVITY_ACTOR,
+        actor=current_user.display_name,
         message="Investigation case created.",
     )
 
     session.add(case_activity)
 
     await session.commit()
-    await session.refresh(investigation_case)
+    await session.refresh(
+        investigation_case
+    )
 
     return investigation_case
 
@@ -117,7 +124,9 @@ async def get_case_notes(
 
     if investigation_case is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Case not found",
         )
 
@@ -144,6 +153,12 @@ async def get_case_notes(
 async def create_case_note(
     case_id: UUID,
     note_data: CaseNoteCreate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -155,21 +170,30 @@ async def create_case_note(
 
     if investigation_case is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Case not found",
         )
 
-    note_content = note_data.content.strip()
+    note_content = (
+        note_data.content.strip()
+    )
 
     if not note_content:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Investigation note cannot be empty",
+            status_code=(
+                status.HTTP_422_UNPROCESSABLE_ENTITY
+            ),
+            detail=(
+                "Investigation note "
+                "cannot be empty"
+            ),
         )
 
     case_note = CaseNote(
         case_id=case_id,
-        author=ACTIVITY_ACTOR,
+        author=current_user.display_name,
         content=note_content,
     )
 
@@ -178,7 +202,7 @@ async def create_case_note(
     case_activity = CaseActivity(
         case_id=case_id,
         event_type="note_added",
-        actor=ACTIVITY_ACTOR,
+        actor=current_user.display_name,
         message="Investigation note added.",
     )
 
@@ -207,7 +231,9 @@ async def get_case_activities(
 
     if investigation_case is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Case not found",
         )
 
@@ -221,7 +247,9 @@ async def get_case_activities(
         )
     )
 
-    activities = result.scalars().all()
+    activities = (
+        result.scalars().all()
+    )
 
     return list(activities)
 
@@ -243,7 +271,9 @@ async def get_case(
 
     if investigation_case is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Case not found",
         )
 
@@ -257,17 +287,27 @@ async def get_case(
         )
     )
 
-    linked_alerts = result.scalars().all()
+    linked_alerts = (
+        result.scalars().all()
+    )
 
     return CaseDetailRead(
         id=investigation_case.id,
         title=investigation_case.title,
-        description=investigation_case.description,
+        description=(
+            investigation_case.description
+        ),
         status=investigation_case.status,
         priority=investigation_case.priority,
-        assigned_analyst=investigation_case.assigned_analyst,
-        created_at=investigation_case.created_at,
-        updated_at=investigation_case.updated_at,
+        assigned_analyst=(
+            investigation_case.assigned_analyst
+        ),
+        created_at=(
+            investigation_case.created_at
+        ),
+        updated_at=(
+            investigation_case.updated_at
+        ),
         alerts=[
             CaseAlertRead.model_validate(
                 alert
@@ -284,6 +324,12 @@ async def get_case(
 async def update_case(
     case_id: UUID,
     case_data: CaseUpdate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -295,12 +341,16 @@ async def update_case(
 
     if investigation_case is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Case not found",
         )
 
-    update_data = case_data.model_dump(
-        exclude_unset=True
+    update_data = (
+        case_data.model_dump(
+            exclude_unset=True
+        )
     )
 
     previous_status = (
@@ -311,7 +361,9 @@ async def update_case(
         investigation_case.assigned_analyst
     )
 
-    for field, value in update_data.items():
+    for field, value in (
+        update_data.items()
+    ):
         setattr(
             investigation_case,
             field,
@@ -333,7 +385,9 @@ async def update_case(
         case_activity = CaseActivity(
             case_id=case_id,
             event_type="status_changed",
-            actor=ACTIVITY_ACTOR,
+            actor=(
+                current_user.display_name
+            ),
             message=(
                 "Case status changed from "
                 f"{previous_status.upper()} "
@@ -353,7 +407,8 @@ async def update_case(
             and new_analyst is not None
         ):
             assignment_message = (
-                f"Case assigned to {new_analyst}."
+                "Case assigned to "
+                f"{new_analyst}."
             )
 
         elif (
@@ -361,28 +416,42 @@ async def update_case(
             and new_analyst is None
         ):
             assignment_message = (
-                "Case analyst assignment removed "
-                f"from {previous_analyst}."
+                "Case analyst assignment "
+                "removed from "
+                f"{previous_analyst}."
             )
 
         else:
             assignment_message = (
-                "Case assignment changed from "
+                "Case assignment changed "
+                "from "
                 f"{previous_analyst} "
                 "to "
                 f"{new_analyst}."
             )
 
-        assignment_activity = CaseActivity(
-            case_id=case_id,
-            event_type="analyst_assigned",
-            actor=ACTIVITY_ACTOR,
-            message=assignment_message,
+        assignment_activity = (
+            CaseActivity(
+                case_id=case_id,
+                event_type=(
+                    "analyst_assigned"
+                ),
+                actor=(
+                    current_user.display_name
+                ),
+                message=(
+                    assignment_message
+                ),
+            )
         )
 
-        session.add(assignment_activity)
+        session.add(
+            assignment_activity
+        )
 
     await session.commit()
-    await session.refresh(investigation_case)
+    await session.refresh(
+        investigation_case
+    )
 
     return investigation_case
