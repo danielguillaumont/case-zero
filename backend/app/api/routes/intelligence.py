@@ -14,8 +14,10 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_roles
 from app.database import get_database_session
 from app.models.threat_indicator import ThreatIndicator
+from app.models.user import User
 from app.schemas.threat_indicator import (
     ThreatIndicatorCreate,
     ThreatIndicatorRead,
@@ -36,6 +38,12 @@ router = APIRouter(
 )
 async def create_threat_indicator(
     indicator_data: ThreatIndicatorCreate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -197,6 +205,12 @@ async def get_threat_indicator(
 async def update_threat_indicator(
     indicator_id: UUID,
     indicator_data: ThreatIndicatorUpdate,
+    current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
