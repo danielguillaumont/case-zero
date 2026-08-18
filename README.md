@@ -14,9 +14,9 @@
 
 ## Overview
 
-**CASE//ZERO** is a cybersecurity engineering portfolio project that models the workflow of a modern Security Operations Center.
+**CASE//ZERO** is a cybersecurity engineering portfolio project that simulates the core workflow of a modern Security Operations Center.
 
-It connects security telemetry, detection engineering, alert investigation, threat hunting, case management, MITRE ATT&CK, threat intelligence, response playbooks, authentication, and role-based access control in one application.
+It connects security telemetry, detection engineering, alerts, investigations, threat hunting, threat intelligence, MITRE ATT&CK, response playbooks, authentication, and role-based access control in one application.
 
 ```text
 Security Events
@@ -48,7 +48,7 @@ Evidence   Investigation
 - Source-event and detection-rule linkage
 - MITRE ATT&CK mappings
 
-Current detections:
+Current detections include:
 
 - Encoded PowerShell
 - PowerShell Download Cradle
@@ -57,13 +57,14 @@ Current detections:
 ### Investigation
 
 - Alert lifecycle and analyst assignment
-- Source evidence
+- Source-event evidence
 - Detection-rule context
 - MITRE ATT&CK context
 - Threat-intelligence matches
 - Recommended response playbooks
 - Investigation cases
-- Notes and activity timelines
+- Analyst notes
+- Case activity timelines
 
 ### Threat Hunting
 
@@ -77,7 +78,7 @@ Current detections:
 - Persistent IOC registry
 - IP, domain, URL, and hash indicators
 - Reputation and confidence scoring
-- Search, filters, and tags
+- Search, filtering, and tags
 - IOC-to-event correlation
 - Alert-to-IOC matching
 
@@ -90,59 +91,86 @@ Current detections:
 - Ordered incident-response procedures
 - Bidirectional Rule ↔ Playbook navigation
 
-### Authentication & RBAC
+---
+
+## Authentication & RBAC
+
+CASE//ZERO includes end-to-end authentication and role-based access control.
 
 - PostgreSQL-backed user accounts
 - Argon2 password hashing
-- JWT bearer authentication
-- OAuth2 password login
-- Current-user API
+- JWT authentication
+- HttpOnly session cookies
+- Login and logout workflow
+- Current-user validation
 - Active/inactive account enforcement
 - Administrator, Analyst, and Viewer roles
-- Reusable role-based authorization dependency
+- Route-level authorization across SOC APIs
+- Protected frontend application routes
 - Administrator provisioning utility
-
-Route-level RBAC enforcement is currently being applied across the platform.
-
----
-
-## Authentication Flow
 
 ```text
 Email + Password
        ↓
-User Lookup
-       ↓
 Argon2 Verification
        ↓
 JWT Access Token
+       ↓
+HttpOnly Session
        ↓
 Authenticated User
        ↓
 Role Authorization
 ```
 
-| Role | Intended Access |
+| Role | Access |
 |---|---|
-| Administrator | Full platform and administrative access |
-| Analyst | Investigation and security operations |
-| Viewer | Read-only visibility |
+| **Administrator** | Full platform access |
+| **Analyst** | Security operations, hunting, investigations, ingestion, and updates |
+| **Viewer** | Read-only SOC visibility |
+
+Unauthenticated users cannot access protected SOC data.
+
+---
+
+## Security Workspaces
+
+CASE//ZERO currently includes:
+
+```text
+Dashboard
+Events
+Alerts
+Cases
+Threat Hunt
+Threat Intelligence
+Detection Rules
+Response Playbooks
+```
+
+Each workspace is connected to the same investigation workflow rather than operating as an isolated demo.
 
 ---
 
 ## Testing & CI
 
-CASE//ZERO currently has **37 passing backend tests** covering:
+CASE//ZERO currently has **75 passing backend tests** covering:
 
 - Detection-engine logic
 - Multi-event correlation
-- API behavior
-- PostgreSQL-backed end-to-end pipelines
-- Password hashing
+- Authentication
+- Password security
 - JWT creation and validation
-- Authentication APIs
-- Inactive-user handling
-- RBAC authorization
+- Role-based access control
+- API authorization
+- Event ingestion
+- Event-to-alert pipelines
+- Alert workflows
+- Case workflows
+- Case notes and activity
+- Threat hunting
+- Threat intelligence
+- Viewer, Analyst, and Administrator permissions
 
 Example tested pipeline:
 
@@ -155,10 +183,10 @@ Detection Engine
       ↓
 Persisted Alert
       ↓
-API Retrieval
+Authenticated API Retrieval
 ```
 
-GitHub Actions runs on pushes and pull requests to `main`:
+GitHub Actions validates the application on pushes and pull requests to `main`:
 
 ```text
 Backend
@@ -184,7 +212,7 @@ Frontend
 | ORM | SQLAlchemy |
 | Database | PostgreSQL |
 | Migrations | Alembic |
-| Authentication | OAuth2, JWT, PyJWT |
+| Authentication | JWT, OAuth2 |
 | Password Security | Argon2, pwdlib |
 | Authorization | RBAC |
 | Testing | Pytest, FastAPI TestClient |
@@ -200,7 +228,7 @@ Frontend
 flowchart LR
     USER["User"]
     UI["Next.js"]
-    AUTH["Auth / RBAC"]
+    AUTH["Authentication / RBAC"]
     API["FastAPI"]
     DET["Detection Engine"]
     DB[("PostgreSQL")]
@@ -306,39 +334,40 @@ http://localhost:3000
 - [x] Security-event ingestion
 - [x] Detection engine
 - [x] Multi-event correlation
+- [x] Automated alert generation
 - [x] Alert investigation
 - [x] Case management
+- [x] Analyst notes and activity timelines
 - [x] Threat hunting
 - [x] MITRE ATT&CK mappings
 - [x] Incident-response playbooks
 - [x] Threat Intelligence registry
 - [x] IOC correlation
 - [x] JWT authentication
+- [x] HttpOnly frontend sessions
+- [x] Login and logout workflow
 - [x] Argon2 password hashing
 - [x] Administrator / Analyst / Viewer roles
-- [x] RBAC foundation
+- [x] Route-level RBAC enforcement
+- [x] Protected frontend application access
 - [x] Database-backed integration tests
 - [x] GitHub Actions CI
 
-### In Progress
-
-- [ ] Route-level RBAC enforcement
-- [ ] Frontend login/logout and session handling
-
 ### Next
 
-- [ ] Production deployment
 - [ ] Production security hardening
-- [ ] Portfolio screenshots and investigation demo
+- [ ] Production deployment
+- [ ] Portfolio screenshots
+- [ ] Architecture and investigation demo
 - [ ] Additional detections and telemetry
 
 ---
 
 ## Project Goal
 
-CASE//ZERO demonstrates the intersection of:
+CASE//ZERO demonstrates practical experience across:
 
-**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · RBAC · API Development · Database Engineering · Automated Testing · CI/CD**
+**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · RBAC · API Development · Database Engineering · Full-Stack Development · Automated Testing · CI/CD**
 
 ---
 
