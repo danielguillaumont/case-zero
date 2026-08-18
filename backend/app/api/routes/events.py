@@ -9,8 +9,10 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_roles
 from app.database import get_database_session
 from app.models.security_event import SecurityEvent
+from app.models.user import User
 from app.schemas.security_event import (
     SecurityEventCreate,
     SecurityEventRead,
@@ -33,6 +35,12 @@ router = APIRouter(
 )
 async def create_security_event(
     event_data: SecurityEventCreate,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -105,8 +113,12 @@ async def get_security_event(
 
     if security_event is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Security event not found",
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
+            detail=(
+                "Security event not found"
+            ),
         )
 
     return security_event

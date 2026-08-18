@@ -1,9 +1,9 @@
 import asyncio
 import selectors
 import sys
+from uuid import uuid4
 
 import psycopg
-
 from fastapi.testclient import TestClient
 
 from app.config import (
@@ -14,6 +14,7 @@ from app.config import (
     POSTGRES_USER,
 )
 from app.main import app
+from app.security import create_access_token
 
 
 def create_selector_event_loop():
@@ -63,6 +64,78 @@ def clear_event_pipeline_data() -> None:
                 "DELETE FROM security_events"
             )
 
+            cursor.execute(
+                """
+                DELETE FROM users
+                WHERE email LIKE %s
+                """,
+                (
+                    "%-event-pipeline"
+                    "@casezero.dev",
+                ),
+            )
+
+
+def create_analyst_headers() -> dict[str, str]:
+    assert POSTGRES_DB == "casezero_test"
+
+    user_id = uuid4()
+
+    email = (
+        "analyst-"
+        f"{user_id.hex[:8]}"
+        "-event-pipeline"
+        "@casezero.dev"
+    )
+
+    with psycopg.connect(
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        autocommit=True,
+    ) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO users (
+                    id,
+                    email,
+                    display_name,
+                    password_hash,
+                    role,
+                    is_active
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                (
+                    user_id,
+                    email,
+                    "Pipeline Test Analyst",
+                    "not-used-by-pipeline-test",
+                    "analyst",
+                    True,
+                ),
+            )
+
+    token = create_access_token(
+        user_id=user_id,
+        role="analyst",
+    )
+
+    return {
+        "Authorization":
+            f"Bearer {token}"
+    }
+
 
 def setup_function() -> None:
     clear_event_pipeline_data()
@@ -73,6 +146,10 @@ def teardown_function() -> None:
 
 
 def test_encoded_powershell_event_creates_persisted_alert():
+    analyst_headers = (
+        create_analyst_headers()
+    )
+
     event_payload = {
         "event_type":
             "process_creation",
@@ -104,6 +181,7 @@ def test_encoded_powershell_event_creates_persisted_alert():
     event_response = client.post(
         "/api/events",
         json=event_payload,
+        headers=analyst_headers,
     )
 
     assert (
@@ -199,6 +277,10 @@ def test_encoded_powershell_event_creates_persisted_alert():
 
 
 def test_benign_powershell_event_does_not_create_alert():
+    analyst_headers = (
+        create_analyst_headers()
+    )
+
     event_payload = {
         "event_type":
             "process_creation",
@@ -230,6 +312,7 @@ def test_benign_powershell_event_does_not_create_alert():
     event_response = client.post(
         "/api/events",
         json=event_payload,
+        headers=analyst_headers,
     )
 
     assert (
@@ -288,6 +371,10 @@ def test_benign_powershell_event_does_not_create_alert():
 
 
 def test_fifth_authentication_failure_creates_brute_force_alert():
+    analyst_headers = (
+        create_analyst_headers()
+    )
+
     event_times = [
         "2026-08-16T22:40:00Z",
         "2026-08-16T22:41:00Z",
@@ -334,6 +421,7 @@ def test_fifth_authentication_failure_creates_brute_force_alert():
         event_response = client.post(
             "/api/events",
             json=event_payload,
+            headers=analyst_headers,
         )
 
         assert (
