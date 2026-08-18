@@ -1,7 +1,9 @@
 import asyncio
 import selectors
 import sys
-from uuid import uuid4
+from uuid import (
+    uuid4,
+)
 
 import psycopg
 from fastapi.testclient import TestClient
@@ -41,7 +43,7 @@ def create_test_client() -> TestClient:
 client = create_test_client()
 
 
-def clear_rbac_test_data() -> None:
+def clear_event_read_test_data() -> None:
     assert (
         POSTGRES_DB
         == "casezero_test"
@@ -59,9 +61,21 @@ def clear_rbac_test_data() -> None:
             cursor.execute(
                 """
                 DELETE FROM alerts
+                WHERE source_event_id IN (
+                    SELECT id
+                    FROM security_events
+                    WHERE source = %s
+                )
+                """,
+                ("event-read-rbac",),
+            )
+
+            cursor.execute(
+                """
+                DELETE FROM security_events
                 WHERE source = %s
                 """,
-                ("rbac-test",),
+                ("event-read-rbac",),
             )
 
             cursor.execute(
@@ -70,7 +84,7 @@ def clear_rbac_test_data() -> None:
                 WHERE email LIKE %s
                 """,
                 (
-                    "%-alert-rbac"
+                    "%-event-read-rbac"
                     "@casezero.dev",
                 ),
             )
@@ -89,7 +103,7 @@ def create_role_headers(
     email = (
         f"{role}-"
         f"{user_id.hex[:8]}"
-        "-alert-rbac"
+        "-event-read-rbac"
         "@casezero.dev"
     )
 
@@ -128,7 +142,7 @@ def create_role_headers(
                         "CASE ZERO "
                         f"{role.title()}"
                     ),
-                    "not-used-by-rbac-test",
+                    "not-used-by-event-read-test",
                     role,
                     True,
                 ),
@@ -145,46 +159,44 @@ def create_role_headers(
     }
 
 
-def alert_payload() -> dict:
+def event_payload() -> dict:
     return {
-        "title":
-            "RBAC Integration Alert",
-        "description":
-            "Alert created by RBAC tests.",
-        "severity":
-            "medium",
+        "event_type":
+            "process_creation",
         "source":
-            "rbac-test",
+            "event-read-rbac",
+        "event_time":
+            "2026-08-17T21:00:00Z",
+        "hostname":
+            "EVENT-READ-RBAC-WS",
+        "username":
+            "read-test-user",
+        "source_ip":
+            "10.50.60.70",
+        "destination_ip":
+            None,
+        "process_name":
+            "cmd.exe",
+        "command_line":
+            "cmd.exe /c hostname",
+        "raw_data": {
+            "test":
+                "event-read-rbac",
+        },
     }
 
 
-def create_alert_as_analyst() -> dict:
-    headers = create_role_headers(
-        "analyst"
-    )
-
-    response = client.post(
-        "/api/alerts",
-        json=alert_payload(),
-        headers=headers,
-    )
-
-    assert response.status_code == 201
-
-    return response.json()
-
-
 def setup_function() -> None:
-    clear_rbac_test_data()
+    clear_event_read_test_data()
 
 
 def teardown_function() -> None:
-    clear_rbac_test_data()
+    clear_event_read_test_data()
 
 
-def test_unauthenticated_alert_reads_are_rejected():
+def test_unauthenticated_event_reads_are_rejected():
     list_response = client.get(
-        "/api/alerts"
+        "/api/events"
     )
 
     assert (
@@ -194,7 +206,7 @@ def test_unauthenticated_alert_reads_are_rejected():
 
     detail_response = client.get(
         (
-            "/api/alerts/"
+            "/api/events/"
             "00000000-0000-0000-"
             "0000-000000000001"
         )
@@ -206,9 +218,26 @@ def test_unauthenticated_alert_reads_are_rejected():
     )
 
 
-def test_viewer_can_read_alert_list_and_detail():
-    alert = (
-        create_alert_as_analyst()
+def test_viewer_can_read_event_list_and_detail():
+    analyst_headers = (
+        create_role_headers(
+            "analyst"
+        )
+    )
+
+    create_response = client.post(
+        "/api/events",
+        json=event_payload(),
+        headers=analyst_headers,
+    )
+
+    assert (
+        create_response.status_code
+        == 201
+    )
+
+    event = (
+        create_response.json()
     )
 
     viewer_headers = (
@@ -218,7 +247,7 @@ def test_viewer_can_read_alert_list_and_detail():
     )
 
     list_response = client.get(
-        "/api/alerts",
+        "/api/events",
         headers=viewer_headers,
     )
 
@@ -227,19 +256,19 @@ def test_viewer_can_read_alert_list_and_detail():
         == 200
     )
 
-    alert_ids = {
+    event_ids = {
         item["id"]
         for item
         in list_response.json()
     }
 
     assert (
-        alert["id"]
-        in alert_ids
+        event["id"]
+        in event_ids
     )
 
     detail_response = client.get(
-        f"/api/alerts/{alert['id']}",
+        f"/api/events/{event['id']}",
         headers=viewer_headers,
     )
 
@@ -254,133 +283,10 @@ def test_viewer_can_read_alert_list_and_detail():
 
     assert (
         detail["id"]
-        == alert["id"]
+        == event["id"]
     )
 
     assert (
         detail["source"]
-        == "rbac-test"
+        == "event-read-rbac"
     )
-
-
-def test_unauthenticated_user_cannot_create_alert():
-    response = client.post(
-        "/api/alerts",
-        json=alert_payload(),
-    )
-
-    assert response.status_code == 401
-
-
-def test_viewer_cannot_create_alert():
-    headers = create_role_headers(
-        "viewer"
-    )
-
-    response = client.post(
-        "/api/alerts",
-        json=alert_payload(),
-        headers=headers,
-    )
-
-    assert response.status_code == 403
-
-    assert response.json() == {
-        "detail":
-            "Insufficient permissions"
-    }
-
-
-def test_analyst_can_create_alert():
-    headers = create_role_headers(
-        "analyst"
-    )
-
-    response = client.post(
-        "/api/alerts",
-        json=alert_payload(),
-        headers=headers,
-    )
-
-    assert response.status_code == 201
-
-    alert = response.json()
-
-    assert (
-        alert["title"]
-        == "RBAC Integration Alert"
-    )
-
-    assert (
-        alert["source"]
-        == "rbac-test"
-    )
-
-
-def test_administrator_can_create_alert():
-    headers = create_role_headers(
-        "administrator"
-    )
-
-    response = client.post(
-        "/api/alerts",
-        json=alert_payload(),
-        headers=headers,
-    )
-
-    assert response.status_code == 201
-
-
-def test_viewer_cannot_update_alert():
-    alert = (
-        create_alert_as_analyst()
-    )
-
-    viewer_headers = (
-        create_role_headers(
-            "viewer"
-        )
-    )
-
-    response = client.patch(
-        f"/api/alerts/{alert['id']}",
-        json={
-            "status":
-                "investigating"
-        },
-        headers=viewer_headers,
-    )
-
-    assert response.status_code == 403
-
-    assert response.json() == {
-        "detail":
-            "Insufficient permissions"
-    }
-
-
-def test_viewer_cannot_create_case_from_alert():
-    alert = (
-        create_alert_as_analyst()
-    )
-
-    viewer_headers = (
-        create_role_headers(
-            "viewer"
-        )
-    )
-
-    response = client.post(
-        (
-            f"/api/alerts/{alert['id']}"
-            "/case"
-        ),
-        headers=viewer_headers,
-    )
-
-    assert response.status_code == 403
-
-    assert response.json() == {
-        "detail":
-            "Insufficient permissions"
-    }

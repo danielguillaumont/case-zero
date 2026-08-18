@@ -81,6 +81,13 @@ async def create_security_event(
     response_model=list[SecurityEventRead],
 )
 async def get_security_events(
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -102,6 +109,13 @@ async def get_security_events(
 )
 async def get_security_event(
     event_id: UUID,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),

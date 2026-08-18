@@ -36,7 +36,7 @@ router = APIRouter(
 )
 async def create_alert(
     alert_data: AlertCreate,
-    current_user: User = Depends(
+    _current_user: User = Depends(
         require_roles(
             "administrator",
             "analyst",
@@ -67,6 +67,13 @@ async def create_alert(
     response_model=list[AlertRead],
 )
 async def get_alerts(
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -88,6 +95,13 @@ async def get_alerts(
 )
 async def get_alert(
     alert_id: UUID,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -99,7 +113,9 @@ async def get_alert(
 
     if alert is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Alert not found",
         )
 
@@ -130,13 +146,17 @@ async def create_case_from_alert(
 
     if alert is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Alert not found",
         )
 
     if alert.case_id is not None:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
             detail=(
                 "Alert is already linked "
                 "to a case"
@@ -250,7 +270,9 @@ async def update_alert(
 
     if alert is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Alert not found",
         )
 

@@ -1,9 +1,12 @@
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     status,
 )
 
+from app.auth import require_roles
+from app.models.user import User
 from app.schemas.playbook import (
     PlaybookRead,
 )
@@ -24,7 +27,15 @@ router = APIRouter(
     "",
     response_model=list[PlaybookRead],
 )
-async def list_playbooks() -> list[dict]:
+async def list_playbooks(
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
+) -> list[dict]:
     return get_playbooks()
 
 
@@ -34,6 +45,13 @@ async def list_playbooks() -> list[dict]:
 )
 async def list_playbooks_for_rule(
     rule_id: str,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
 ) -> list[dict]:
     return get_playbooks_for_rule(
         rule_id
@@ -46,6 +64,13 @@ async def list_playbooks_for_rule(
 )
 async def read_playbook(
     playbook_id: str,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
 ) -> dict:
     playbook = get_playbook(
         playbook_id
@@ -53,7 +78,9 @@ async def read_playbook(
 
     if playbook is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="Playbook not found",
         )
 

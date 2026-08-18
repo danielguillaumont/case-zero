@@ -38,7 +38,7 @@ router = APIRouter(
 )
 async def create_threat_indicator(
     indicator_data: ThreatIndicatorCreate,
-    current_user: User = Depends(
+    _current_user: User = Depends(
         require_roles(
             "administrator",
             "analyst",
@@ -105,6 +105,13 @@ async def get_threat_indicators(
         default=100,
         ge=1,
         le=500,
+    ),
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
     ),
     session: AsyncSession = Depends(
         get_database_session
@@ -176,6 +183,13 @@ async def get_threat_indicators(
 )
 async def get_threat_indicator(
     indicator_id: UUID,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -205,7 +219,7 @@ async def get_threat_indicator(
 async def update_threat_indicator(
     indicator_id: UUID,
     indicator_data: ThreatIndicatorUpdate,
-    current_user: User = Depends(
+    _current_user: User = Depends(
         require_roles(
             "administrator",
             "analyst",

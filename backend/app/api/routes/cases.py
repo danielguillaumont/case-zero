@@ -63,11 +63,10 @@ async def create_case(
         status="open",
     )
 
-    session.add(investigation_case)
+    session.add(
+        investigation_case
+    )
 
-    # Flush first so the new case receives
-    # its UUID before the related activity
-    # record is created.
     await session.flush()
 
     case_activity = CaseActivity(
@@ -77,9 +76,12 @@ async def create_case(
         message="Investigation case created.",
     )
 
-    session.add(case_activity)
+    session.add(
+        case_activity
+    )
 
     await session.commit()
+
     await session.refresh(
         investigation_case
     )
@@ -92,6 +94,13 @@ async def create_case(
     response_model=list[CaseRead],
 )
 async def get_cases(
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -113,6 +122,13 @@ async def get_cases(
 )
 async def get_case_notes(
     case_id: UUID,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -197,7 +213,9 @@ async def create_case_note(
         content=note_content,
     )
 
-    session.add(case_note)
+    session.add(
+        case_note
+    )
 
     case_activity = CaseActivity(
         case_id=case_id,
@@ -206,10 +224,14 @@ async def create_case_note(
         message="Investigation note added.",
     )
 
-    session.add(case_activity)
+    session.add(
+        case_activity
+    )
 
     await session.commit()
-    await session.refresh(case_note)
+    await session.refresh(
+        case_note
+    )
 
     return case_note
 
@@ -220,6 +242,13 @@ async def create_case_note(
 )
 async def get_case_activities(
     case_id: UUID,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -240,7 +269,8 @@ async def get_case_activities(
     result = await session.execute(
         select(CaseActivity)
         .where(
-            CaseActivity.case_id == case_id
+            CaseActivity.case_id
+            == case_id
         )
         .order_by(
             CaseActivity.created_at.desc()
@@ -251,7 +281,9 @@ async def get_case_activities(
         result.scalars().all()
     )
 
-    return list(activities)
+    return list(
+        activities
+    )
 
 
 @router.get(
@@ -260,6 +292,13 @@ async def get_case_activities(
 )
 async def get_case(
     case_id: UUID,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
     session: AsyncSession = Depends(
         get_database_session
     ),
@@ -380,7 +419,8 @@ async def update_case(
 
     if (
         "status" in update_data
-        and previous_status != new_status
+        and previous_status
+        != new_status
     ):
         case_activity = CaseActivity(
             case_id=case_id,
@@ -396,11 +436,15 @@ async def update_case(
             ),
         )
 
-        session.add(case_activity)
+        session.add(
+            case_activity
+        )
 
     if (
-        "assigned_analyst" in update_data
-        and previous_analyst != new_analyst
+        "assigned_analyst"
+        in update_data
+        and previous_analyst
+        != new_analyst
     ):
         if (
             previous_analyst is None
@@ -450,6 +494,7 @@ async def update_case(
         )
 
     await session.commit()
+
     await session.refresh(
         investigation_case
     )

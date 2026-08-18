@@ -204,7 +204,8 @@ def test_encoded_powershell_event_creates_persisted_alert():
     event_id = event["id"]
 
     event_detail_response = client.get(
-        f"/api/events/{event_id}"
+        f"/api/events/{event_id}",
+        headers=analyst_headers,
     )
 
     assert (
@@ -222,7 +223,8 @@ def test_encoded_powershell_event_creates_persisted_alert():
     )
 
     alerts_response = client.get(
-        "/api/alerts"
+        "/api/alerts",
+        headers=analyst_headers,
     )
 
     assert (
@@ -325,7 +327,8 @@ def test_benign_powershell_event_does_not_create_alert():
     event_id = event["id"]
 
     event_detail_response = client.get(
-        f"/api/events/{event_id}"
+        f"/api/events/{event_id}",
+        headers=analyst_headers,
     )
 
     assert (
@@ -348,7 +351,8 @@ def test_benign_powershell_event_does_not_create_alert():
     )
 
     alerts_response = client.get(
-        "/api/alerts"
+        "/api/alerts",
+        headers=analyst_headers,
     )
 
     assert (
@@ -433,11 +437,10 @@ def test_fifth_authentication_failure_creates_brute_force_alert():
             event_response.json()
         )
 
-        # The first four failures must not
-        # generate a brute-force alert.
         if index < 5:
             alerts_response = client.get(
-                "/api/alerts"
+                "/api/alerts",
+                headers=analyst_headers,
             )
 
             assert (
@@ -457,7 +460,8 @@ def test_fifth_authentication_failure_creates_brute_force_alert():
     )
 
     alerts_response = client.get(
-        "/api/alerts"
+        "/api/alerts",
+        headers=analyst_headers,
     )
 
     assert (
@@ -507,7 +511,8 @@ def test_fifth_authentication_failure_creates_brute_force_alert():
     )
 
     events_response = client.get(
-        "/api/events"
+        "/api/events",
+        headers=analyst_headers,
     )
 
     assert (

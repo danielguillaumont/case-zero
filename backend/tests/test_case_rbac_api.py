@@ -137,7 +137,9 @@ def create_role_headers(
     user_id = uuid4()
 
     email = (
-        f"{role}-case-rbac"
+        f"{role}-"
+        f"{user_id.hex[:8]}"
+        "-case-rbac"
         "@casezero.dev"
     )
 
@@ -217,7 +219,10 @@ def create_case_as_analyst() -> dict:
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
     return response.json()
 
@@ -230,13 +235,159 @@ def teardown_function() -> None:
     clear_rbac_test_data()
 
 
+def test_unauthenticated_case_reads_are_rejected():
+    fake_case_id = (
+        "00000000-0000-0000-"
+        "0000-000000000001"
+    )
+
+    list_response = client.get(
+        "/api/cases"
+    )
+
+    assert (
+        list_response.status_code
+        == 401
+    )
+
+    detail_response = client.get(
+        f"/api/cases/{fake_case_id}"
+    )
+
+    assert (
+        detail_response.status_code
+        == 401
+    )
+
+    notes_response = client.get(
+        (
+            f"/api/cases/{fake_case_id}"
+            "/notes"
+        )
+    )
+
+    assert (
+        notes_response.status_code
+        == 401
+    )
+
+    activities_response = client.get(
+        (
+            f"/api/cases/{fake_case_id}"
+            "/activities"
+        )
+    )
+
+    assert (
+        activities_response.status_code
+        == 401
+    )
+
+
+def test_viewer_can_read_case_data():
+    investigation_case = (
+        create_case_as_analyst()
+    )
+
+    case_id = (
+        investigation_case["id"]
+    )
+
+    viewer_headers = (
+        create_role_headers(
+            "viewer"
+        )
+    )
+
+    list_response = client.get(
+        "/api/cases",
+        headers=viewer_headers,
+    )
+
+    assert (
+        list_response.status_code
+        == 200
+    )
+
+    case_ids = {
+        item["id"]
+        for item
+        in list_response.json()
+    }
+
+    assert (
+        case_id
+        in case_ids
+    )
+
+    detail_response = client.get(
+        f"/api/cases/{case_id}",
+        headers=viewer_headers,
+    )
+
+    assert (
+        detail_response.status_code
+        == 200
+    )
+
+    assert (
+        detail_response.json()["id"]
+        == case_id
+    )
+
+    notes_response = client.get(
+        f"/api/cases/{case_id}/notes",
+        headers=viewer_headers,
+    )
+
+    assert (
+        notes_response.status_code
+        == 200
+    )
+
+    assert (
+        notes_response.json()
+        == []
+    )
+
+    activities_response = client.get(
+        (
+            f"/api/cases/{case_id}"
+            "/activities"
+        ),
+        headers=viewer_headers,
+    )
+
+    assert (
+        activities_response.status_code
+        == 200
+    )
+
+    activities = (
+        activities_response.json()
+    )
+
+    assert (
+        len(activities)
+        == 1
+    )
+
+    assert (
+        activities[0]["event_type"]
+        == "case_created"
+    )
+
+
 def test_unauthenticated_user_cannot_create_case():
     response = client.post(
         "/api/cases",
         json=case_payload(),
     )
 
-    assert response.status_code == 401
+    assert (
+        response.status_code
+        == 401
+    )
 
 
 def test_viewer_cannot_create_case():
@@ -250,7 +401,10 @@ def test_viewer_cannot_create_case():
         headers=headers,
     )
 
-    assert response.status_code == 403
+    assert (
+        response.status_code
+        == 403
+    )
 
     assert response.json() == {
         "detail":
@@ -269,7 +423,10 @@ def test_analyst_can_create_case():
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
     investigation_case = (
         response.json()
@@ -297,7 +454,10 @@ def test_administrator_can_create_case():
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
 
 def test_viewer_cannot_update_case():
@@ -323,7 +483,10 @@ def test_viewer_cannot_update_case():
         headers=viewer_headers,
     )
 
-    assert response.status_code == 403
+    assert (
+        response.status_code
+        == 403
+    )
 
     assert response.json() == {
         "detail":
@@ -356,7 +519,10 @@ def test_viewer_cannot_add_case_note():
         headers=viewer_headers,
     )
 
-    assert response.status_code == 403
+    assert (
+        response.status_code
+        == 403
+    )
 
     assert response.json() == {
         "detail":
@@ -377,12 +543,21 @@ def test_case_activity_records_authenticated_actor():
         headers=analyst_headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
-    case_id = response.json()["id"]
+    case_id = (
+        response.json()["id"]
+    )
 
     activity_response = client.get(
-        f"/api/cases/{case_id}/activities"
+        (
+            f"/api/cases/{case_id}"
+            "/activities"
+        ),
+        headers=analyst_headers,
     )
 
     assert (
@@ -394,7 +569,10 @@ def test_case_activity_records_authenticated_actor():
         activity_response.json()
     )
 
-    assert len(activities) == 1
+    assert (
+        len(activities)
+        == 1
+    )
 
     assert (
         activities[0]["event_type"]
@@ -443,7 +621,9 @@ def test_case_note_records_authenticated_author():
         == 201
     )
 
-    note = note_response.json()
+    note = (
+        note_response.json()
+    )
 
     assert (
         note["author"]
@@ -452,5 +632,8 @@ def test_case_note_records_authenticated_author():
 
     assert (
         note["content"]
-        == "Authenticated analyst note."
+        == (
+            "Authenticated "
+            "analyst note."
+        )
     )

@@ -1,9 +1,12 @@
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     status,
 )
 
+from app.auth import require_roles
+from app.models.user import User
 from app.schemas.detection_rule import (
     DetectionRuleRead,
 )
@@ -22,7 +25,15 @@ router = APIRouter(
     "",
     response_model=list[DetectionRuleRead],
 )
-async def get_rules() -> list[dict]:
+async def get_rules(
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
+) -> list[dict]:
     return get_detection_rules()
 
 
@@ -32,6 +43,13 @@ async def get_rules() -> list[dict]:
 )
 async def get_rule(
     rule_id: str,
+    _current_user: User = Depends(
+        require_roles(
+            "administrator",
+            "analyst",
+            "viewer",
+        )
+    ),
 ) -> dict:
     rules = get_detection_rules()
 
@@ -46,8 +64,12 @@ async def get_rule(
 
     if rule is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Detection rule not found",
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
+            detail=(
+                "Detection rule not found"
+            ),
         )
 
     return rule

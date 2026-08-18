@@ -177,7 +177,10 @@ def create_indicator_as_analyst() -> dict:
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
     return response.json()
 
@@ -190,13 +193,105 @@ def teardown_function() -> None:
     clear_rbac_test_data()
 
 
+def test_unauthenticated_indicator_reads_are_rejected():
+    list_response = client.get(
+        "/api/intelligence"
+    )
+
+    assert (
+        list_response.status_code
+        == 401
+    )
+
+    detail_response = client.get(
+        (
+            "/api/intelligence/"
+            "00000000-0000-0000-"
+            "0000-000000000001"
+        )
+    )
+
+    assert (
+        detail_response.status_code
+        == 401
+    )
+
+
+def test_viewer_can_read_indicator_list_and_detail():
+    indicator = (
+        create_indicator_as_analyst()
+    )
+
+    viewer_headers = (
+        create_role_headers(
+            "viewer"
+        )
+    )
+
+    list_response = client.get(
+        "/api/intelligence",
+        headers=viewer_headers,
+    )
+
+    assert (
+        list_response.status_code
+        == 200
+    )
+
+    indicator_ids = {
+        item["id"]
+        for item
+        in list_response.json()
+    }
+
+    assert (
+        indicator["id"]
+        in indicator_ids
+    )
+
+    detail_response = client.get(
+        (
+            "/api/intelligence/"
+            f"{indicator['id']}"
+        ),
+        headers=viewer_headers,
+    )
+
+    assert (
+        detail_response.status_code
+        == 200
+    )
+
+    detail = (
+        detail_response.json()
+    )
+
+    assert (
+        detail["id"]
+        == indicator["id"]
+    )
+
+    assert (
+        detail["value"]
+        == "198.51.100.77"
+    )
+
+    assert (
+        detail["source"]
+        == "rbac-test"
+    )
+
+
 def test_unauthenticated_user_cannot_create_indicator():
     response = client.post(
         "/api/intelligence",
         json=indicator_payload(),
     )
 
-    assert response.status_code == 401
+    assert (
+        response.status_code
+        == 401
+    )
 
 
 def test_viewer_cannot_create_indicator():
@@ -210,7 +305,10 @@ def test_viewer_cannot_create_indicator():
         headers=headers,
     )
 
-    assert response.status_code == 403
+    assert (
+        response.status_code
+        == 403
+    )
 
     assert response.json() == {
         "detail":
@@ -229,7 +327,10 @@ def test_analyst_can_create_indicator():
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
     indicator = response.json()
 
@@ -260,7 +361,10 @@ def test_administrator_can_create_indicator():
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert (
+        response.status_code
+        == 201
+    )
 
 
 def test_viewer_cannot_update_indicator():
@@ -288,7 +392,10 @@ def test_viewer_cannot_update_indicator():
         headers=viewer_headers,
     )
 
-    assert response.status_code == 403
+    assert (
+        response.status_code
+        == 403
+    )
 
     assert response.json() == {
         "detail":
@@ -321,7 +428,10 @@ def test_analyst_can_update_indicator():
         headers=analyst_headers,
     )
 
-    assert response.status_code == 200
+    assert (
+        response.status_code
+        == 200
+    )
 
     updated_indicator = (
         response.json()
