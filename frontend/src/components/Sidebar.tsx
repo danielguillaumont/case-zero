@@ -1,119 +1,33 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import SidebarNavigation
+  from "@/components/SidebarNavigation";
 
-
-const navigationItems = [
-  {
-    label: "Dashboard",
-    href: "/",
-  },
-  {
-    label: "Events",
-    href: "/events",
-  },
-  {
-    label: "Alerts",
-    href: "/alerts",
-  },
-  {
-    label: "Cases",
-    href: "/cases",
-  },
-  {
-    label: "Hunt",
-    href: "/hunt",
-  },
-  {
-    label: "Intelligence",
-    href: "/intelligence",
-  },
-  {
-    label: "Rules",
-    href: "/rules",
-  },
-  {
-    label: "Playbooks",
-    href: "/playbooks",
-  },
-];
+import {
+  getCurrentUser,
+} from "@/lib/auth";
 
 
-export default function Sidebar() {
-  const pathname = usePathname();
+export default async function Sidebar() {
+  const currentUser =
+    await getCurrentUser();
 
-  function isActive(
-    href: string
-  ): boolean {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
-    return (
-      pathname === href
-      || pathname.startsWith(
-        `${href}/`
-      )
-    );
+  if (!currentUser) {
+    redirect("/login");
   }
 
   return (
-    <aside className="w-64 border-r border-zinc-800 bg-zinc-950 p-6">
+    <SidebarNavigation
+      user={{
+        displayName:
+          currentUser.display_name,
 
-      <div className="mb-10">
+        email:
+          currentUser.email,
 
-        <Link
-          href="/"
-          className="block"
-        >
-          <h1 className="text-2xl font-bold tracking-tight">
-            CASE
-            <span className="text-emerald-400">
-              //ZERO
-            </span>
-          </h1>
-        </Link>
-
-        <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-          Security Operations
-        </p>
-
-      </div>
-
-      <nav className="space-y-2">
-
-        {navigationItems.map(
-          (item) => {
-            const active =
-              isActive(item.href);
-
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`block w-full rounded-lg px-4 py-3 text-sm transition ${
-                  active
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          }
-        )}
-
-      </nav>
-
-      <div className="mt-10 border-t border-zinc-800 pt-6">
-
-        <div className="rounded-lg px-4 py-3 text-sm text-zinc-500">
-          Administration
-        </div>
-
-      </div>
-
-    </aside>
+        role:
+          currentUser.role,
+      }}
+    />
   );
 }

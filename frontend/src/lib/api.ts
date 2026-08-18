@@ -1,3 +1,13 @@
+import {
+  getAuthorizationHeaders,
+} from "@/lib/auth";
+
+
+const API_BASE_URL =
+  process.env.CASE_ZERO_API_URL
+  ?? "http://127.0.0.1:8000";
+
+
 export type HealthStatus = {
   status: string;
   service: string;
@@ -183,10 +193,46 @@ export type CaseActivity = {
 };
 
 
-export async function getApiHealth(): Promise<HealthStatus | null> {
+async function apiFetch(
+  path: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  const authorizationHeaders =
+    await getAuthorizationHeaders();
+
+  const headers =
+    new Headers(
+      init.headers
+    );
+
+  for (
+    const [key, value]
+    of Object.entries(
+      authorizationHeaders
+    )
+  ) {
+    headers.set(
+      key,
+      value
+    );
+  }
+
+  return fetch(
+    `${API_BASE_URL}${path}`,
+    {
+      ...init,
+      headers,
+      cache: "no-store",
+    }
+  );
+}
+
+
+export async function getApiHealth():
+Promise<HealthStatus | null> {
   try {
     const response = await fetch(
-      "http://127.0.0.1:8000/api/health",
+      `${API_BASE_URL}/api/health`,
       {
         cache: "no-store",
       }
@@ -203,14 +249,13 @@ export async function getApiHealth(): Promise<HealthStatus | null> {
 }
 
 
-export async function getAlerts(): Promise<Alert[]> {
+export async function getAlerts():
+Promise<Alert[]> {
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/alerts",
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/alerts"
+      );
 
     if (!response.ok) {
       return [];
@@ -227,12 +272,10 @@ export async function getAlert(
   alertId: string
 ): Promise<Alert | null> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/alerts/${alertId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/alerts/${alertId}`
+      );
 
     if (!response.ok) {
       return null;
@@ -245,14 +288,13 @@ export async function getAlert(
 }
 
 
-export async function getSecurityEvents(): Promise<SecurityEvent[]> {
+export async function getSecurityEvents():
+Promise<SecurityEvent[]> {
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/events",
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/events"
+      );
 
     if (!response.ok) {
       return [];
@@ -269,12 +311,10 @@ export async function getSecurityEvent(
   eventId: string
 ): Promise<SecurityEvent | null> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/events/${eventId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/events/${eventId}`
+      );
 
     if (!response.ok) {
       return null;
@@ -287,14 +327,13 @@ export async function getSecurityEvent(
 }
 
 
-export async function getDetectionRules(): Promise<DetectionRule[]> {
+export async function getDetectionRules():
+Promise<DetectionRule[]> {
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/rules",
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/rules"
+      );
 
     if (!response.ok) {
       return [];
@@ -311,12 +350,10 @@ export async function getDetectionRule(
   ruleId: string
 ): Promise<DetectionRule | null> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/rules/${ruleId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/rules/${ruleId}`
+      );
 
     if (!response.ok) {
       return null;
@@ -333,39 +370,58 @@ export async function huntSecurityEvents(
   huntQuery: HuntQuery
 ): Promise<SecurityEvent[]> {
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/hunt",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          event_type:
-            huntQuery.event_type ?? null,
-          source:
-            huntQuery.source ?? null,
-          hostname:
-            huntQuery.hostname ?? null,
-          username:
-            huntQuery.username ?? null,
-          source_ip:
-            huntQuery.source_ip ?? null,
-          process_name:
-            huntQuery.process_name ?? null,
-          contains:
-            huntQuery.contains ?? null,
-          start_time:
-            huntQuery.start_time ?? null,
-          end_time:
-            huntQuery.end_time ?? null,
-          limit:
-            huntQuery.limit ?? 100,
-        }),
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/hunt",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            event_type:
+              huntQuery.event_type
+              ?? null,
+
+            source:
+              huntQuery.source
+              ?? null,
+
+            hostname:
+              huntQuery.hostname
+              ?? null,
+
+            username:
+              huntQuery.username
+              ?? null,
+
+            source_ip:
+              huntQuery.source_ip
+              ?? null,
+
+            process_name:
+              huntQuery.process_name
+              ?? null,
+
+            contains:
+              huntQuery.contains
+              ?? null,
+
+            start_time:
+              huntQuery.start_time
+              ?? null,
+
+            end_time:
+              huntQuery.end_time
+              ?? null,
+
+            limit:
+              huntQuery.limit
+              ?? 100,
+          }),
+        }
+      );
 
     if (!response.ok) {
       return [];
@@ -378,14 +434,13 @@ export async function huntSecurityEvents(
 }
 
 
-export async function getPlaybooks(): Promise<Playbook[]> {
+export async function getPlaybooks():
+Promise<Playbook[]> {
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/playbooks",
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/playbooks"
+      );
 
     if (!response.ok) {
       return [];
@@ -402,12 +457,10 @@ export async function getPlaybook(
   playbookId: string
 ): Promise<Playbook | null> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/playbooks/${playbookId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/playbooks/${playbookId}`
+      );
 
     if (!response.ok) {
       return null;
@@ -424,12 +477,10 @@ export async function getPlaybooksForRule(
   ruleId: string
 ): Promise<Playbook[]> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/playbooks/rule/${ruleId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/playbooks/rule/${ruleId}`
+      );
 
     if (!response.ok) {
       return [];
@@ -484,12 +535,13 @@ export async function getThreatIndicators(
       )
     );
 
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/intelligence?${searchParams.toString()}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        (
+          "/api/intelligence?"
+          + searchParams.toString()
+        )
+      );
 
     if (!response.ok) {
       return [];
@@ -506,12 +558,10 @@ export async function getThreatIndicator(
   indicatorId: string
 ): Promise<ThreatIndicator | null> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/intelligence/${indicatorId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/intelligence/${indicatorId}`
+      );
 
     if (!response.ok) {
       return null;
@@ -524,14 +574,13 @@ export async function getThreatIndicator(
 }
 
 
-export async function getCases(): Promise<Case[]> {
+export async function getCases():
+Promise<Case[]> {
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/cases",
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/cases"
+      );
 
     if (!response.ok) {
       return [];
@@ -548,12 +597,10 @@ export async function getCase(
   caseId: string
 ): Promise<CaseDetail | null> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/cases/${caseId}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/cases/${caseId}`
+      );
 
     if (!response.ok) {
       return null;
@@ -570,12 +617,10 @@ export async function getCaseNotes(
   caseId: string
 ): Promise<CaseNote[]> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/cases/${caseId}/notes`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/cases/${caseId}/notes`
+      );
 
     if (!response.ok) {
       return [];
@@ -592,12 +637,10 @@ export async function getCaseActivities(
   caseId: string
 ): Promise<CaseActivity[]> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/cases/${caseId}/activities`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        `/api/cases/${caseId}/activities`
+      );
 
     if (!response.ok) {
       return [];
