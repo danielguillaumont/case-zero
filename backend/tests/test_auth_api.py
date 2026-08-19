@@ -4,9 +4,12 @@ import sys
 from uuid import uuid4
 
 import psycopg
-from fastapi.testclient import TestClient
+from fastapi.testclient import (
+    TestClient,
+)
 
 from app.config import (
+    LOGIN_THROTTLE_MAX_FAILURES,
     POSTGRES_DB,
     POSTGRES_HOST,
     POSTGRES_PASSWORD,
@@ -14,7 +17,9 @@ from app.config import (
     POSTGRES_USER,
 )
 from app.main import app
-from app.security import hash_password
+from app.security import (
+    hash_password,
+)
 
 
 def create_selector_event_loop():
@@ -41,8 +46,11 @@ def create_test_client() -> TestClient:
 client = create_test_client()
 
 
-def clear_auth_test_users() -> None:
-    assert POSTGRES_DB == "casezero_test"
+def clear_auth_test_data() -> None:
+    assert (
+        POSTGRES_DB
+        == "casezero_test"
+    )
 
     with psycopg.connect(
         dbname=POSTGRES_DB,
@@ -53,6 +61,12 @@ def clear_auth_test_users() -> None:
         autocommit=True,
     ) as connection:
         with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM login_throttles
+                """
+            )
+
             cursor.execute(
                 """
                 DELETE FROM users
@@ -69,7 +83,10 @@ def create_test_user(
     role: str = "analyst",
     is_active: bool = True,
 ) -> str:
-    assert POSTGRES_DB == "casezero_test"
+    assert (
+        POSTGRES_DB
+        == "casezero_test"
+    )
 
     user_id = uuid4()
 
@@ -108,27 +125,37 @@ def create_test_user(
                 (
                     user_id,
                     email,
-                    "CASE ZERO Test User",
+                    (
+                        "CASE ZERO "
+                        "Test User"
+                    ),
                     password_hash,
                     role,
                     is_active,
                 ),
             )
 
-    return str(user_id)
+    return str(
+        user_id
+    )
 
 
 def setup_function() -> None:
-    clear_auth_test_users()
+    clear_auth_test_data()
 
 
 def teardown_function() -> None:
-    clear_auth_test_users()
+    clear_auth_test_data()
 
 
 def test_valid_login_returns_access_token():
-    email = "analyst@casezero.dev"
-    password = "Test-Analyst-Password-2026!"
+    email = (
+        "analyst@casezero.dev"
+    )
+
+    password = (
+        "Test-Analyst-Password-2026!"
+    )
 
     create_test_user(
         email=email,
@@ -144,11 +171,17 @@ def test_valid_login_returns_access_token():
         },
     )
 
-    assert response.status_code == 200
+    assert (
+        response.status_code
+        == 200
+    )
 
     body = response.json()
 
-    assert body["token_type"] == "bearer"
+    assert (
+        body["token_type"]
+        == "bearer"
+    )
 
     assert isinstance(
         body["access_token"],
@@ -159,8 +192,13 @@ def test_valid_login_returns_access_token():
 
 
 def test_authenticated_me_returns_current_user():
-    email = "viewer@casezero.dev"
-    password = "Test-Viewer-Password-2026!"
+    email = (
+        "viewer@casezero.dev"
+    )
+
+    password = (
+        "Test-Viewer-Password-2026!"
+    )
 
     user_id = create_test_user(
         email=email,
@@ -176,11 +214,16 @@ def test_authenticated_me_returns_current_user():
         },
     )
 
-    assert login_response.status_code == 200
+    assert (
+        login_response.status_code
+        == 200
+    )
 
-    token = login_response.json()[
-        "access_token"
-    ]
+    token = (
+        login_response.json()[
+            "access_token"
+        ]
+    )
 
     me_response = client.get(
         "/api/auth/me",
@@ -190,37 +233,93 @@ def test_authenticated_me_returns_current_user():
         },
     )
 
-    assert me_response.status_code == 200
+    assert (
+        me_response.status_code
+        == 200
+    )
 
     user = me_response.json()
 
-    assert user["id"] == user_id
-    assert user["email"] == email
-    assert user["role"] == "viewer"
-    assert user["is_active"] is True
+    assert (
+        user["id"]
+        == user_id
+    )
 
-    assert "password" not in user
-    assert "password_hash" not in user
+    assert (
+        user["email"]
+        == email
+    )
+
+    assert (
+        user["role"]
+        == "viewer"
+    )
+
+    assert (
+        user["is_active"]
+        is True
+    )
+
+    assert (
+        "password"
+        not in user
+    )
+
+    assert (
+        "password_hash"
+        not in user
+    )
 
 
 def test_wrong_password_is_rejected():
-    email = "wrongpass@casezero.dev"
+    email = (
+        "wrongpass@casezero.dev"
+    )
 
     create_test_user(
         email=email,
-        password="Correct-Password-2026!",
+        password=(
+            "Correct-Password-2026!"
+        ),
     )
 
     response = client.post(
         "/api/auth/login",
         data={
             "username": email,
-            "password":
-                "Definitely-Wrong-Password!",
+            "password": (
+                "Definitely-Wrong-"
+                "Password!"
+            ),
         },
     )
 
-    assert response.status_code == 401
+    assert (
+        response.status_code
+        == 401
+    )
+
+    assert response.json() == {
+        "detail":
+            "Incorrect email or password"
+    }
+
+
+def test_unknown_user_returns_generic_error():
+    response = client.post(
+        "/api/auth/login",
+        data={
+            "username":
+                "unknown@casezero.dev",
+            "password":
+                "Wrong-Password-2026!",
+        },
+    )
+
+    assert (
+        response.status_code
+        == 401
+    )
 
     assert response.json() == {
         "detail":
@@ -237,17 +336,28 @@ def test_invalid_token_is_rejected():
         },
     )
 
-    assert response.status_code == 401
+    assert (
+        response.status_code
+        == 401
+    )
 
     assert response.json() == {
         "detail":
-            "Could not validate credentials"
+            (
+                "Could not validate "
+                "credentials"
+            )
     }
 
 
-def test_inactive_user_cannot_login():
-    email = "inactive@casezero.dev"
-    password = "Inactive-Password-2026!"
+def test_inactive_user_returns_generic_error():
+    email = (
+        "inactive@casezero.dev"
+    )
+
+    password = (
+        "Inactive-Password-2026!"
+    )
 
     create_test_user(
         email=email,
@@ -264,9 +374,174 @@ def test_inactive_user_cannot_login():
         },
     )
 
-    assert response.status_code == 403
+    assert (
+        response.status_code
+        == 401
+    )
 
     assert response.json() == {
         "detail":
-            "User account is inactive"
+            "Incorrect email or password"
     }
+
+
+def test_repeated_failures_trigger_temporary_throttle():
+    email = (
+        "throttled@casezero.dev"
+    )
+
+    create_test_user(
+        email=email,
+        password=(
+            "Correct-Password-2026!"
+        ),
+    )
+
+    for attempt in range(
+        LOGIN_THROTTLE_MAX_FAILURES
+    ):
+        response = client.post(
+            "/api/auth/login",
+            data={
+                "username": email,
+                "password":
+                    "Wrong-Password-2026!",
+            },
+        )
+
+        if (
+            attempt
+            < LOGIN_THROTTLE_MAX_FAILURES
+            - 1
+        ):
+            assert (
+                response.status_code
+                == 401
+            )
+
+        else:
+            assert (
+                response.status_code
+                == 429
+            )
+
+            assert (
+                "Retry-After"
+                in response.headers
+            )
+
+            assert (
+                int(
+                    response.headers[
+                        "Retry-After"
+                    ]
+                )
+                > 0
+            )
+
+
+def test_blocked_identity_rejects_correct_password():
+    email = (
+        "blocked@casezero.dev"
+    )
+
+    correct_password = (
+        "Correct-Password-2026!"
+    )
+
+    create_test_user(
+        email=email,
+        password=correct_password,
+    )
+
+    for _ in range(
+        LOGIN_THROTTLE_MAX_FAILURES
+    ):
+        client.post(
+            "/api/auth/login",
+            data={
+                "username": email,
+                "password":
+                    "Wrong-Password-2026!",
+            },
+        )
+
+    response = client.post(
+        "/api/auth/login",
+        data={
+            "username": email,
+            "password":
+                correct_password,
+        },
+    )
+
+    assert (
+        response.status_code
+        == 429
+    )
+
+    assert (
+        "Retry-After"
+        in response.headers
+    )
+
+
+def test_successful_login_clears_failure_state():
+    email = (
+        "reset@casezero.dev"
+    )
+
+    correct_password = (
+        "Correct-Password-2026!"
+    )
+
+    create_test_user(
+        email=email,
+        password=correct_password,
+    )
+
+    for _ in range(
+        LOGIN_THROTTLE_MAX_FAILURES
+        - 1
+    ):
+        response = client.post(
+            "/api/auth/login",
+            data={
+                "username": email,
+                "password":
+                    "Wrong-Password-2026!",
+            },
+        )
+
+        assert (
+            response.status_code
+            == 401
+        )
+
+    success_response = client.post(
+        "/api/auth/login",
+        data={
+            "username": email,
+            "password":
+                correct_password,
+        },
+    )
+
+    assert (
+        success_response.status_code
+        == 200
+    )
+
+    failure_response = client.post(
+        "/api/auth/login",
+        data={
+            "username": email,
+            "password":
+                "Wrong-Password-2026!",
+        },
+    )
+
+    assert (
+        failure_response.status_code
+        == 401
+    )

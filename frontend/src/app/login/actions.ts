@@ -101,9 +101,10 @@ export async function loginAction(
     );
   }
 
-  if (response.status === 403) {
+  if (response.status === 429) {
     redirectToLoginError(
-      "This account is inactive."
+      "Too many login attempts. "
+      + "Try again later."
     );
   }
 

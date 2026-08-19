@@ -11,16 +11,30 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+)
 
 from app.auth import get_current_user
-from app.database import get_database_session
+from app.database import (
+    get_database_session,
+)
 from app.models.user import User
-from app.schemas.auth import AccessTokenRead
+from app.schemas.auth import (
+    AccessTokenRead,
+)
 from app.schemas.user import UserRead
 from app.security import (
     create_access_token,
+    hash_password,
     verify_password,
+)
+from app.services.login_throttle import (
+    clear_login_failures,
+    get_login_retry_after,
+    hash_login_identity,
+    normalize_login_identity,
+    record_login_failure,
 )
 
 
@@ -28,6 +42,46 @@ router = APIRouter(
     prefix="/api/auth",
     tags=["Authentication"],
 )
+
+
+DUMMY_PASSWORD_HASH = hash_password(
+    (
+        "CASE-ZERO-DUMMY-"
+        "PASSWORD-VERIFICATION-ONLY"
+    )
+)
+
+
+def invalid_credentials_exception():
+    return HTTPException(
+        status_code=(
+            status.HTTP_401_UNAUTHORIZED
+        ),
+        detail=(
+            "Incorrect email or password"
+        ),
+        headers={
+            "WWW-Authenticate": "Bearer"
+        },
+    )
+
+
+def throttled_login_exception(
+    retry_after: int,
+):
+    return HTTPException(
+        status_code=(
+            status.HTTP_429_TOO_MANY_REQUESTS
+        ),
+        detail=(
+            "Too many login attempts. "
+            "Try again later."
+        ),
+        headers={
+            "Retry-After":
+                str(retry_after)
+        },
+    )
 
 
 @router.post(
@@ -41,10 +95,28 @@ async def login(
     ),
 ) -> AccessTokenRead:
     email = (
-        form_data.username
-        .strip()
-        .lower()
+        normalize_login_identity(
+            form_data.username
+        )
     )
+
+    identity_hash = (
+        hash_login_identity(
+            email
+        )
+    )
+
+    retry_after = (
+        await get_login_retry_after(
+            session,
+            identity_hash,
+        )
+    )
+
+    if retry_after is not None:
+        raise throttled_login_exception(
+            retry_after
+        )
 
     result = await session.execute(
         select(User).where(
@@ -57,32 +129,48 @@ async def login(
 
     user = result.scalar_one_or_none()
 
-    if (
-        user is None
-        or not verify_password(
-            form_data.password,
-            user.password_hash,
-        )
-    ):
-        raise HTTPException(
-            status_code=(
-                status.HTTP_401_UNAUTHORIZED
-            ),
-            detail=(
-                "Incorrect email or password"
-            ),
-            headers={
-                "WWW-Authenticate": "Bearer"
-            },
+    password_hash = (
+        user.password_hash
+        if user is not None
+        else DUMMY_PASSWORD_HASH
+    )
+
+    password_valid = verify_password(
+        form_data.password,
+        password_hash,
+    )
+
+    credentials_valid = (
+        user is not None
+        and user.is_active
+        and password_valid
+    )
+
+    if not credentials_valid:
+        retry_after = (
+            await record_login_failure(
+                session,
+                identity_hash,
+            )
         )
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=(
-                status.HTTP_403_FORBIDDEN
-            ),
-            detail="User account is inactive",
+        if retry_after is not None:
+            raise (
+                throttled_login_exception(
+                    retry_after
+                )
+            )
+
+        raise (
+            invalid_credentials_exception()
         )
+
+    assert user is not None
+
+    await clear_login_failures(
+        session,
+        identity_hash,
+    )
 
     access_token = create_access_token(
         user_id=user.id,

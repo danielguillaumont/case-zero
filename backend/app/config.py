@@ -42,6 +42,63 @@ IS_PRODUCTION = (
 )
 
 
+def parse_positive_integer(
+    name: str,
+    default: int,
+) -> int:
+    raw_value = os.getenv(
+        name,
+        str(default),
+    )
+
+    try:
+        value = int(
+            raw_value
+        )
+
+    except ValueError as exc:
+        raise RuntimeError(
+            f"{name} must be an integer."
+        ) from exc
+
+    if value <= 0:
+        raise RuntimeError(
+            f"{name} must be greater "
+            "than zero."
+        )
+
+    return value
+
+
+def parse_boolean(
+    value: str,
+) -> bool:
+    normalized_value = (
+        value.strip().lower()
+    )
+
+    if normalized_value in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        return True
+
+    if normalized_value in {
+        "0",
+        "false",
+        "no",
+        "off",
+    }:
+        return False
+
+    raise RuntimeError(
+        "Boolean environment values "
+        "must be true or false."
+    )
+
+
 POSTGRES_USER = os.getenv(
     "POSTGRES_USER",
     "casezero",
@@ -81,48 +138,36 @@ JWT_SECRET_KEY = os.getenv(
 JWT_ALGORITHM = "HS256"
 
 
-JWT_ACCESS_TOKEN_MINUTES = int(
-    os.getenv(
+JWT_ACCESS_TOKEN_MINUTES = (
+    parse_positive_integer(
         "JWT_ACCESS_TOKEN_MINUTES",
-        "60",
+        60,
     )
 )
 
 
-if JWT_ACCESS_TOKEN_MINUTES <= 0:
-    raise RuntimeError(
-        "JWT_ACCESS_TOKEN_MINUTES "
-        "must be greater than zero."
+LOGIN_THROTTLE_MAX_FAILURES = (
+    parse_positive_integer(
+        "LOGIN_THROTTLE_MAX_FAILURES",
+        5,
     )
+)
 
 
-def parse_boolean(
-    value: str,
-) -> bool:
-    normalized_value = (
-        value.strip().lower()
+LOGIN_THROTTLE_WINDOW_MINUTES = (
+    parse_positive_integer(
+        "LOGIN_THROTTLE_WINDOW_MINUTES",
+        15,
     )
+)
 
-    if normalized_value in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }:
-        return True
 
-    if normalized_value in {
-        "0",
-        "false",
-        "no",
-        "off",
-    }:
-        return False
-
-    raise RuntimeError(
-        "Boolean environment values "
-        "must be true or false."
+LOGIN_THROTTLE_BLOCK_MINUTES = (
+    parse_positive_integer(
+        "LOGIN_THROTTLE_BLOCK_MINUTES",
+        5,
     )
+)
 
 
 default_docs_enabled = (
