@@ -14,9 +14,9 @@
 
 ## Overview
 
-**CASE//ZERO** is a cybersecurity engineering portfolio project that simulates the core workflow of a modern Security Operations Center.
+**CASE//ZERO** is a cybersecurity engineering project that simulates the workflow of a modern Security Operations Center.
 
-It connects security telemetry, detection engineering, alerts, investigations, threat hunting, threat intelligence, MITRE ATT&CK, response playbooks, authentication, and role-based access control in one application.
+It connects security telemetry, detection engineering, alerts, investigations, threat hunting, threat intelligence, MITRE ATT&CK, incident-response playbooks, authentication, and role-based access control in one application.
 
 ```text
 Security Events
@@ -93,24 +93,30 @@ Current detections include:
 
 ---
 
-## Authentication & RBAC
+## Authentication & Access Control
 
 CASE//ZERO includes end-to-end authentication and role-based access control.
 
 - PostgreSQL-backed user accounts
 - Argon2 password hashing
-- JWT authentication
+- JWT access tokens
 - HttpOnly session cookies
 - Login and logout workflow
 - Current-user validation
-- Active/inactive account enforcement
 - Administrator, Analyst, and Viewer roles
 - Route-level authorization across SOC APIs
 - Protected frontend application routes
 - Administrator provisioning utility
+- Generic authentication failure responses
+- Timing-resistant unknown-user password verification
+- Persistent login-attempt throttling
+- Temporary authentication cooldowns
+- HTTP `429` and `Retry-After` enforcement
 
 ```text
 Email + Password
+       ↓
+Login Abuse Protection
        ↓
 Argon2 Verification
        ↓
@@ -133,6 +139,36 @@ Unauthenticated users cannot access protected SOC data.
 
 ---
 
+## Security Hardening
+
+Production-readiness work currently includes:
+
+- Environment-based application configuration
+- Production configuration validation
+- Trusted Host enforcement
+- Production-aware Swagger / OpenAPI exposure
+- Public liveness endpoint with minimal disclosure
+- Authenticated platform-status endpoint
+- HttpOnly session cookies
+- Production `Secure` / `__Host-` cookie strategy
+- Server-only authentication utilities
+- JWT expiration and integrity validation
+- Persistent PostgreSQL-backed login throttling
+- Generic authentication errors to reduce account enumeration
+- Temporary lockout instead of permanent account disablement
+
+Public health:
+
+```text
+GET /api/health
+
+{"status":"online"}
+```
+
+Detailed platform status requires authentication.
+
+---
+
 ## Security Workspaces
 
 CASE//ZERO currently includes:
@@ -148,21 +184,26 @@ Detection Rules
 Response Playbooks
 ```
 
-Each workspace is connected to the same investigation workflow rather than operating as an isolated demo.
+Each workspace participates in the same investigation workflow rather than operating as an isolated demo.
 
 ---
 
 ## Testing & CI
 
-CASE//ZERO currently has **75 passing backend tests** covering:
+CASE//ZERO currently has **86 passing backend tests** covering:
 
 - Detection-engine logic
 - Multi-event correlation
 - Authentication
 - Password security
 - JWT creation and validation
+- Login throttling
+- Generic authentication failures
 - Role-based access control
 - API authorization
+- Application security controls
+- Trusted Host validation
+- Public and authenticated health endpoints
 - Event ingestion
 - Event-to-alert pipelines
 - Alert workflows
@@ -184,6 +225,20 @@ Detection Engine
 Persisted Alert
       ↓
 Authenticated API Retrieval
+```
+
+Authentication abuse protection is also integration tested:
+
+```text
+Failed Login
+     ↓
+Persistent Throttle State
+     ↓
+Failure Threshold
+     ↓
+Temporary Cooldown
+     ↓
+429 + Retry-After
 ```
 
 GitHub Actions validates the application on pushes and pull requests to `main`:
@@ -229,22 +284,27 @@ flowchart LR
     USER["User"]
     UI["Next.js"]
     AUTH["Authentication / RBAC"]
+    THROTTLE["Login Abuse Protection"]
     API["FastAPI"]
     DET["Detection Engine"]
     DB[("PostgreSQL")]
 
     USER --> UI
     UI --> AUTH
-    AUTH --> API
+    AUTH --> THROTTLE
+    THROTTLE --> API
     API --> DET
     API --> DB
     DET --> DB
+    THROTTLE --> DB
 ```
 
 Core APIs:
 
 ```text
 /api/auth
+/api/health
+/api/status
 /api/events
 /api/alerts
 /api/cases
@@ -297,11 +357,13 @@ API:
 http://127.0.0.1:8000
 ```
 
-Swagger:
+Swagger in local development:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+API documentation can be disabled through environment configuration for production deployments.
 
 ### Create First Administrator
 
@@ -350,16 +412,40 @@ http://localhost:3000
 - [x] Administrator / Analyst / Viewer roles
 - [x] Route-level RBAC enforcement
 - [x] Protected frontend application access
+- [x] Trusted Host enforcement
+- [x] Production API documentation controls
+- [x] Public / authenticated health separation
+- [x] Persistent login abuse protection
+- [x] Generic authentication failure handling
 - [x] Database-backed integration tests
 - [x] GitHub Actions CI
 
 ### Next
 
-- [ ] Production security hardening
-- [ ] Production deployment
+- [ ] Security and authentication audit logging
+- [ ] Frontend security headers and CSP
+- [ ] Production deployment configuration
+- [ ] Final production security review
+- [ ] First public deployment
 - [ ] Portfolio screenshots
 - [ ] Architecture and investigation demo
-- [ ] Additional detections and telemetry
+
+---
+
+## Project Direction
+
+CASE//ZERO is evolving toward a case-centered security operations platform where detections, evidence, investigations, analyst decisions, response actions, and future automation share a common investigation context.
+
+Longer-term development will explore:
+
+- Case-centric SOAR workflows
+- Evidence and investigation graphs
+- Security-tool connectors
+- Detection-as-Code
+- Investigation intelligence
+- AI-assisted security analysis
+- Human approval gates for response actions
+- Detection feedback and outcome learning
 
 ---
 
@@ -367,7 +453,7 @@ http://localhost:3000
 
 CASE//ZERO demonstrates practical experience across:
 
-**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · RBAC · API Development · Database Engineering · Full-Stack Development · Automated Testing · CI/CD**
+**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · Application Security · RBAC · API Development · Database Engineering · Full-Stack Development · Automated Testing · CI/CD**
 
 ---
 
