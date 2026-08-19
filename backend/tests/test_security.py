@@ -103,15 +103,43 @@ def test_modified_access_token_is_rejected():
         role="administrator",
     )
 
-    replacement = (
+    header_segment, payload_segment, signature_segment = (
+        token.split(".")
+    )
+
+    signature_characters = list(
+        signature_segment
+    )
+
+    tamper_index = (
+        len(signature_characters)
+        // 2
+    )
+
+    original_character = (
+        signature_characters[
+            tamper_index
+        ]
+    )
+
+    signature_characters[
+        tamper_index
+    ] = (
         "a"
-        if token[-1] != "a"
+        if original_character != "a"
         else "b"
     )
 
-    tampered_token = (
-        token[:-1]
-        + replacement
+    tampered_signature = "".join(
+        signature_characters
+    )
+
+    tampered_token = ".".join(
+        [
+            header_segment,
+            payload_segment,
+            tampered_signature,
+        ]
     )
 
     with pytest.raises(

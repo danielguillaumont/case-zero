@@ -13,6 +13,11 @@ const API_BASE_URL =
   ?? "http://127.0.0.1:8000";
 
 
+const IS_PRODUCTION =
+  process.env.NODE_ENV
+  === "production";
+
+
 type LoginResponse = {
   access_token: string;
   token_type: string;
@@ -130,9 +135,7 @@ export async function loginAction(
     loginResponse.access_token,
     {
       httpOnly: true,
-      secure:
-        process.env.NODE_ENV
-        === "production",
+      secure: IS_PRODUCTION,
       sameSite: "lax",
       path: "/",
     }

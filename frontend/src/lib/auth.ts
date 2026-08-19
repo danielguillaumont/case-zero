@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 
 
@@ -6,8 +8,15 @@ const API_BASE_URL =
   ?? "http://127.0.0.1:8000";
 
 
+const IS_PRODUCTION =
+  process.env.NODE_ENV
+  === "production";
+
+
 export const SESSION_COOKIE_NAME =
-  "casezero_access_token";
+  IS_PRODUCTION
+    ? "__Host-casezero_access_token"
+    : "casezero_access_token";
 
 
 export type CurrentUser = {
@@ -26,7 +35,8 @@ export type CurrentUser = {
 
 export async function getAccessToken():
 Promise<string | null> {
-  const cookieStore = await cookies();
+  const cookieStore =
+    await cookies();
 
   return (
     cookieStore.get(

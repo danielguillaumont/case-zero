@@ -231,12 +231,10 @@ async function apiFetch(
 export async function getApiHealth():
 Promise<HealthStatus | null> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/health`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response =
+      await apiFetch(
+        "/api/status"
+      );
 
     if (!response.ok) {
       return null;
