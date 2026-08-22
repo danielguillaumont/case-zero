@@ -21,6 +21,9 @@ from app.models.case_note import CaseNote
 from app.models.login_throttle import (
     LoginThrottle,
 )
+from app.models.security_audit_event import (
+    SecurityAuditEvent,
+)
 from app.models.security_event import (
     SecurityEvent,
 )

@@ -2,6 +2,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
     status,
 )
 from fastapi.security import (
@@ -35,6 +36,9 @@ from app.services.login_throttle import (
     hash_login_identity,
     normalize_login_identity,
     record_login_failure,
+)
+from app.services.security_audit import (
+    record_security_audit_event,
 )
 
 
@@ -89,6 +93,7 @@ def throttled_login_exception(
     response_model=AccessTokenRead,
 )
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(
         get_database_session
@@ -114,6 +119,22 @@ async def login(
     )
 
     if retry_after is not None:
+        await record_security_audit_event(
+            request=request,
+            event_type=(
+                "auth.login_throttled"
+            ),
+            outcome="throttled",
+            severity="high",
+            identity_hash=(
+                identity_hash
+            ),
+            details={
+                "retry_after_seconds":
+                    retry_after,
+            },
+        )
+
         raise throttled_login_exception(
             retry_after
         )
@@ -154,12 +175,46 @@ async def login(
             )
         )
 
+        audit_user_id = (
+            user.id
+            if user is not None
+            else None
+        )
+
         if retry_after is not None:
+            await record_security_audit_event(
+                request=request,
+                event_type=(
+                    "auth.login_throttled"
+                ),
+                outcome="throttled",
+                severity="high",
+                user_id=audit_user_id,
+                identity_hash=(
+                    identity_hash
+                ),
+                details={
+                    "retry_after_seconds":
+                        retry_after,
+                },
+            )
+
             raise (
                 throttled_login_exception(
                     retry_after
                 )
             )
+
+        await record_security_audit_event(
+            request=request,
+            event_type=(
+                "auth.login_failure"
+            ),
+            outcome="failure",
+            severity="warning",
+            user_id=audit_user_id,
+            identity_hash=identity_hash,
+        )
 
         raise (
             invalid_credentials_exception()
@@ -175,6 +230,20 @@ async def login(
     access_token = create_access_token(
         user_id=user.id,
         role=user.role,
+    )
+
+    await record_security_audit_event(
+        request=request,
+        event_type=(
+            "auth.login_success"
+        ),
+        outcome="success",
+        severity="info",
+        user_id=user.id,
+        identity_hash=identity_hash,
+        details={
+            "role": user.role,
+        },
     )
 
     return AccessTokenRead(
