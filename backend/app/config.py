@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-
 from dotenv import load_dotenv
+from sqlalchemy.engine import URL
 
 
 ROOT_DIR = Path(
@@ -70,6 +70,24 @@ def parse_positive_integer(
     return value
 
 
+def parse_port(
+    name: str,
+    default: int,
+) -> int:
+    value = parse_positive_integer(
+        name,
+        default,
+    )
+
+    if value > 65535:
+        raise RuntimeError(
+            f"{name} must be between "
+            "1 and 65535."
+        )
+
+    return value
+
+
 def parse_boolean(
     value: str,
 ) -> bool:
@@ -123,10 +141,10 @@ POSTGRES_HOST = os.getenv(
 ).strip()
 
 
-POSTGRES_PORT = os.getenv(
+POSTGRES_PORT = parse_port(
     "POSTGRES_PORT",
-    "5432",
-).strip()
+    5432,
+)
 
 
 JWT_SECRET_KEY = os.getenv(
@@ -212,6 +230,18 @@ if not ALLOWED_HOSTS:
     )
 
 
+EXAMPLE_SECRET_VALUES = {
+    (
+        "replace_with_secure_"
+        "database_password"
+    ),
+    (
+        "replace_with_long_"
+        "random_secret"
+    ),
+}
+
+
 def validate_production_config():
     if not IS_PRODUCTION:
         return
@@ -254,15 +284,62 @@ def validate_production_config():
             f"{missing_text}"
         )
 
+    if (
+        POSTGRES_PASSWORD
+        in EXAMPLE_SECRET_VALUES
+    ):
+        raise RuntimeError(
+            "POSTGRES_PASSWORD must not "
+            "use the example placeholder "
+            "value in production."
+        )
+
+    if (
+        JWT_SECRET_KEY
+        in EXAMPLE_SECRET_VALUES
+    ):
+        raise RuntimeError(
+            "JWT_SECRET_KEY must not use "
+            "the example placeholder value "
+            "in production."
+        )
+
+    if (
+        len(
+            JWT_SECRET_KEY.encode(
+                "utf-8"
+            )
+        )
+        < 32
+    ):
+        raise RuntimeError(
+            "JWT_SECRET_KEY must be at "
+            "least 32 bytes in production."
+        )
+
+    if "*" in ALLOWED_HOSTS:
+        raise RuntimeError(
+            "CASE_ZERO_ALLOWED_HOSTS "
+            "must not contain '*' "
+            "in production."
+        )
+
 
 validate_production_config()
 
 
 DATABASE_URL = (
-    "postgresql+psycopg://"
-    f"{POSTGRES_USER}:"
-    f"{POSTGRES_PASSWORD}"
-    f"@{POSTGRES_HOST}:"
-    f"{POSTGRES_PORT}/"
-    f"{POSTGRES_DB}"
+    URL.create(
+        drivername=(
+            "postgresql+psycopg"
+        ),
+        username=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        database=POSTGRES_DB,
+    )
+    .render_as_string(
+        hide_password=False
+    )
 )
