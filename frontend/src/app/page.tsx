@@ -106,6 +106,11 @@ export default async function Home() {
           } TRACKED`
         : "REGISTRY ACTIVE";
 
+  const environmentLabel =
+    process.env.NODE_ENV === "production"
+      ? "Production"
+      : "Local Development";
+
   const recentAlerts =
     alerts.slice(0, 5);
 
@@ -145,7 +150,6 @@ export default async function Home() {
 
         <main className="flex-1 p-10">
 
-          {/* Header */}
           <header className="mb-10 flex items-center justify-between">
 
             <div>
@@ -165,12 +169,11 @@ export default async function Home() {
             </div>
 
             <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-400">
-              Local Development
+              {environmentLabel}
             </div>
 
           </header>
 
-          {/* Metrics */}
           <section>
 
             <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">
@@ -202,10 +205,8 @@ export default async function Home() {
 
           </section>
 
-          {/* Lower Dashboard */}
           <div className="mt-8 grid grid-cols-3 gap-6">
 
-            {/* System Status */}
             <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
 
               <div className="mb-6">
@@ -284,19 +285,18 @@ export default async function Home() {
 
               {apiOnline &&
                 apiHealth && (
-                <div className="mt-4 border-t border-zinc-800 pt-4">
+                  <div className="mt-4 border-t border-zinc-800 pt-4">
 
-                  <p className="text-xs text-zinc-600">
-                    API Version:{" "}
-                    {apiHealth.version}
-                  </p>
+                    <p className="text-xs text-zinc-600">
+                      API Version:{" "}
+                      {apiHealth.version}
+                    </p>
 
-                </div>
-              )}
+                  </div>
+                )}
 
             </section>
 
-            {/* Investigation Queue */}
             <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
 
               <h3 className="font-medium">
@@ -336,7 +336,6 @@ export default async function Home() {
 
           </div>
 
-          {/* Recent Alerts */}
           <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
 
             <div className="border-b border-zinc-800 p-6">

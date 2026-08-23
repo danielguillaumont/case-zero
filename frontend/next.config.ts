@@ -3,6 +3,55 @@ import type { NextConfig } from "next";
 const isDevelopment =
   process.env.NODE_ENV === "development";
 
+
+function validateApiConfiguration() {
+  const configuredApiUrl =
+    process.env.CASE_ZERO_API_URL?.trim();
+
+  if (!configuredApiUrl) {
+    if (isDevelopment) {
+      return;
+    }
+
+    throw new Error(
+      "CASE_ZERO_API_URL is required "
+      + "for production builds and runtime."
+    );
+  }
+
+  let parsedApiUrl: URL;
+
+  try {
+    parsedApiUrl =
+      new URL(configuredApiUrl);
+  } catch {
+    throw new Error(
+      "CASE_ZERO_API_URL must be "
+      + "a valid absolute URL."
+    );
+  }
+
+  if (
+    parsedApiUrl.protocol !== "http:"
+    && parsedApiUrl.protocol !== "https:"
+  ) {
+    throw new Error(
+      "CASE_ZERO_API_URL must use "
+      + "http or https."
+    );
+  }
+
+  process.env.CASE_ZERO_API_URL =
+    configuredApiUrl.replace(
+      /\/+$/,
+      ""
+    );
+}
+
+
+validateApiConfiguration();
+
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   [
@@ -34,6 +83,7 @@ const contentSecurityPolicy = [
   "manifest-src 'self'",
 ].join("; ");
 
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -49,18 +99,22 @@ const securityHeaders = [
   },
   {
     key: "Referrer-Policy",
-    value: "strict-origin-when-cross-origin",
+    value:
+      "strict-origin-when-cross-origin",
   },
   {
     key: "Permissions-Policy",
     value:
-      "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+      "camera=(), microphone=(), "
+      + "geolocation=(), "
+      + "browsing-topics=()",
   },
   {
     key: "Cross-Origin-Opener-Policy",
     value: "same-origin",
   },
 ];
+
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -74,5 +128,6 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
 
 export default nextConfig;
