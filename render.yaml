@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+
+services:
+  - type: web
+    name: case-zero-api
+    runtime: python
+    plan: free
+    region: ohio
+    rootDir: backend
+
+    buildCommand: pip install -r requirements.txt
+
+    startCommand: >-
+      alembic upgrade head &&
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port $PORT
+
+    healthCheckPath: /api/health
+
+    autoDeployTrigger: off
+
+    envVars:
+      - key: APP_ENV
+        value: production
+
+      - key: PYTHON_VERSION
+        value: 3.12.2
+
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: case-zero-db
+          property: user
+
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: case-zero-db
+          property: password
+
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: case-zero-db
+          property: database
+
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: case-zero-db
+          property: host
+
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: case-zero-db
+          property: port
+
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+      - key: JWT_ACCESS_TOKEN_MINUTES
+        value: "60"
+
+      - key: LOGIN_THROTTLE_MAX_FAILURES
+        value: "5"
+
+      - key: LOGIN_THROTTLE_WINDOW_MINUTES
+        value: "15"
+
+      - key: LOGIN_THROTTLE_BLOCK_MINUTES
+        value: "5"
+
+      - key: CASE_ZERO_API_DOCS_ENABLED
+        value: "false"
+
+      - key: CASE_ZERO_ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: case-zero-api
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+
+databases:
+  - name: case-zero-db
+    plan: free
+    region: ohio
+    postgresMajorVersion: "18"
+    databaseName: casezero
+    user: casezero
+
+    ipAllowList: []
