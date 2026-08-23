@@ -12,7 +12,6 @@ services:
 
     startCommand: >-
       alembic upgrade head &&
-      python -m scripts.create_admin --bootstrap-if-configured &&
       uvicorn app.main:app
       --host 0.0.0.0
       --port $PORT
@@ -74,15 +73,6 @@ services:
           type: web
           name: case-zero-api
           envVarKey: RENDER_EXTERNAL_HOSTNAME
-
-      - key: CASE_ZERO_BOOTSTRAP_ADMIN_EMAIL
-        sync: false
-
-      - key: CASE_ZERO_BOOTSTRAP_ADMIN_DISPLAY_NAME
-        sync: false
-
-      - key: CASE_ZERO_BOOTSTRAP_ADMIN_PASSWORD
-        sync: false
 
 
 databases:
