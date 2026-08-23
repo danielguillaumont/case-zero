@@ -8,6 +8,7 @@ import {
   getCases,
   getDetectionRules,
   getSecurityEvents,
+  getThreatIndicators,
 } from "@/lib/api";
 
 import type {
@@ -22,12 +23,14 @@ export default async function Home() {
     events,
     cases,
     rules,
+    threatIndicators,
   ] = await Promise.all([
     getApiHealth(),
     getAlerts(),
     getSecurityEvents(),
     getCases(),
     getDetectionRules(),
+    getThreatIndicators(),
   ]);
 
   const apiOnline =
@@ -88,6 +91,20 @@ export default async function Home() {
 
   const eventPipelineActive =
     apiOnline;
+
+  const threatIntelligenceActive =
+    apiOnline;
+
+  const threatIntelligenceStatus =
+    !apiOnline
+      ? "OFFLINE"
+      : threatIndicators.length > 0
+        ? `${threatIndicators.length} IOC${
+            threatIndicators.length === 1
+              ? ""
+              : "S"
+          } TRACKED`
+        : "REGISTRY ACTIVE";
 
   const recentAlerts =
     alerts.slice(0, 5);
@@ -255,7 +272,12 @@ export default async function Home() {
 
                 <StatusRow
                   name="Threat Intelligence"
-                  status="NOT CONFIGURED"
+                  status={
+                    threatIntelligenceStatus
+                  }
+                  active={
+                    threatIntelligenceActive
+                  }
                 />
 
               </div>
