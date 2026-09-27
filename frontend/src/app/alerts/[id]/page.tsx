@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+
+import {
+  notFound,
+} from "next/navigation";
 
 import Sidebar from "@/components/Sidebar";
 
@@ -34,25 +37,33 @@ import {
 export default async function AlertDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 }) {
-  const { id } = await params;
+  const { id } =
+    await params;
 
-  const alert = await getAlert(id);
+  const alert =
+    await getAlert(id);
 
   if (!alert) {
     notFound();
   }
 
-  const linkedCase = alert.case_id
-    ? await getCase(alert.case_id)
-    : null;
+  const linkedCase =
+    alert.case_id
+      ? await getCase(
+          alert.case_id
+        )
+      : null;
 
-  const sourceEvent = alert.source_event_id
-    ? await getSecurityEvent(
-        alert.source_event_id
-      )
-    : null;
+  const sourceEvent =
+    alert.source_event_id
+      ? await getSecurityEvent(
+          alert.source_event_id
+        )
+      : null;
 
   const detectionRule =
     alert.detection_rule_id
@@ -83,16 +94,21 @@ export default async function AlertDetailPage({
         )
       : [];
 
-  const existingCases = alert.case_id
-    ? []
-    : await getCases();
+  const existingCases =
+    alert.case_id
+      ? []
+      : await getCases();
 
-  const linkableCases = existingCases.filter(
-    (investigationCase) =>
-      !["resolved", "closed"].includes(
-        investigationCase.status.toLowerCase()
-      )
-  );
+  const linkableCases =
+    existingCases.filter(
+      (investigationCase) =>
+        ![
+          "resolved",
+          "closed",
+        ].includes(
+          investigationCase.status.toLowerCase()
+        )
+    );
 
   const normalizedStatus =
     alert.status.toLowerCase();
@@ -129,841 +145,1294 @@ export default async function AlertDetailPage({
       alert.id
     );
 
+  const attackMappings =
+    detectionRule?.mitre_attack
+    ?? [];
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen text-[#f1f4f7]">
 
       <div className="flex min-h-screen">
 
         <Sidebar />
 
-        <main className="flex-1 p-10">
+        <main className="min-w-0 flex-1">
 
-          {/* Back Link */}
-          <div className="mb-8">
+          <div className="mx-auto w-full max-w-[1700px] px-8 py-8 xl:px-10 xl:py-10">
 
-            <Link
-              href="/alerts"
-              className="text-sm text-zinc-500 transition hover:text-zinc-200"
-            >
-              &larr; Back to Alerts
-            </Link>
+            {/* Breadcrumb */}
+            <div className="mb-6 flex items-center gap-2 text-[10px]">
 
-          </div>
+              <Link
+                href="/alerts"
+                className="font-medium text-[#8c99a4] transition hover:text-[#e5eaee]"
+              >
+                Security Alerts
+              </Link>
 
-          {/* Alert Header */}
-          <header className="mb-8 flex items-start justify-between gap-6">
+              <span className="text-[#3f4e5a]">
+                /
+              </span>
 
-            <div>
-
-              <p className="text-sm text-emerald-400">
-                CASE//ZERO / ALERT
-              </p>
-
-              <h2 className="mt-2 text-3xl font-semibold">
-                {alert.title}
-              </h2>
-
-              <p className="mt-3 text-sm text-zinc-500">
-                Review alert context and investigation details.
-              </p>
+              <span className="text-[#5e6d79]">
+                Alert Investigation
+              </span>
 
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Header */}
+            <header className="cz-dashboard-header mb-7 flex items-start justify-between gap-8">
 
-              <SeverityBadge
-                severity={alert.severity}
-              />
+              <div className="min-w-0">
 
-              <StatusBadge
-                status={alert.status}
-              />
+                <div className="mb-3 flex flex-wrap items-center gap-3">
 
-            </div>
+                  <span className="text-[12px] font-semibold text-[#c9a965]">
+                    Security Operations
+                  </span>
 
-          </header>
+                  <span className="h-px w-8 bg-[#c9a965]/40" />
 
-          <div className="grid grid-cols-3 gap-6">
+                  <span className="text-[11px] text-[#667583]">
+                    Alert Investigation
+                  </span>
 
-            {/* Alert Details */}
-            <section className="col-span-2 rounded-xl border border-zinc-800 bg-zinc-900">
+                </div>
 
-              <div className="border-b border-zinc-800 p-6">
+                <div className="flex flex-wrap items-center gap-3">
 
-                <h3 className="font-medium">
-                  Alert Details
-                </h3>
+                  <h2 className="max-w-5xl text-[34px] font-semibold tracking-[-0.04em] text-[#f4f6f8]">
+                    {alert.title}
+                  </h2>
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  Detection information associated with this alert.
+                  <SeverityBadge
+                    severity={
+                      alert.severity
+                    }
+                  />
+
+                  <StatusBadge
+                    status={
+                      alert.status
+                    }
+                  />
+
+                </div>
+
+                <p className="mt-3 max-w-4xl text-[13px] leading-6 text-[#81909c]">
+                  Review detection context,
+                  supporting telemetry,
+                  investigation ownership,
+                  and recommended response
+                  actions for this alert.
                 </p>
 
               </div>
 
-              <div className="p-6">
+              <div className="flex shrink-0 items-center gap-3 pt-1">
 
-                <DetailField
-                  label="Description"
-                  value={
-                    alert.description ??
-                    "No description provided."
-                  }
-                  large
-                />
+                <div className="rounded-[10px] border border-[#ffffff]/[0.07] bg-[#0b141e]/80 px-4 py-3">
 
-                <div className="mt-8 grid grid-cols-2 gap-8">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#667583]">
+                    Source
+                  </p>
 
-                  <DetailField
-                    label="Source"
-                    value={alert.source}
-                  />
+                  <p className="mt-1 max-w-[150px] truncate text-[11px] font-medium text-[#c9d1d8]">
+                    {alert.source}
+                  </p>
 
-                  <DetailField
-                    label="Severity"
-                    value={
-                      alert.severity.toUpperCase()
-                    }
-                  />
+                </div>
 
-                  <DetailField
-                    label="Status"
-                    value={
-                      alert.status.toUpperCase()
-                    }
-                  />
+                <div className="rounded-[10px] border border-[#d9a950]/15 bg-[#d9a950]/[0.045] px-4 py-3">
 
-                  {alert.detection_rule_id ? (
-                    <LinkedDetailField
-                      label="Detection Rule"
-                      value={
-                        alert.detection_rule_id
-                      }
-                      href={`/rules/${alert.detection_rule_id}`}
-                    />
-                  ) : (
-                    <DetailField
-                      label="Detection Rule"
-                      value="Not linked"
-                    />
-                  )}
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#88784f]">
+                    Detection
+                  </p>
 
-                  <DetailField
-                    label="Assigned Analyst"
-                    value={
-                      alert.assigned_analyst ??
-                      "Unassigned"
-                    }
-                  />
+                  <div className="mt-1 flex items-center gap-2">
 
-                  <DetailField
-                    label="Created"
-                    value={formatAlertTime(
-                      alert.created_at
-                    )}
-                  />
+                    <span className="h-2 w-2 rounded-full bg-[#d9a950]" />
 
-                  <DetailField
-                    label="Last Updated"
-                    value={formatAlertTime(
-                      alert.updated_at
-                    )}
-                  />
+                    <p className="text-[11px] font-medium text-[#d8bd7a]">
+                      Alert active
+                    </p>
+
+                  </div>
 
                 </div>
 
               </div>
 
-            </section>
+            </header>
 
-            {/* Investigation Panel */}
-            <section className="rounded-xl border border-zinc-800 bg-zinc-900">
+            {/* Alert snapshot */}
+            <section>
 
-              <div className="border-b border-zinc-800 p-6">
+              <div className="mb-3 flex items-end justify-between">
 
-                <h3 className="font-medium">
-                  Investigation
-                </h3>
+                <div>
+                  <h3 className="text-[14px] font-medium text-[#dce3e8]">
+                    Investigation snapshot
+                  </h3>
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  Analyst workflow
+                  <p className="mt-1 text-[11px] text-[#657481]">
+                    Current alert workflow
+                    and ownership state
+                  </p>
+                </div>
+
+                <p className="text-[10px] text-[#5e6d79]">
+                  Created{" "}
+                  {formatAlertTime(
+                    alert.created_at
+                  )}
                 </p>
 
               </div>
 
-              <div className="space-y-6 p-6">
+              <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
 
-                <div>
+                <SummaryCard
+                  label="Severity"
+                  value={
+                    alert.severity
+                      .toUpperCase()
+                  }
+                  context="Detection priority"
+                  accent={
+                    getSeverityColor(
+                      alert.severity
+                    )
+                  }
+                />
 
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">
-                    Current Status
-                  </p>
+                <SummaryCard
+                  label="Workflow"
+                  value={
+                    formatLabel(
+                      alert.status
+                    )
+                  }
+                  context="Current alert state"
+                  accent="#c9a965"
+                />
 
-                  <div className="mt-3">
+                <SummaryCard
+                  label="Analyst"
+                  value={
+                    alert.assigned_analyst
+                    ?? "Unassigned"
+                  }
+                  context="Investigation owner"
+                  accent="#69c5d7"
+                />
+
+                <SummaryCard
+                  label="Case"
+                  value={
+                    linkedCase
+                      ? "Linked"
+                      : alert.case_id
+                        ? "Unavailable"
+                        : "Not linked"
+                  }
+                  context={
+                    linkedCase
+                      ? linkedCase.title
+                      : "Investigation record"
+                  }
+                  accent="#63cfa4"
+                />
+
+              </div>
+
+            </section>
+
+            {/* Main investigation workspace */}
+            <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-12">
+
+              {/* Alert context */}
+              <div className="overflow-hidden rounded-[14px] border border-[#1d2a36] bg-[#0b141e]/95 shadow-[0_18px_60px_rgba(0,0,0,0.18)] xl:col-span-8">
+
+                <div className="flex items-start justify-between gap-6 border-b border-[#1c2833] px-6 py-5">
+
+                  <div className="flex items-start gap-3">
+
+                    <span className="mt-[7px] h-2 w-2 rounded-full bg-[#69c5d7]" />
+
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-[#e8edf1]">
+                        Alert context
+                      </h3>
+
+                      <p className="mt-1 text-[11px] text-[#667583]">
+                        Detection evidence
+                        and correlation metadata
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <span className="rounded-[6px] border border-[#69c5d7]/15 bg-[#69c5d7]/[0.05] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.06em] text-[#82cfdb]">
+                    Detection
+                  </span>
+
+                </div>
+
+                <div className="p-6">
+
+                  <div className="rounded-[11px] border border-[#1c2934] bg-[#08111a]/65 p-5">
+
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#62717e]">
+                      Detection summary
+                    </p>
+
+                    <p className="mt-3 text-[13px] leading-7 text-[#bac4cc]">
+                      {alert.description
+                        ?? "No alert description was provided."}
+                    </p>
+
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 border-y border-[#1c2833] md:grid-cols-2">
+
+                    <DetailCell
+                      label="Alert source"
+                      value={alert.source}
+                    />
+
+                    <DetailCell
+                      label="Assigned analyst"
+                      value={
+                        alert.assigned_analyst
+                        ?? "Unassigned"
+                      }
+                    />
+
+                    <DetailCell
+                      label="Created"
+                      value={formatAlertTime(
+                        alert.created_at
+                      )}
+                    />
+
+                    <DetailCell
+                      label="Last updated"
+                      value={formatAlertTime(
+                        alert.updated_at
+                      )}
+                    />
+
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+
+                    {alert.detection_rule_id ? (
+                      <LinkedContextCard
+                        label="Detection rule"
+                        value={
+                          alert.detection_rule_id
+                        }
+                        href={`/rules/${alert.detection_rule_id}`}
+                        accent="#c9a965"
+                      />
+                    ) : (
+                      <ContextCard
+                        label="Detection rule"
+                        value="Not linked"
+                      />
+                    )}
+
+                    {alert.source_event_id ? (
+                      <LinkedContextCard
+                        label="Source event"
+                        value={
+                          alert.source_event_id
+                        }
+                        href={`/events/${alert.source_event_id}`}
+                        accent="#69c5d7"
+                      />
+                    ) : (
+                      <ContextCard
+                        label="Source event"
+                        value="Not linked"
+                      />
+                    )}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Workflow */}
+              <aside className="overflow-hidden rounded-[14px] border border-[#1d2a36] bg-[#0b141e]/95 shadow-[0_18px_60px_rgba(0,0,0,0.18)] xl:col-span-4">
+
+                <div className="border-b border-[#1c2833] px-6 py-5">
+
+                  <div className="flex items-start justify-between gap-4">
+
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-[#e8edf1]">
+                        Analyst workflow
+                      </h3>
+
+                      <p className="mt-1 text-[11px] text-[#667583]">
+                        Triage and investigation
+                        controls
+                      </p>
+                    </div>
 
                     <StatusBadge
-                      status={alert.status}
+                      status={
+                        alert.status
+                      }
                     />
 
                   </div>
 
                 </div>
 
-                <div className="border-t border-zinc-800 pt-6">
+                <div className="divide-y divide-[#1c2833]">
 
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">
-                    Analyst Action
-                  </p>
+                  {/* Status */}
+                  <div className="p-6">
 
-                  {[
-                    "new",
-                    "assigned",
-                  ].includes(
-                    normalizedStatus
-                  ) && (
-                    <form
-                      action={
-                        startInvestigationAction
-                      }
-                      className="mt-3"
-                    >
-                      <button
-                        type="submit"
-                        className="w-full rounded-lg border border-yellow-800 bg-yellow-950 px-4 py-3 text-sm font-medium text-yellow-400 transition hover:bg-yellow-900"
-                      >
-                        Start Investigation
-                      </button>
-                    </form>
-                  )}
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.09em] text-[#62717e]">
+                      Workflow state
+                    </p>
 
-                  {normalizedStatus ===
-                    "investigating" && (
-                    <form
-                      action={
-                        resolveAlertAction
-                      }
-                      className="mt-3"
-                    >
-                      <button
-                        type="submit"
-                        className="w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
-                      >
-                        Resolve Alert
-                      </button>
-                    </form>
-                  )}
+                    <div className="mt-3 flex items-center justify-between">
 
-                  {normalizedStatus ===
-                    "resolved" && (
-                    <div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/40 px-4 py-3">
-
-                      <p className="text-sm text-emerald-400">
-                        Investigation resolved
-                      </p>
-
-                    </div>
-                  )}
-
-                  {normalizedStatus ===
-                    "closed" && (
-                    <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
-
-                      <p className="text-sm text-zinc-400">
-                        Alert closed
-                      </p>
-
-                    </div>
-                  )}
-
-                </div>
-
-                <div className="border-t border-zinc-800 pt-6">
-
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">
-                    Assigned Analyst
-                  </p>
-
-                  {alert.assigned_analyst ? (
-                    <div className="mt-3">
-
-                      <p className="text-sm font-medium text-zinc-200">
-                        {alert.assigned_analyst}
-                      </p>
-
-                      {alert.assigned_analyst ===
-                        "Daniel Guillaumont" && (
-                        <p className="mt-1 text-xs text-emerald-400">
-                          Assigned to you
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#d9e0e5]">
+                          {formatLabel(
+                            alert.status
+                          )}
                         </p>
-                      )}
+
+                        <p className="mt-1 text-[10px] text-[#657481]">
+                          Current triage stage
+                        </p>
+                      </div>
+
+                      <span className="h-2 w-2 rounded-full bg-[#c9a965]" />
 
                     </div>
-                  ) : (
-                    <div className="mt-3">
 
-                      <p className="text-sm text-zinc-500">
-                        Unassigned
-                      </p>
-
+                    {[
+                      "new",
+                      "assigned",
+                    ].includes(
+                      normalizedStatus
+                    ) && (
                       <form
                         action={
-                          assignToMeAction
+                          startInvestigationAction
                         }
                         className="mt-4"
                       >
                         <button
                           type="submit"
-                          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                          className="w-full rounded-[8px] border border-[#c9a965]/30 bg-[#c9a965]/[0.08] px-4 py-3 text-[11px] font-semibold text-[#d9bd7a] transition hover:border-[#c9a965]/50 hover:bg-[#c9a965]/[0.13]"
                         >
-                          Assign to Me
+                          Start investigation
                         </button>
                       </form>
+                    )}
 
-                    </div>
-                  )}
-
-                </div>
-
-                <div className="border-t border-zinc-800 pt-6">
-
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">
-                    Investigation Case
-                  </p>
-
-                  {linkedCase ? (
-                    <div className="mt-3">
-
-                      <p className="text-sm font-medium text-zinc-200">
-                        {linkedCase.title}
-                      </p>
-
-                      <div className="mt-3 flex items-center gap-2">
-
-                        <CaseStatusBadge
-                          status={
-                            linkedCase.status
-                          }
-                        />
-
-                        <PriorityBadge
-                          priority={
-                            linkedCase.priority
-                          }
-                        />
-
-                      </div>
-
-                      <Link
-                        href={`/cases/${linkedCase.id}`}
-                        className="mt-4 inline-flex text-sm font-medium text-emerald-400 transition hover:text-emerald-300"
-                      >
-                        View Case &rarr;
-                      </Link>
-
-                    </div>
-                  ) : alert.case_id ? (
-                    <div className="mt-3">
-
-                      <p className="text-sm text-yellow-400">
-                        Linked case unavailable
-                      </p>
-
-                      <p className="mt-1 text-xs text-zinc-600">
-                        Case ID:{" "}
-                        {alert.case_id}
-                      </p>
-
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-
-                      <p className="text-sm text-zinc-400">
-                        No investigation case linked.
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-zinc-600">
-                        Create a new case or associate this alert with an existing investigation.
-                      </p>
-
+                    {normalizedStatus
+                      === "investigating" && (
                       <form
                         action={
-                          createCaseAction
+                          resolveAlertAction
                         }
                         className="mt-4"
                       >
                         <button
                           type="submit"
-                          className="w-full rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
+                          className="w-full rounded-[8px] border border-[#63cfa4]/30 bg-[#63cfa4]/[0.07] px-4 py-3 text-[11px] font-semibold text-[#84dab9] transition hover:border-[#63cfa4]/50 hover:bg-[#63cfa4]/[0.12]"
                         >
-                          Create New Investigation Case
+                          Resolve alert
                         </button>
                       </form>
+                    )}
 
-                      <div className="my-5 flex items-center gap-3">
+                    {normalizedStatus
+                      === "resolved" && (
+                      <div className="mt-4 rounded-[8px] border border-[#63cfa4]/20 bg-[#63cfa4]/[0.05] px-4 py-3">
 
-                        <div className="h-px flex-1 bg-zinc-800" />
+                        <div className="flex items-center gap-2">
 
-                        <span className="text-xs uppercase tracking-wider text-zinc-600">
-                          or
-                        </span>
+                          <span className="h-2 w-2 rounded-full bg-[#63cfa4]" />
 
-                        <div className="h-px flex-1 bg-zinc-800" />
-
-                      </div>
-
-                      {linkableCases.length > 0 ? (
-                        <form
-                          action={
-                            linkExistingCaseAction
-                          }
-                        >
-                          <label
-                            htmlFor="case_id"
-                            className="text-xs uppercase tracking-wider text-zinc-500"
-                          >
-                            Existing Case
-                          </label>
-
-                          <select
-                            id="case_id"
-                            name="case_id"
-                            required
-                            defaultValue=""
-                            className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-zinc-300 outline-none transition focus:border-emerald-700"
-                          >
-                            <option
-                              value=""
-                              disabled
-                            >
-                              Select investigation...
-                            </option>
-
-                            {linkableCases.map(
-                              (
-                                investigationCase
-                              ) => (
-                                <option
-                                  key={
-                                    investigationCase.id
-                                  }
-                                  value={
-                                    investigationCase.id
-                                  }
-                                >
-                                  {
-                                    investigationCase.title
-                                  }
-                                </option>
-                              )
-                            )}
-
-                          </select>
-
-                          <button
-                            type="submit"
-                            className="mt-3 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
-                          >
-                            Link to Existing Case
-                          </button>
-
-                        </form>
-                      ) : (
-                        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3">
-
-                          <p className="text-xs leading-5 text-zinc-500">
-                            No active investigation cases are currently available.
+                          <p className="text-[11px] font-medium text-[#83d9b7]">
+                            Investigation resolved
                           </p>
 
                         </div>
-                      )}
+
+                      </div>
+                    )}
+
+                    {normalizedStatus
+                      === "closed" && (
+                      <div className="mt-4 rounded-[8px] border border-[#2a3640] bg-[#08111a] px-4 py-3">
+
+                        <p className="text-[11px] text-[#7c8a95]">
+                          Alert closed
+                        </p>
+
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Analyst */}
+                  <div className="p-6">
+
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.09em] text-[#62717e]">
+                      Analyst ownership
+                    </p>
+
+                    {alert.assigned_analyst ? (
+                      <div className="mt-3">
+
+                        <div className="flex items-center gap-3">
+
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#69c5d7]/20 bg-[#69c5d7]/[0.06] text-[10px] font-semibold text-[#87d0dc]">
+                            {getInitials(
+                              alert.assigned_analyst
+                            )}
+                          </div>
+
+                          <div>
+                            <p className="text-[12px] font-semibold text-[#d6dde2]">
+                              {alert.assigned_analyst}
+                            </p>
+
+                            <p className="mt-1 text-[9px] text-[#687783]">
+                              Investigation owner
+                            </p>
+                          </div>
+
+                        </div>
+
+                        {alert.assigned_analyst
+                          === "Daniel Guillaumont" && (
+                          <p className="mt-3 text-[10px] font-medium text-[#74cfaa]">
+                            Assigned to you
+                          </p>
+                        )}
+
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+
+                        <p className="text-[11px] text-[#71808c]">
+                          No analyst currently owns
+                          this alert.
+                        </p>
+
+                        <form
+                          action={
+                            assignToMeAction
+                          }
+                          className="mt-4"
+                        >
+                          <button
+                            type="submit"
+                            className="w-full rounded-[8px] border border-[#263440] bg-[#101a23] px-4 py-3 text-[11px] font-semibold text-[#c7d0d7] transition hover:border-[#3a4a57] hover:bg-[#15212c]"
+                          >
+                            Assign to me
+                          </button>
+                        </form>
+
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Case */}
+                  <div className="p-6">
+
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.09em] text-[#62717e]">
+                      Investigation case
+                    </p>
+
+                    {linkedCase ? (
+                      <div className="mt-3">
+
+                        <p className="text-[12px] font-semibold leading-5 text-[#d8dfe4]">
+                          {linkedCase.title}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+
+                          <CaseStatusBadge
+                            status={
+                              linkedCase.status
+                            }
+                          />
+
+                          <PriorityBadge
+                            priority={
+                              linkedCase.priority
+                            }
+                          />
+
+                        </div>
+
+                        <Link
+                          href={`/cases/${linkedCase.id}`}
+                          className="mt-4 flex w-full items-center justify-between rounded-[8px] border border-[#263440] bg-[#08111a] px-4 py-3 text-[11px] font-semibold text-[#c7d0d7] transition hover:border-[#3a4a57] hover:text-white"
+                        >
+                          <span>
+                            Open investigation
+                          </span>
+
+                          <span className="text-[#c9a965]">
+                            →
+                          </span>
+                        </Link>
+
+                      </div>
+                    ) : alert.case_id ? (
+                      <div className="mt-3 rounded-[8px] border border-[#d9a950]/20 bg-[#d9a950]/[0.05] px-4 py-3">
+
+                        <p className="text-[11px] font-medium text-[#dfbd70]">
+                          Linked case unavailable
+                        </p>
+
+                        <p className="mt-2 break-all font-mono text-[9px] text-[#687783]">
+                          {alert.case_id}
+                        </p>
+
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+
+                        <p className="text-[11px] leading-5 text-[#71808c]">
+                          Escalate this alert into a
+                          dedicated investigation
+                          case.
+                        </p>
+
+                        <form
+                          action={
+                            createCaseAction
+                          }
+                          className="mt-4"
+                        >
+                          <button
+                            type="submit"
+                            className="w-full rounded-[8px] border border-[#63cfa4]/25 bg-[#63cfa4]/[0.06] px-4 py-3 text-[11px] font-semibold text-[#80d5b4] transition hover:border-[#63cfa4]/45 hover:bg-[#63cfa4]/[0.1]"
+                          >
+                            Create investigation case
+                          </button>
+                        </form>
+
+                        {linkableCases.length > 0 && (
+                          <>
+                            <div className="my-4 flex items-center gap-3">
+
+                              <div className="h-px flex-1 bg-[#1d2933]" />
+
+                              <span className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#53616d]">
+                                or link existing
+                              </span>
+
+                              <div className="h-px flex-1 bg-[#1d2933]" />
+
+                            </div>
+
+                            <form
+                              action={
+                                linkExistingCaseAction
+                              }
+                            >
+
+                              <select
+                                id="case_id"
+                                name="case_id"
+                                required
+                                defaultValue=""
+                                className="w-full rounded-[8px] border border-[#25323d] bg-[#08111a] px-3 py-3 text-[11px] text-[#aeb8c1] outline-none transition focus:border-[#69c5d7]/45"
+                              >
+                                <option
+                                  value=""
+                                  disabled
+                                >
+                                  Select investigation...
+                                </option>
+
+                                {linkableCases.map(
+                                  (
+                                    investigationCase
+                                  ) => (
+                                    <option
+                                      key={
+                                        investigationCase.id
+                                      }
+                                      value={
+                                        investigationCase.id
+                                      }
+                                    >
+                                      {
+                                        investigationCase.title
+                                      }
+                                    </option>
+                                  )
+                                )}
+
+                              </select>
+
+                              <button
+                                type="submit"
+                                className="mt-3 w-full rounded-[8px] border border-[#263440] bg-[#101a23] px-4 py-3 text-[11px] font-semibold text-[#c7d0d7] transition hover:border-[#3a4a57] hover:bg-[#15212c]"
+                              >
+                                Link existing case
+                              </button>
+
+                            </form>
+                          </>
+                        )}
+
+                      </div>
+                    )}
+
+                  </div>
+
+                </div>
+
+              </aside>
+
+            </section>
+
+            {/* Detection intelligence */}
+            {(detectionRule
+              || recommendedPlaybooks.length > 0) && (
+              <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+
+                {/* MITRE */}
+                <div className="overflow-hidden rounded-[14px] border border-[#1d2a36] bg-[#0b141e]/95">
+
+                  <div className="flex items-start justify-between gap-5 border-b border-[#1c2833] px-6 py-5">
+
+                    <div>
+
+                      <div className="flex items-center gap-2">
+
+                        <span className="h-2 w-2 rounded-full bg-[#df945b]" />
+
+                        <h3 className="text-[15px] font-semibold text-[#e8edf1]">
+                          Detection intelligence
+                        </h3>
+
+                      </div>
+
+                      <p className="mt-2 text-[11px] text-[#667583]">
+                        ATT&amp;CK context inherited
+                        from the generating rule
+                      </p>
 
                     </div>
-                  )}
+
+                    {detectionRule && (
+                      <Link
+                        href={`/rules/${detectionRule.id}`}
+                        className="text-[10px] font-semibold text-[#c9a965] transition hover:text-[#e3c77f]"
+                      >
+                        View rule →
+                      </Link>
+                    )}
+
+                  </div>
+
+                  <div className="p-6">
+
+                    {attackMappings.length > 0 ? (
+                      <div className="grid gap-3">
+
+                        {attackMappings.map(
+                          (mapping) => (
+                            <MitreAttackCard
+                              key={`${mapping.technique_id}-${mapping.tactic_id}`}
+                              mapping={mapping}
+                            />
+                          )
+                        )}
+
+                      </div>
+                    ) : (
+                      <EmptyState
+                        title="No ATT&CK mapping"
+                        description="The linked detection rule does not currently expose an ATT&CK technique mapping."
+                      />
+                    )}
+
+                  </div>
 
                 </div>
 
-              </div>
+                {/* Playbooks */}
+                <div className="overflow-hidden rounded-[14px] border border-[#1d2a36] bg-[#0b141e]/95">
 
-            </section>
+                  <div className="flex items-start justify-between gap-5 border-b border-[#1c2833] px-6 py-5">
 
-          </div>
+                    <div>
 
-          {/* MITRE ATT&CK */}
-          {detectionRule &&
-            detectionRule.mitre_attack.length > 0 && (
-            <section className="mt-6 overflow-hidden rounded-xl border border-orange-900/70 bg-zinc-900">
+                      <div className="flex items-center gap-2">
 
-              <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
+                        <span className="h-2 w-2 rounded-full bg-[#63cfa4]" />
 
-                <div>
+                        <h3 className="text-[15px] font-semibold text-[#e8edf1]">
+                          Recommended response
+                        </h3>
 
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-400">
-                    MITRE ATT&amp;CK
-                  </p>
+                      </div>
 
-                  <h3 className="mt-2 font-medium">
-                    Detection Technique Mapping
-                  </h3>
+                      <p className="mt-2 text-[11px] text-[#667583]">
+                        Analyst procedures mapped to
+                        the triggering detection
+                      </p>
 
-                  <p className="mt-1 text-sm text-zinc-500">
-                    ATT&amp;CK context inherited from the detection rule that generated this alert.
-                  </p>
+                    </div>
 
-                </div>
+                    <span className="rounded-full border border-[#63cfa4]/15 bg-[#63cfa4]/[0.05] px-2.5 py-1 text-[9px] font-semibold text-[#7fd6b4]">
+                      {recommendedPlaybooks.length}{" "}
+                      mapped
+                    </span>
 
-                <Link
-                  href={`/rules/${detectionRule.id}`}
-                  className="rounded-md border border-orange-900 bg-orange-950 px-3 py-1.5 text-xs font-medium text-orange-400 transition hover:bg-orange-900/60"
-                >
-                  View Detection Rule &rarr;
-                </Link>
+                  </div>
 
-              </div>
+                  <div className="space-y-3 p-6">
 
-              <div className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-2">
+                    {recommendedPlaybooks.length > 0 ? (
+                      recommendedPlaybooks.map(
+                        (playbook) => (
+                          <RecommendedPlaybookCard
+                            key={
+                              playbook.id
+                            }
+                            playbook={
+                              playbook
+                            }
+                            detectionRuleId={
+                              alert.detection_rule_id!
+                            }
+                          />
+                        )
+                      )
+                    ) : (
+                      <EmptyState
+                        title="No response playbook mapped"
+                        description="This alert has no enabled response playbook associated with its detection rule."
+                      />
+                    )}
 
-                {detectionRule.mitre_attack.map(
-                  (mapping) => (
-                    <MitreAttackCard
-                      key={`${mapping.technique_id}-${mapping.tactic_id}`}
-                      mapping={mapping}
-                    />
-                  )
-                )}
-
-              </div>
-
-            </section>
-          )}
-
-          {/* Recommended Response */}
-          {alert.detection_rule_id && (
-            <section className="mt-6 overflow-hidden rounded-xl border border-emerald-900/70 bg-zinc-900">
-
-              <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
-
-                <div>
-
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-400">
-                    Recommended Response
-                  </p>
-
-                  <h3 className="mt-2 font-medium">
-                    Incident Response Playbook
-                  </h3>
-
-                  <p className="mt-1 text-sm text-zinc-500">
-                    CASE//ZERO matched this alert&apos;s detection rule to the recommended analyst response procedure.
-                  </p>
+                  </div>
 
                 </div>
 
-                <Link
-                  href={`/rules/${alert.detection_rule_id}`}
-                  className="rounded-md border border-violet-900 bg-violet-950 px-3 py-1.5 text-xs font-medium text-violet-400 transition hover:bg-violet-900"
-                >
-                  {alert.detection_rule_id} &rarr;
-                </Link>
+              </section>
+            )}
 
-              </div>
+            {/* Threat intelligence */}
+            {threatMatches.length > 0 && (
+              <section className="mt-5 overflow-hidden rounded-[14px] border border-[#e66b6b]/20 bg-[#0b141e]/95">
 
-              {recommendedPlaybooks.length > 0 ? (
-                <div className="space-y-4 p-6">
+                <div className="flex items-start justify-between gap-6 border-b border-[#1c2833] px-6 py-5">
 
-                  {recommendedPlaybooks.map(
-                    (playbook) => (
-                      <RecommendedPlaybookCard
-                        key={playbook.id}
-                        playbook={playbook}
-                        detectionRuleId={
-                          alert.detection_rule_id!
+                  <div>
+
+                    <div className="flex items-center gap-2">
+
+                      <span className="h-2 w-2 rounded-full bg-[#e66b6b]" />
+
+                      <h3 className="text-[15px] font-semibold text-[#e8edf1]">
+                        Threat intelligence matches
+                      </h3>
+
+                    </div>
+
+                    <p className="mt-2 text-[11px] text-[#667583]">
+                      Source telemetry matched
+                      against the CASE//ZERO IOC
+                      registry
+                    </p>
+
+                  </div>
+
+                  <div className="rounded-full border border-[#e66b6b]/20 bg-[#e66b6b]/[0.06] px-3 py-1.5 text-[9px] font-semibold text-[#ee8989]">
+                    {threatMatches.length}{" "}
+                    {threatMatches.length === 1
+                      ? "match"
+                      : "matches"}
+                  </div>
+
+                </div>
+
+                <div className="grid gap-3 p-6">
+
+                  {threatMatches.map(
+                    (match) => (
+                      <ThreatIntelligenceMatchCard
+                        key={
+                          match.indicator.id
+                        }
+                        indicator={
+                          match.indicator
+                        }
+                        matchedFields={
+                          match.matchedFields
                         }
                       />
                     )
                   )}
 
                 </div>
-              ) : (
-                <div className="p-6">
 
-                  <div className="rounded-lg border border-yellow-900 bg-yellow-950/30 px-4 py-4">
+              </section>
+            )}
 
-                    <p className="text-sm font-medium text-yellow-400">
-                      No response playbook mapped
-                    </p>
+            {/* Source event */}
+            {alert.source_event_id && (
+              <section className="mt-5 overflow-hidden rounded-[14px] border border-[#1d2a36] bg-[#0b141e]/95">
 
-                    <p className="mt-2 text-sm leading-6 text-zinc-500">
-                      This alert was generated by detection rule{" "}
-                      <span className="font-medium text-zinc-300">
-                        {alert.detection_rule_id}
-                      </span>
-                      , but no enabled response playbook is currently mapped to that rule.
-                    </p>
+                <div className="flex items-start justify-between gap-6 border-b border-[#1c2833] px-6 py-5">
 
-                  </div>
+                  <div>
 
-                </div>
-              )}
+                    <div className="flex items-center gap-2">
 
-            </section>
-          )}
+                      <span className="h-2 w-2 rounded-full bg-[#69c5d7]" />
 
-          {/* Threat Intelligence */}
-          {threatMatches.length > 0 && (
-            <section className="mt-6 overflow-hidden rounded-xl border border-red-900/70 bg-zinc-900">
-
-              <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
-
-                <div>
-
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-red-400">
-                    Threat Intelligence Match
-                  </p>
-
-                  <h3 className="mt-2 font-medium">
-                    Known Indicators
-                  </h3>
-
-                  <p className="mt-1 text-sm text-zinc-500">
-                    CASE//ZERO matched values from the source security event against the local IOC registry.
-                  </p>
-
-                </div>
-
-                <div className="rounded-md border border-red-900 bg-red-950 px-3 py-1.5 text-xs font-medium text-red-400">
-                  {threatMatches.length}{" "}
-                  {threatMatches.length === 1
-                    ? "Match"
-                    : "Matches"}
-                </div>
-
-              </div>
-
-              <div className="space-y-4 p-6">
-
-                {threatMatches.map(
-                  (match) => (
-                    <ThreatIntelligenceMatchCard
-                      key={match.indicator.id}
-                      indicator={
-                        match.indicator
-                      }
-                      matchedFields={
-                        match.matchedFields
-                      }
-                    />
-                  )
-                )}
-
-              </div>
-
-            </section>
-          )}
-
-          {/* Source Security Event */}
-          {alert.source_event_id && (
-            <section className="mt-6 overflow-hidden rounded-xl border border-violet-900/70 bg-zinc-900">
-
-              <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
-
-                <div>
-
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">
-                    Detection Evidence
-                  </p>
-
-                  <h3 className="mt-2 font-medium">
-                    Triggered By Security Event
-                  </h3>
-
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Original telemetry that caused this alert to be generated.
-                  </p>
-
-                </div>
-
-                <span className="rounded-md border border-violet-900 bg-violet-950 px-3 py-1.5 text-xs font-medium uppercase text-violet-400">
-                  Source Event
-                </span>
-
-              </div>
-
-              {sourceEvent ? (
-                <div className="p-6">
-
-                  <div className="grid grid-cols-3 gap-x-8 gap-y-7">
-
-                    <DetailField
-                      label="Event Type"
-                      value={
-                        sourceEvent.event_type
-                      }
-                    />
-
-                    <DetailField
-                      label="Telemetry Source"
-                      value={
-                        sourceEvent.source
-                      }
-                    />
-
-                    <DetailField
-                      label="Event Time"
-                      value={formatAlertTime(
-                        sourceEvent.event_time
-                      )}
-                    />
-
-                    <DetailField
-                      label="Hostname"
-                      value={
-                        sourceEvent.hostname ??
-                        "Unavailable"
-                      }
-                    />
-
-                    <DetailField
-                      label="Username"
-                      value={
-                        sourceEvent.username ??
-                        "Unavailable"
-                      }
-                    />
-
-                    <DetailField
-                      label="Source IP"
-                      value={
-                        sourceEvent.source_ip ??
-                        "Unavailable"
-                      }
-                    />
-
-                    <DetailField
-                      label="Destination IP"
-                      value={
-                        sourceEvent.destination_ip ??
-                        "Unavailable"
-                      }
-                    />
-
-                    <DetailField
-                      label="Process"
-                      value={
-                        sourceEvent.process_name ??
-                        "Unavailable"
-                      }
-                    />
-
-                    <DetailField
-                      label="Ingested"
-                      value={formatAlertTime(
-                        sourceEvent.created_at
-                      )}
-                    />
-
-                  </div>
-
-                  <div className="mt-8 border-t border-zinc-800 pt-6">
-
-                    <p className="text-xs uppercase tracking-wider text-zinc-500">
-                      Command Line
-                    </p>
-
-                    <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-sm leading-6 text-orange-300">
-                      {sourceEvent.command_line ??
-                        "Command line unavailable."}
-                    </pre>
-
-                  </div>
-
-                  {sourceEvent.raw_data && (
-                    <div className="mt-6">
-
-                      <p className="text-xs uppercase tracking-wider text-zinc-500">
-                        Raw Event Data
-                      </p>
-
-                      <pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-xs leading-6 text-zinc-400">
-                        {JSON.stringify(
-                          sourceEvent.raw_data,
-                          null,
-                          2
-                        )}
-                      </pre>
+                      <h3 className="text-[15px] font-semibold text-[#e8edf1]">
+                        Detection evidence
+                      </h3>
 
                     </div>
+
+                    <p className="mt-2 text-[11px] text-[#667583]">
+                      Original normalized telemetry
+                      that triggered this detection
+                    </p>
+
+                  </div>
+
+                  {sourceEvent && (
+                    <Link
+                      href={`/events/${sourceEvent.id}`}
+                      className="text-[10px] font-semibold text-[#80cad6] transition hover:text-[#a2e1ea]"
+                    >
+                      Open event →
+                    </Link>
                   )}
 
                 </div>
-              ) : (
-                <div className="px-6 py-8">
 
-                  <div className="rounded-lg border border-yellow-900 bg-yellow-950/30 px-4 py-4">
+                {sourceEvent ? (
+                  <div className="p-6">
 
-                    <p className="text-sm font-medium text-yellow-400">
-                      Source event unavailable
-                    </p>
+                    <div className="grid grid-cols-1 border border-[#1c2934] md:grid-cols-2 xl:grid-cols-3">
 
-                    <p className="mt-2 text-sm text-zinc-500">
-                      This alert contains a source event ID, but the event could not be retrieved from the API.
-                    </p>
+                      <EvidenceField
+                        label="Event type"
+                        value={formatLabel(
+                          sourceEvent.event_type
+                        )}
+                      />
+
+                      <EvidenceField
+                        label="Telemetry source"
+                        value={
+                          sourceEvent.source
+                        }
+                      />
+
+                      <EvidenceField
+                        label="Event time"
+                        value={formatAlertTime(
+                          sourceEvent.event_time
+                        )}
+                      />
+
+                      <EvidenceField
+                        label="Hostname"
+                        value={
+                          sourceEvent.hostname
+                          ?? "Unavailable"
+                        }
+                      />
+
+                      <EvidenceField
+                        label="Username"
+                        value={
+                          sourceEvent.username
+                          ?? "Unavailable"
+                        }
+                      />
+
+                      <EvidenceField
+                        label="Process"
+                        value={
+                          sourceEvent.process_name
+                          ?? "Unavailable"
+                        }
+                      />
+
+                      <EvidenceField
+                        label="Source address"
+                        value={
+                          sourceEvent.source_ip
+                          ?? "Unavailable"
+                        }
+                        mono
+                      />
+
+                      <EvidenceField
+                        label="Destination address"
+                        value={
+                          sourceEvent.destination_ip
+                          ?? "Unavailable"
+                        }
+                        mono
+                      />
+
+                      <EvidenceField
+                        label="Ingested"
+                        value={formatAlertTime(
+                          sourceEvent.created_at
+                        )}
+                      />
+
+                    </div>
+
+                    <div className="mt-5">
+
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#62717e]">
+                        Command line
+                      </p>
+
+                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-[10px] border border-[#202e39] bg-[#050b11] px-5 py-4 font-mono text-[11px] leading-6 text-[#d9b776]">
+                        {sourceEvent.command_line
+                          ?? "Command line unavailable."}
+                      </pre>
+
+                    </div>
+
+                    {sourceEvent.raw_data && (
+                      <details className="mt-5 rounded-[10px] border border-[#202e39] bg-[#071019]">
+
+                        <summary className="cursor-pointer select-none px-5 py-4 text-[10px] font-semibold text-[#8e9ba5] transition hover:text-[#cbd4da]">
+                          View raw event payload
+                        </summary>
+
+                        <div className="border-t border-[#1b2731] p-4">
+
+                          <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words font-mono text-[10px] leading-6 text-[#73828e]">
+                            {JSON.stringify(
+                              sourceEvent.raw_data,
+                              null,
+                              2
+                            )}
+                          </pre>
+
+                        </div>
+
+                      </details>
+                    )}
 
                   </div>
+                ) : (
+                  <div className="p-6">
 
-                </div>
-              )}
+                    <div className="rounded-[10px] border border-[#d9a950]/20 bg-[#d9a950]/[0.04] px-5 py-4">
+
+                      <p className="text-[12px] font-semibold text-[#ddbd73]">
+                        Source event unavailable
+                      </p>
+
+                      <p className="mt-2 text-[11px] leading-5 text-[#73828e]">
+                        This alert references a
+                        security event, but the
+                        event could not be
+                        retrieved.
+                      </p>
+
+                    </div>
+
+                  </div>
+                )}
+
+              </section>
+            )}
+
+            {/* Technical metadata */}
+            <section className="mt-5 overflow-hidden rounded-[14px] border border-[#1d2a36] bg-[#0b141e]/75">
+
+              <div className="border-b border-[#1c2833] px-6 py-5">
+
+                <h3 className="text-[14px] font-semibold text-[#dce3e8]">
+                  Technical metadata
+                </h3>
+
+                <p className="mt-1 text-[10px] text-[#61707c]">
+                  Internal identifiers used by
+                  CASE//ZERO correlation and
+                  investigation workflows
+                </p>
+
+              </div>
+
+              <div className="grid grid-cols-1 gap-px bg-[#1c2833] md:grid-cols-2 xl:grid-cols-4">
+
+                <MetadataField
+                  label="Alert ID"
+                  value={
+                    alert.id
+                  }
+                />
+
+                <MetadataField
+                  label="Detection rule ID"
+                  value={
+                    alert.detection_rule_id
+                    ?? "Not linked"
+                  }
+                />
+
+                <MetadataField
+                  label="Case ID"
+                  value={
+                    alert.case_id
+                    ?? "Not linked"
+                  }
+                />
+
+                <MetadataField
+                  label="Source event ID"
+                  value={
+                    alert.source_event_id
+                    ?? "Not linked"
+                  }
+                />
+
+              </div>
 
             </section>
-          )}
 
-          {/* Technical Metadata */}
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-
-            <h3 className="font-medium">
-              Technical Metadata
-            </h3>
-
-            <p className="mt-1 text-sm text-zinc-500">
-              Internal CASE//ZERO alert identifiers.
-            </p>
-
-            <div className="mt-6 grid grid-cols-2 gap-6 xl:grid-cols-4">
-
-              <MetadataField
-                label="Alert ID"
-                value={alert.id}
-              />
-
-              <MetadataField
-                label="Detection Rule ID"
-                value={
-                  alert.detection_rule_id ??
-                  "Not linked"
-                }
-              />
-
-              <MetadataField
-                label="Case ID"
-                value={
-                  alert.case_id ??
-                  "Not linked"
-                }
-              />
-
-              <MetadataField
-                label="Source Event ID"
-                value={
-                  alert.source_event_id ??
-                  "Not linked"
-                }
-              />
-
-            </div>
-
-          </section>
+          </div>
 
         </main>
 
       </div>
+
+    </div>
+  );
+}
+
+
+function SummaryCard({
+  label,
+  value,
+  context,
+  accent,
+}: {
+  label: string;
+  value: string;
+  context: string;
+  accent: string;
+}) {
+  return (
+    <div className="cz-metric min-h-[128px] p-5">
+
+      <div
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            `linear-gradient(90deg, ${accent}, transparent 70%)`,
+        }}
+      />
+
+      <div className="relative z-10">
+
+        <div className="flex items-center justify-between gap-3">
+
+          <p className="text-[11px] font-medium text-[#8996a1]">
+            {label}
+          </p>
+
+          <span
+            className="h-1.5 w-6 rounded-full"
+            style={{
+              background:
+                accent,
+              opacity:
+                0.72,
+            }}
+          />
+
+        </div>
+
+        <p className="mt-4 truncate text-[20px] font-semibold leading-none tracking-[-0.03em] text-[#eef2f5]">
+          {value}
+        </p>
+
+        <p className="mt-4 truncate text-[10px] text-[#657481]">
+          {context}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+function DetailCell({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="border-b border-[#1c2833] px-5 py-4 even:md:border-l">
+
+      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5f6e7a]">
+        {label}
+      </p>
+
+      <p className="mt-2 break-words text-[11px] font-medium text-[#b7c1c9]">
+        {value}
+      </p>
+
+    </div>
+  );
+}
+
+
+function ContextCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[9px] border border-[#1d2a35] bg-[#08111a] px-4 py-4">
+
+      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5d6b77]">
+        {label}
+      </p>
+
+      <p className="mt-2 truncate text-[11px] font-medium text-[#8c99a4]">
+        {value}
+      </p>
+
+    </div>
+  );
+}
+
+
+function LinkedContextCard({
+  label,
+  value,
+  href,
+  accent,
+}: {
+  label: string;
+  value: string;
+  href: string;
+  accent: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-[9px] border border-[#1d2a35] bg-[#08111a] px-4 py-4 transition hover:border-[#344550] hover:bg-[#0b1620]"
+    >
+
+      <div className="flex items-center justify-between gap-4">
+
+        <div className="min-w-0">
+
+          <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5d6b77]">
+            {label}
+          </p>
+
+          <p className="mt-2 truncate font-mono text-[10px] text-[#98a5af]">
+            {value}
+          </p>
+
+        </div>
+
+        <span
+          className="text-[14px] transition group-hover:translate-x-0.5"
+          style={{
+            color:
+              accent,
+          }}
+        >
+          →
+        </span>
+
+      </div>
+
+    </Link>
+  );
+}
+
+
+function EvidenceField({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="min-h-[86px] bg-[#09121b] px-5 py-4">
+
+      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5d6b77]">
+        {label}
+      </p>
+
+      <p
+        className={`mt-2 break-words text-[11px] text-[#bdc6cd] ${
+          mono
+            ? "font-mono"
+            : ""
+        }`}
+      >
+        {value}
+      </p>
+
+    </div>
+  );
+}
+
+
+function MetadataField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 bg-[#08111a] px-5 py-4">
+
+      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5d6b77]">
+        {label}
+      </p>
+
+      <code className="mt-2 block overflow-x-auto break-all font-mono text-[9px] leading-5 text-[#82909b]">
+        {value}
+      </code>
 
     </div>
   );
@@ -976,153 +1445,41 @@ function MitreAttackCard({
   mapping: MitreAttackMapping;
 }) {
   return (
-    <article className="rounded-xl border border-orange-900/50 bg-zinc-950/70 p-5">
+    <article className="rounded-[10px] border border-[#df945b]/15 bg-[#08111a] p-5">
 
       <div className="flex flex-wrap items-center gap-2">
 
-        <span className="rounded-md border border-orange-900 bg-orange-950 px-2.5 py-1 font-mono text-xs font-medium text-orange-400">
+        <span className="rounded-[5px] border border-[#df945b]/25 bg-[#df945b]/[0.07] px-2 py-1 font-mono text-[9px] font-semibold text-[#e6a46f]">
           {mapping.technique_id}
         </span>
 
-        <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium uppercase text-zinc-400">
+        <span className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[#5f6e79]">
           Technique
         </span>
 
       </div>
 
-      <h4 className="mt-4 text-lg font-medium text-zinc-100">
+      <p className="mt-3 text-[13px] font-semibold text-[#dbe2e7]">
         {mapping.technique_name}
-      </h4>
+      </p>
 
-      <div className="mt-5 border-t border-zinc-800 pt-4">
+      <div className="mt-4 flex items-center justify-between gap-4 border-t border-[#1c2833] pt-4">
 
-        <p className="text-xs uppercase tracking-wider text-zinc-600">
-          ATT&amp;CK Tactic
-        </p>
+        <div>
 
-        <div className="mt-2 flex items-center gap-3">
+          <p className="text-[8px] font-semibold uppercase tracking-[0.09em] text-[#5c6a76]">
+            ATT&amp;CK tactic
+          </p>
 
-          <span className="font-mono text-sm text-orange-300">
-            {mapping.tactic_id}
-          </span>
-
-          <span className="text-sm text-zinc-400">
+          <p className="mt-1 text-[10px] text-[#8e9ba5]">
             {mapping.tactic_name}
-          </span>
-
-        </div>
-
-      </div>
-
-    </article>
-  );
-}
-
-
-function ThreatIntelligenceMatchCard({
-  indicator,
-  matchedFields,
-}: {
-  indicator: ThreatIndicator;
-  matchedFields: string[];
-}) {
-  return (
-    <article className="rounded-xl border border-red-900/60 bg-zinc-950/70 p-6">
-
-      <div className="flex items-start justify-between gap-8">
-
-        <div className="min-w-0 flex-1">
-
-          <div className="flex flex-wrap items-center gap-2">
-
-            <IndicatorTypeBadge
-              indicatorType={
-                indicator.indicator_type
-              }
-            />
-
-            <ReputationBadge
-              reputation={
-                indicator.reputation
-              }
-            />
-
-            <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-400">
-              {indicator.confidence}% confidence
-            </span>
-
-          </div>
-
-          <code className="mt-4 block break-all font-mono text-lg font-semibold text-red-300">
-            {indicator.value}
-          </code>
-
-          {indicator.description && (
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-500">
-              {indicator.description}
-            </p>
-          )}
-
-          <div className="mt-5">
-
-            <p className="text-xs uppercase tracking-wider text-zinc-600">
-              Matched Event Fields
-            </p>
-
-            <div className="mt-2 flex flex-wrap gap-2">
-
-              {matchedFields.map(
-                (field) => (
-                  <span
-                    key={field}
-                    className="rounded-md border border-violet-900 bg-violet-950 px-2.5 py-1 text-xs text-violet-400"
-                  >
-                    {formatMatchedField(
-                      field
-                    )}
-                  </span>
-                )
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="w-64 shrink-0 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
-
-          <p className="text-xs uppercase tracking-wider text-zinc-600">
-            Intelligence Source
-          </p>
-
-          <p className="mt-2 text-sm font-medium text-zinc-300">
-            {indicator.source}
-          </p>
-
-          <p className="mt-5 text-xs uppercase tracking-wider text-zinc-600">
-            Confidence
-          </p>
-
-          <p className="mt-2 text-lg font-semibold text-zinc-100">
-            {indicator.confidence}
-            <span className="ml-1 text-xs font-normal text-zinc-600">
-              / 100
-            </span>
           </p>
 
         </div>
 
-      </div>
-
-      <div className="mt-6 border-t border-zinc-800 pt-5">
-
-        <Link
-          href={`/intelligence/${indicator.id}`}
-          className="inline-flex rounded-lg border border-red-900 bg-red-950 px-5 py-3 text-sm font-medium text-red-400 transition hover:bg-red-900/60"
-        >
-          Open Intelligence Record &rarr;
-        </Link>
+        <code className="font-mono text-[9px] text-[#c99762]">
+          {mapping.tactic_id}
+        </code>
 
       </div>
 
@@ -1142,89 +1499,74 @@ function RecommendedPlaybookCard({
     Array.from(
       new Set(
         playbook.steps.map(
-          (step) => step.category
+          (step) =>
+            step.category
         )
       )
     );
 
   return (
-    <article className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-6">
+    <article className="rounded-[10px] border border-[#20303b] bg-[#08111a] p-5">
 
-      <div className="flex items-start justify-between gap-8">
+      <div className="flex flex-wrap items-center gap-2">
 
-        <div className="min-w-0 flex-1">
+        <SeverityBadge
+          severity={
+            playbook.severity
+          }
+        />
 
-          <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-[5px] border border-[#63cfa4]/20 bg-[#63cfa4]/[0.06] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.06em] text-[#7ed6b3]">
+          Recommended
+        </span>
 
-            <SeverityBadge
-              severity={playbook.severity}
-            />
-
-            <span className="rounded-md border border-emerald-900 bg-emerald-950 px-2.5 py-1 text-xs font-medium uppercase text-emerald-400">
-              Recommended
-            </span>
-
-            <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium uppercase text-zinc-400">
-              {playbook.steps.length} Steps
-            </span>
-
-          </div>
-
-          <h4 className="mt-4 text-xl font-medium text-zinc-100">
-            {playbook.name}
-          </h4>
-
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-zinc-500">
-            {playbook.description}
-          </p>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-
-            {categories.map(
-              (category) => (
-                <CategoryBadge
-                  key={category}
-                  category={category}
-                />
-              )
-            )}
-
-          </div>
-
-        </div>
-
-        <div className="w-72 shrink-0 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
-
-          <p className="text-xs uppercase tracking-wider text-zinc-600">
-            Triggered By
-          </p>
-
-          <Link
-            href={`/rules/${detectionRuleId}`}
-            className="mt-2 inline-flex break-words text-sm font-medium text-violet-400 transition hover:text-violet-300"
-          >
-            {detectionRuleId} &rarr;
-          </Link>
-
-          <p className="mt-5 text-xs uppercase tracking-wider text-zinc-600">
-            Playbook ID
-          </p>
-
-          <p className="mt-2 break-words text-sm text-zinc-400">
-            {playbook.id}
-          </p>
-
-        </div>
+        <span className="rounded-[5px] border border-[#293640] bg-[#111a22] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.06em] text-[#7d8a95]">
+          {playbook.steps.length} steps
+        </span>
 
       </div>
 
-      <div className="mt-6 border-t border-zinc-800 pt-5">
+      <h4 className="mt-4 text-[13px] font-semibold text-[#dce3e8]">
+        {playbook.name}
+      </h4>
+
+      <p className="mt-2 text-[10px] leading-5 text-[#6c7b87]">
+        {playbook.description}
+      </p>
+
+      {categories.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+
+          {categories.map(
+            (category) => (
+              <CategoryBadge
+                key={
+                  category
+                }
+                category={
+                  category
+                }
+              />
+            )
+          )}
+
+        </div>
+      )}
+
+      <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#1d2933] pt-4">
+
+        <Link
+          href={`/rules/${detectionRuleId}`}
+          className="max-w-[55%] truncate font-mono text-[9px] text-[#70808c] transition hover:text-[#c9a965]"
+        >
+          {detectionRuleId}
+        </Link>
 
         <Link
           href={`/playbooks/${playbook.id}`}
-          className="inline-flex rounded-lg border border-emerald-800 bg-emerald-950 px-5 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
+          className="text-[10px] font-semibold text-[#79d1ae] transition hover:text-[#9ae0c4]"
         >
-          Open Response Playbook &rarr;
+          Open playbook →
         </Link>
 
       </div>
@@ -1234,82 +1576,139 @@ function RecommendedPlaybookCard({
 }
 
 
-function MetadataField({
-  label,
-  value,
+function ThreatIntelligenceMatchCard({
+  indicator,
+  matchedFields,
 }: {
-  label: string;
-  value: string;
+  indicator: ThreatIndicator;
+  matchedFields: string[];
 }) {
   return (
-    <div>
+    <article className="rounded-[10px] border border-[#e66b6b]/15 bg-[#08111a] p-5">
 
-      <p className="text-xs uppercase tracking-wider text-zinc-500">
-        {label}
-      </p>
+      <div className="flex flex-col justify-between gap-5 xl:flex-row">
 
-      <code className="mt-2 block overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-        {value}
-      </code>
+        <div className="min-w-0 flex-1">
 
-    </div>
+          <div className="flex flex-wrap items-center gap-2">
+
+            <IndicatorTypeBadge
+              indicatorType={
+                indicator.indicator_type
+              }
+            />
+
+            <ReputationBadge
+              reputation={
+                indicator.reputation
+              }
+            />
+
+            <span className="rounded-[5px] border border-[#2c3943] bg-[#111a22] px-2 py-1 text-[8px] font-semibold text-[#85929c]">
+              {indicator.confidence}%
+              confidence
+            </span>
+
+          </div>
+
+          <code className="mt-4 block break-all font-mono text-[13px] font-semibold text-[#e98a8a]">
+            {indicator.value}
+          </code>
+
+          {indicator.description && (
+            <p className="mt-2 max-w-4xl text-[10px] leading-5 text-[#6e7d89]">
+              {indicator.description}
+            </p>
+          )}
+
+          <div className="mt-4">
+
+            <p className="text-[8px] font-semibold uppercase tracking-[0.09em] text-[#596874]">
+              Matched fields
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+
+              {matchedFields.map(
+                (field) => (
+                  <span
+                    key={field}
+                    className="rounded-[5px] border border-[#7ca3d8]/20 bg-[#7ca3d8]/[0.06] px-2 py-1 text-[8px] font-medium text-[#91b0d9]"
+                  >
+                    {formatMatchedField(
+                      field
+                    )}
+                  </span>
+                )
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="w-full rounded-[9px] border border-[#1d2933] bg-[#050b11] p-4 xl:w-56">
+
+          <p className="text-[8px] font-semibold uppercase tracking-[0.09em] text-[#596874]">
+            Intelligence source
+          </p>
+
+          <p className="mt-2 truncate text-[10px] font-medium text-[#aab4bc]">
+            {indicator.source}
+          </p>
+
+          <p className="mt-4 text-[8px] font-semibold uppercase tracking-[0.09em] text-[#596874]">
+            Confidence
+          </p>
+
+          <p className="mt-2 text-[18px] font-semibold text-[#e1e6ea]">
+            {indicator.confidence}
+
+            <span className="ml-1 text-[9px] font-normal text-[#61707c]">
+              /100
+            </span>
+          </p>
+
+          <Link
+            href={`/intelligence/${indicator.id}`}
+            className="mt-4 flex items-center justify-between border-t border-[#1d2933] pt-4 text-[9px] font-semibold text-[#d98484] transition hover:text-[#f09a9a]"
+          >
+            <span>
+              Open IOC
+            </span>
+
+            <span>
+              →
+            </span>
+          </Link>
+
+        </div>
+
+      </div>
+
+    </article>
   );
 }
 
 
-function DetailField({
-  label,
-  value,
-  large = false,
+function EmptyState({
+  title,
+  description,
 }: {
-  label: string;
-  value: string;
-  large?: boolean;
+  title: string;
+  description: string;
 }) {
   return (
-    <div>
+    <div className="rounded-[10px] border border-[#202d38] bg-[#08111a] px-5 py-5">
 
-      <p className="text-xs uppercase tracking-wider text-zinc-500">
-        {label}
+      <p className="text-[12px] font-semibold text-[#aeb9c1]">
+        {title}
       </p>
 
-      <p
-        className={`mt-2 break-words text-zinc-300 ${
-          large
-            ? "text-sm leading-7"
-            : "text-sm"
-        }`}
-      >
-        {value}
+      <p className="mt-2 text-[10px] leading-5 text-[#64737f]">
+        {description}
       </p>
-
-    </div>
-  );
-}
-
-
-function LinkedDetailField({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: string;
-  href: string;
-}) {
-  return (
-    <div>
-
-      <p className="text-xs uppercase tracking-wider text-zinc-500">
-        {label}
-      </p>
-
-      <Link
-        href={href}
-        className="mt-2 inline-flex break-words text-sm font-medium text-violet-400 transition hover:text-violet-300"
-      >
-        {value} &rarr;
-      </Link>
 
     </div>
   );
@@ -1321,33 +1720,28 @@ function SeverityBadge({
 }: {
   severity: string;
 }) {
-  const normalizedSeverity =
+  const normalized =
     severity.toLowerCase();
 
   const styles: Record<
     string,
     string
   > = {
-    low:
-      "border-blue-900 bg-blue-950 text-blue-400",
-
-    medium:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
-
-    high:
-      "border-orange-900 bg-orange-950 text-orange-400",
-
     critical:
-      "border-red-900 bg-red-950 text-red-400",
+      "border-[#e66b6b]/30 bg-[#e66b6b]/[0.08] text-[#f08a8a]",
+    high:
+      "border-[#df8950]/30 bg-[#df8950]/[0.08] text-[#e9a067]",
+    medium:
+      "border-[#d9a950]/30 bg-[#d9a950]/[0.08] text-[#e0bb69]",
+    low:
+      "border-[#69c5d7]/25 bg-[#69c5d7]/[0.07] text-[#86d2df]",
   };
 
   return (
     <span
-      className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[
-          normalizedSeverity
-        ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      className={`inline-flex w-fit rounded-[6px] border px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.05em] ${
+        styles[normalized]
+        ?? "border-[#33404b] bg-[#17212a] text-[#9aa6b0]"
       }`}
     >
       {severity}
@@ -1361,7 +1755,7 @@ function StatusBadge({
 }: {
   status: string;
 }) {
-  const normalizedStatus =
+  const normalized =
     status.toLowerCase();
 
   const styles: Record<
@@ -1369,28 +1763,22 @@ function StatusBadge({
     string
   > = {
     new:
-      "border-zinc-700 bg-zinc-800 text-zinc-300",
-
+      "border-[#596875]/30 bg-[#596875]/[0.12] text-[#b6c0c8]",
     assigned:
-      "border-blue-900 bg-blue-950 text-blue-400",
-
+      "border-[#7ca3d8]/25 bg-[#7ca3d8]/[0.08] text-[#96b7e2]",
     investigating:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
-
+      "border-[#d9a950]/25 bg-[#d9a950]/[0.08] text-[#e2bd69]",
     resolved:
-      "border-emerald-900 bg-emerald-950 text-emerald-400",
-
+      "border-[#63cfa4]/25 bg-[#63cfa4]/[0.08] text-[#80dbb7]",
     closed:
-      "border-zinc-800 bg-zinc-950 text-zinc-500",
+      "border-[#4c5964]/25 bg-[#4c5964]/[0.08] text-[#7f8d98]",
   };
 
   return (
     <span
-      className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
-        styles[
-          normalizedStatus
-        ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      className={`inline-flex w-fit rounded-[6px] border px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.05em] ${
+        styles[normalized]
+        ?? "border-[#33404b] bg-[#17212a] text-[#9aa6b0]"
       }`}
     >
       {status}
@@ -1404,7 +1792,7 @@ function CaseStatusBadge({
 }: {
   status: string;
 }) {
-  const normalizedStatus =
+  const normalized =
     status.toLowerCase();
 
   const styles: Record<
@@ -1412,25 +1800,20 @@ function CaseStatusBadge({
     string
   > = {
     open:
-      "border-blue-900 bg-blue-950 text-blue-400",
-
+      "border-[#7ca3d8]/25 bg-[#7ca3d8]/[0.08] text-[#96b7e2]",
     investigating:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
-
+      "border-[#d9a950]/25 bg-[#d9a950]/[0.08] text-[#e2bd69]",
     resolved:
-      "border-emerald-900 bg-emerald-950 text-emerald-400",
-
+      "border-[#63cfa4]/25 bg-[#63cfa4]/[0.08] text-[#80dbb7]",
     closed:
-      "border-zinc-800 bg-zinc-950 text-zinc-500",
+      "border-[#4c5964]/25 bg-[#4c5964]/[0.08] text-[#7f8d98]",
   };
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
-        styles[
-          normalizedStatus
-        ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      className={`rounded-[5px] border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.05em] ${
+        styles[normalized]
+        ?? "border-[#33404b] bg-[#17212a] text-[#9aa6b0]"
       }`}
     >
       {status}
@@ -1444,33 +1827,28 @@ function PriorityBadge({
 }: {
   priority: string;
 }) {
-  const normalizedPriority =
+  const normalized =
     priority.toLowerCase();
 
   const styles: Record<
     string,
     string
   > = {
-    low:
-      "border-blue-900 bg-blue-950 text-blue-400",
-
-    medium:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
-
-    high:
-      "border-orange-900 bg-orange-950 text-orange-400",
-
     critical:
-      "border-red-900 bg-red-950 text-red-400",
+      "border-[#e66b6b]/30 bg-[#e66b6b]/[0.08] text-[#f08a8a]",
+    high:
+      "border-[#df8950]/30 bg-[#df8950]/[0.08] text-[#e9a067]",
+    medium:
+      "border-[#d9a950]/30 bg-[#d9a950]/[0.08] text-[#e0bb69]",
+    low:
+      "border-[#69c5d7]/25 bg-[#69c5d7]/[0.07] text-[#86d2df]",
   };
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
-        styles[
-          normalizedPriority
-        ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+      className={`rounded-[5px] border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.05em] ${
+        styles[normalized]
+        ?? "border-[#33404b] bg-[#17212a] text-[#9aa6b0]"
       }`}
     >
       {priority}
@@ -1484,38 +1862,32 @@ function CategoryBadge({
 }: {
   category: string;
 }) {
+  const normalized =
+    category.toLowerCase();
+
   const styles: Record<
     string,
     string
   > = {
     triage:
-      "border-blue-900 bg-blue-950 text-blue-400",
-
+      "border-[#7ca3d8]/20 bg-[#7ca3d8]/[0.06] text-[#91b0d9]",
     investigation:
-      "border-violet-900 bg-violet-950 text-violet-400",
-
+      "border-[#aa82db]/20 bg-[#aa82db]/[0.06] text-[#b89ae0]",
     containment:
-      "border-orange-900 bg-orange-950 text-orange-400",
-
+      "border-[#df945b]/20 bg-[#df945b]/[0.06] text-[#e3a472]",
     eradication:
-      "border-red-900 bg-red-950 text-red-400",
-
+      "border-[#e66b6b]/20 bg-[#e66b6b]/[0.06] text-[#e98a8a]",
     recovery:
-      "border-emerald-900 bg-emerald-950 text-emerald-400",
-
+      "border-[#63cfa4]/20 bg-[#63cfa4]/[0.06] text-[#7fd6b4]",
     documentation:
-      "border-cyan-900 bg-cyan-950 text-cyan-400",
+      "border-[#69c5d7]/20 bg-[#69c5d7]/[0.06] text-[#84cfda]",
   };
-
-  const normalized =
-    category.toLowerCase();
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`rounded-[5px] border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.05em] ${
         styles[normalized]
-        ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+        ?? "border-[#33404b] bg-[#17212a] text-[#8f9ca6]"
       }`}
     >
       {category}
@@ -1534,17 +1906,15 @@ function IndicatorTypeBadge({
     string
   > = {
     ip: "IP",
-    domain: "DOMAIN",
+    domain: "Domain",
     url: "URL",
-    hash: "HASH",
+    hash: "Hash",
   };
 
   return (
-    <span className="rounded-md border border-blue-900 bg-blue-950 px-2.5 py-1 text-xs font-medium text-blue-400">
-      {
-        labels[indicatorType]
-        ?? indicatorType.toUpperCase()
-      }
+    <span className="rounded-[5px] border border-[#7ca3d8]/20 bg-[#7ca3d8]/[0.06] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.05em] text-[#94b3dc]">
+      {labels[indicatorType]
+        ?? indicatorType.toUpperCase()}
     </span>
   );
 }
@@ -1555,36 +1925,53 @@ function ReputationBadge({
 }: {
   reputation: string;
 }) {
+  const normalized =
+    reputation.toLowerCase();
+
   const styles: Record<
     string,
     string
   > = {
     malicious:
-      "border-red-900 bg-red-950 text-red-400",
-
+      "border-[#e66b6b]/25 bg-[#e66b6b]/[0.07] text-[#ec8585]",
     suspicious:
-      "border-orange-900 bg-orange-950 text-orange-400",
-
+      "border-[#df945b]/25 bg-[#df945b]/[0.07] text-[#e4a372]",
     unknown:
-      "border-zinc-700 bg-zinc-800 text-zinc-400",
-
+      "border-[#47545e]/30 bg-[#47545e]/[0.08] text-[#8e9aa4]",
     benign:
-      "border-emerald-900 bg-emerald-950 text-emerald-400",
+      "border-[#63cfa4]/25 bg-[#63cfa4]/[0.07] text-[#7fd6b4]",
   };
-
-  const normalized =
-    reputation.toLowerCase();
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`rounded-[5px] border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.05em] ${
         styles[normalized]
-        ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+        ?? "border-[#33404b] bg-[#17212a] text-[#8f9ca6]"
       }`}
     >
       {reputation}
     </span>
+  );
+}
+
+
+function getSeverityColor(
+  severity: string
+) {
+  const colors: Record<
+    string,
+    string
+  > = {
+    critical: "#e66b6b",
+    high: "#df945b",
+    medium: "#d9a950",
+    low: "#69c5d7",
+  };
+
+  return (
+    colors[
+      severity.toLowerCase()
+    ] ?? "#7f8d98"
   );
 }
 
@@ -1596,19 +1983,64 @@ function formatMatchedField(
     string,
     string
   > = {
-    source_ip: "Source IP",
-    destination_ip: "Destination IP",
-    command_line: "Command Line",
-    raw_data: "Raw Event Data",
+    source_ip:
+      "Source IP",
+    destination_ip:
+      "Destination IP",
+    command_line:
+      "Command Line",
+    raw_data:
+      "Raw Event Data",
   };
 
   return (
     labels[field]
-    ?? field.replaceAll(
+    ?? formatLabel(field)
+  );
+}
+
+
+function formatLabel(
+  value: string
+) {
+  return value
+    .replaceAll(
       "_",
       " "
     )
-  );
+    .replace(
+      /\b\w/g,
+      (character) =>
+        character.toUpperCase()
+    );
+}
+
+
+function getInitials(
+  displayName: string
+) {
+  const names =
+    displayName
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (names.length === 0) {
+    return "CZ";
+  }
+
+  if (names.length === 1) {
+    return names[0]
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  return (
+    names[0][0]
+    + names[
+      names.length - 1
+    ][0]
+  ).toUpperCase();
 }
 
 
@@ -1618,8 +2050,10 @@ function formatAlertTime(
   return new Intl.DateTimeFormat(
     "en-CA",
     {
-      dateStyle: "medium",
-      timeStyle: "short",
+      dateStyle:
+        "medium",
+      timeStyle:
+        "short",
     }
   ).format(
     new Date(timestamp)

@@ -27,13 +27,15 @@ export default async function SecurityEventDetailPage({
     notFound();
   }
 
-  const alerts = await getAlerts();
+  const alerts =
+    await getAlerts();
 
-  const triggeredAlerts = alerts.filter(
-    (alert) =>
-      alert.source_event_id ===
-      securityEvent.id
-  );
+  const triggeredAlerts =
+    alerts.filter(
+      (alert) =>
+        alert.source_event_id ===
+        securityEvent.id
+    );
 
   const normalizedEventType =
     securityEvent.event_type.toLowerCase();
@@ -46,407 +48,795 @@ export default async function SecurityEventDetailPage({
     normalizedEventType ===
     "process_creation";
 
+  const eventTitle =
+    getEventTitle(
+      securityEvent.event_type,
+      securityEvent.process_name
+    );
+
+  const sourceAddress =
+    securityEvent.source_ip ??
+    "Unavailable";
+
+  const destinationAddress =
+    securityEvent.destination_ip ??
+    "Unavailable";
+
+  const identity =
+    securityEvent.username ??
+    "Unknown identity";
+
+  const host =
+    securityEvent.hostname ??
+    "Unknown host";
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-
+    <div className="min-h-screen text-[#f1f4f7]">
       <div className="flex min-h-screen">
-
         <Sidebar />
 
-        <main className="flex-1 p-10">
+        <main className="min-w-0 flex-1">
+          <div className="mx-auto w-full max-w-[1700px] px-8 py-8 xl:px-10 xl:py-10">
 
-          <div className="mb-8">
+            {/* Breadcrumb */}
+            <div className="mb-6 flex items-center gap-2 text-[11px]">
+              <Link
+                href="/events"
+                className="text-[#72818d] transition hover:text-[#dbe3e8]"
+              >
+                Security Events
+              </Link>
 
-            <Link
-              href="/events"
-              className="text-sm text-zinc-500 transition hover:text-zinc-200"
-            >
-              ← Back to Events
-            </Link>
+              <span className="text-[#46535e]">
+                /
+              </span>
 
-          </div>
-
-          {/* Header */}
-          <header className="mb-8 flex items-start justify-between gap-6">
-
-            <div>
-
-              <p className="text-sm text-emerald-400">
-                CASE//ZERO / SECURITY EVENT
-              </p>
-
-              <h2 className="mt-2 text-3xl font-semibold">
-                {getEventTitle(
-                  securityEvent.event_type,
-                  securityEvent.process_name
-                )}
-              </h2>
-
-              <p className="mt-3 text-sm text-zinc-500">
-                Review normalized security telemetry and detection results.
-              </p>
-
+              <span className="text-[#9aa6af]">
+                Event Investigation
+              </span>
             </div>
 
-            <EventTypeBadge
-              eventType={
-                securityEvent.event_type
-              }
-            />
+            {/* Header */}
+            <header className="cz-dashboard-header mb-7 flex items-start justify-between gap-8">
+              <div className="min-w-0">
 
-          </header>
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                  <span className="text-[12px] font-semibold text-[#c9a965]">
+                    Security Operations
+                  </span>
 
-          {/* Event Details */}
-          <section className="rounded-xl border border-zinc-800 bg-zinc-900">
+                  <span className="h-px w-8 bg-[#c9a965]/40" />
 
-            <div className="border-b border-zinc-800 p-6">
+                  <span className="text-[11px] text-[#667583]">
+                    Event Investigation
+                  </span>
+                </div>
 
-              <h3 className="font-medium">
-                Event Details
-              </h3>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="break-words text-[34px] font-semibold tracking-[-0.04em] text-[#f4f6f8]">
+                    {eventTitle}
+                  </h1>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Normalized telemetry associated with this security event.
-              </p>
+                  <EventTypeBadge
+                    eventType={
+                      securityEvent.event_type
+                    }
+                  />
+                </div>
 
-            </div>
+                <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#81909c]">
+                  Inspect normalized telemetry,
+                  associated entities, execution
+                  context, and detection results
+                  for this security event.
+                </p>
+              </div>
 
-            <div className="p-6">
+              <div className="hidden shrink-0 items-stretch gap-3 pt-1 lg:flex">
 
-              <div className="grid grid-cols-3 gap-x-8 gap-y-8">
+                <div className="rounded-[10px] border border-white/[0.075] bg-[#0b1219]/80 px-4 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#5f6e7a]">
+                    Source
+                  </p>
 
-                <DetailField
-                  label="Event Type"
-                  value={
-                    securityEvent.event_type
-                  }
-                />
+                  <p className="mt-1 text-[11px] font-medium text-[#d2d9df]">
+                    {securityEvent.source}
+                  </p>
+                </div>
 
-                <DetailField
-                  label="Source"
-                  value={
-                    securityEvent.source
-                  }
-                />
+                <div className="rounded-[10px] border border-[#63cfa4]/15 bg-[#63cfa4]/[0.045] px-4 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#668c7d]">
+                    Detection
+                  </p>
 
-                <DetailField
-                  label="Event Time"
+                  <div className="mt-1 flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        triggeredAlerts.length > 0
+                          ? "bg-[#d9a950]"
+                          : "bg-[#63cfa4]"
+                      }`}
+                    />
+
+                    <p
+                      className={`text-[11px] font-medium ${
+                        triggeredAlerts.length > 0
+                          ? "text-[#e4bd6e]"
+                          : "text-[#84d8b7]"
+                      }`}
+                    >
+                      {
+                        triggeredAlerts.length > 0
+                          ? `${triggeredAlerts.length} alert${
+                              triggeredAlerts.length === 1
+                                ? ""
+                                : "s"
+                            }`
+                          : "No match"
+                      }
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </header>
+
+            {/* Snapshot */}
+            <section>
+              <div className="mb-3 flex items-end justify-between">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[#dce3e8]">
+                    Event snapshot
+                  </h2>
+
+                  <p className="mt-1 text-[11px] text-[#657481]">
+                    Core telemetry captured for this record
+                  </p>
+                </div>
+
+                <p className="text-[10px] text-[#5e6d79]">
+                  Ingested{" "}
+                  {formatEventTime(
+                    securityEvent.created_at
+                  )}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+
+                <SnapshotCard
+                  label="Event time"
                   value={formatEventTime(
                     securityEvent.event_time
                   )}
+                  context="Recorded occurrence"
+                  accent="#69c5d7"
+                  compact
                 />
 
-                <DetailField
-                  label="Hostname"
-                  value={
-                    securityEvent.hostname ??
-                    "Unavailable"
-                  }
+                <SnapshotCard
+                  label="Host"
+                  value={host}
+                  context="Observed endpoint"
+                  accent="#c9a965"
+                  compact
                 />
 
-                <DetailField
-                  label="Username"
-                  value={
-                    securityEvent.username ??
-                    "Unavailable"
-                  }
+                <SnapshotCard
+                  label="Identity"
+                  value={identity}
+                  context="Associated user"
+                  accent="#7ca3d8"
+                  compact
                 />
 
-                <DetailField
-                  label="Source IP"
-                  value={
-                    securityEvent.source_ip ??
-                    "Unavailable"
-                  }
-                />
-
-                <DetailField
-                  label="Destination IP"
-                  value={
-                    securityEvent.destination_ip ??
-                    "Unavailable"
-                  }
-                />
-
-                <DetailField
-                  label="Process"
-                  value={
-                    securityEvent.process_name ??
-                    "Unavailable"
-                  }
-                />
-
-                <DetailField
-                  label="Ingested"
-                  value={formatEventTime(
-                    securityEvent.created_at
+                <SnapshotCard
+                  label="Detection results"
+                  value={String(
+                    triggeredAlerts.length
                   )}
+                  context={
+                    triggeredAlerts.length === 1
+                      ? "Linked alert"
+                      : "Linked alerts"
+                  }
+                  accent={
+                    triggeredAlerts.length > 0
+                      ? "#df9659"
+                      : "#63cfa4"
+                  }
                 />
 
               </div>
-
-            </div>
-
-          </section>
-
-          {/* Authentication Context */}
-          {isAuthenticationEvent && (
-            <section className="mt-6 rounded-xl border border-blue-900/60 bg-zinc-900">
-
-              <div className="border-b border-zinc-800 p-6">
-
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-blue-400">
-                  Identity Telemetry
-                </p>
-
-                <h3 className="mt-2 font-medium">
-                  Authentication Context
-                </h3>
-
-                <p className="mt-1 text-sm text-zinc-500">
-                  Authentication outcome and identity information associated with this event.
-                </p>
-
-              </div>
-
-              <div className="p-6">
-
-                <div className="grid grid-cols-3 gap-x-8 gap-y-8">
-
-                  <DetailField
-                    label="Outcome"
-                    value={getRawDataValue(
-                      securityEvent.raw_data,
-                      "outcome"
-                    )}
-                  />
-
-                  <DetailField
-                    label="Authentication Method"
-                    value={getRawDataValue(
-                      securityEvent.raw_data,
-                      "authentication_method"
-                    )}
-                  />
-
-                  <DetailField
-                    label="Username"
-                    value={
-                      securityEvent.username ??
-                      "Unavailable"
-                    }
-                  />
-
-                  <DetailField
-                    label="Source IP"
-                    value={
-                      securityEvent.source_ip ??
-                      "Unavailable"
-                    }
-                  />
-
-                  <DetailField
-                    label="Hostname"
-                    value={
-                      securityEvent.hostname ??
-                      "Unavailable"
-                    }
-                  />
-
-                  <DetailField
-                    label="Test Sequence"
-                    value={getRawDataValue(
-                      securityEvent.raw_data,
-                      "test_sequence"
-                    )}
-                  />
-
-                </div>
-
-              </div>
-
             </section>
-          )}
 
-          {/* Process Context */}
-          {isProcessCreationEvent && (
-            <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
+            {/* Main investigation grid */}
+            <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(340px,0.75fr)]">
 
-              <div className="border-b border-zinc-800 p-6">
+              {/* Event context */}
+              <div className="overflow-hidden rounded-[14px] border border-white/[0.075] bg-[linear-gradient(180deg,rgba(17,25,35,0.96),rgba(13,20,28,0.96))] shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
 
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">
-                  Endpoint Telemetry
-                </p>
+                <div className="flex items-start justify-between border-b border-white/[0.07] px-6 py-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-[#69c5d7]" />
 
-                <h3 className="mt-2 font-medium">
-                  Process Context
-                </h3>
+                      <h2 className="text-[15px] font-semibold text-[#e9eef2]">
+                        Event context
+                      </h2>
+                    </div>
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  Process execution information captured with this event.
-                </p>
+                    <p className="mt-1.5 text-[11px] text-[#687784]">
+                      Normalized telemetry and entity relationships
+                    </p>
+                  </div>
 
-              </div>
+                  <span className="rounded-md border border-white/[0.07] bg-black/10 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-[#657481]">
+                    Normalized
+                  </span>
+                </div>
 
-              <div className="p-6">
+                <div className="grid md:grid-cols-2">
 
-                <div className="grid grid-cols-2 gap-8">
-
-                  <DetailField
-                    label="Process"
-                    value={
-                      securityEvent.process_name ??
-                      "Unavailable"
-                    }
+                  <ContextField
+                    label="Event type"
+                    value={formatEventType(
+                      securityEvent.event_type
+                    )}
                   />
 
-                  <DetailField
-                    label="Hostname"
-                    value={
-                      securityEvent.hostname ??
-                      "Unavailable"
-                    }
+                  <ContextField
+                    label="Telemetry source"
+                    value={securityEvent.source}
+                  />
+
+                  <ContextField
+                    label="Endpoint"
+                    value={host}
+                  />
+
+                  <ContextField
+                    label="Identity"
+                    value={identity}
+                  />
+
+                  <ContextField
+                    label="Source address"
+                    value={sourceAddress}
+                    mono
+                  />
+
+                  <ContextField
+                    label="Destination address"
+                    value={destinationAddress}
+                    mono
                   />
 
                 </div>
 
-                <div className="mt-8">
+                {/* Authentication-specific context */}
+                {isAuthenticationEvent && (
+                  <div className="border-t border-white/[0.07] px-6 py-6">
 
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">
-                    Command Line
-                  </p>
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7ca3d8]">
+                          Identity telemetry
+                        </p>
 
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-sm leading-6 text-orange-300">
-                    {securityEvent.command_line ??
-                      "Command line unavailable."}
-                  </pre>
+                        <h3 className="mt-1.5 text-[14px] font-semibold text-[#e4e9ed]">
+                          Authentication context
+                        </h3>
+                      </div>
 
-                </div>
+                      <span className="rounded-md border border-[#7ca3d8]/20 bg-[#7ca3d8]/[0.06] px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-[#8db1df]">
+                        Identity
+                      </span>
+                    </div>
 
-              </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
 
-            </section>
-          )}
+                      <CompactField
+                        label="Outcome"
+                        value={getRawDataValue(
+                          securityEvent.raw_data,
+                          "outcome"
+                        )}
+                      />
 
-          {/* Detection Results */}
-          <section className="mt-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+                      <CompactField
+                        label="Method"
+                        value={getRawDataValue(
+                          securityEvent.raw_data,
+                          "authentication_method"
+                        )}
+                      />
 
-            <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+                      <CompactField
+                        label="Test sequence"
+                        value={getRawDataValue(
+                          securityEvent.raw_data,
+                          "test_sequence"
+                        )}
+                      />
 
-              <div>
+                    </div>
 
-                <h3 className="font-medium">
-                  Detection Results
-                </h3>
+                  </div>
+                )}
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  Alerts generated from this security event.
-                </p>
+                {/* Process-specific context */}
+                {isProcessCreationEvent && (
+                  <div className="border-t border-white/[0.07] px-6 py-6">
 
-              </div>
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#c9a965]">
+                          Endpoint telemetry
+                        </p>
 
-              <span className="text-xs text-zinc-500">
-                {triggeredAlerts.length}{" "}
-                {triggeredAlerts.length === 1
-                  ? "alert"
-                  : "alerts"}
-              </span>
+                        <h3 className="mt-1.5 text-[14px] font-semibold text-[#e4e9ed]">
+                          Process execution
+                        </h3>
+                      </div>
 
-            </div>
+                      <span className="rounded-md border border-[#c9a965]/20 bg-[#c9a965]/[0.06] px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-[#d9bb77]">
+                        Process
+                      </span>
+                    </div>
 
-            {triggeredAlerts.length === 0 ? (
-              <div className="px-6 py-12 text-center">
+                    <div className="grid gap-3 sm:grid-cols-2">
 
-                <div className="mx-auto h-3 w-3 rounded-full border border-emerald-700 bg-emerald-500" />
+                      <CompactField
+                        label="Process"
+                        value={
+                          securityEvent.process_name ??
+                          "Unavailable"
+                        }
+                      />
 
-                <p className="mt-4 text-sm font-medium text-zinc-300">
-                  No detection matched this event
-                </p>
+                      <CompactField
+                        label="Endpoint"
+                        value={host}
+                      />
 
-                <p className="mt-2 text-sm text-zinc-500">
-                  The event was ingested successfully but did not generate an alert.
-                </p>
+                    </div>
 
-              </div>
-            ) : (
-              <div className="divide-y divide-zinc-800">
+                    <div className="mt-4">
+                      <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#63717d]">
+                        Command line
+                      </p>
 
-                {triggeredAlerts.map(
-                  (alert) => (
-                    <TriggeredAlertRow
-                      key={alert.id}
-                      alert={alert}
-                    />
-                  )
+                      <div className="overflow-x-auto rounded-[10px] border border-white/[0.07] bg-[#060b10] px-4 py-4">
+                        <code className="whitespace-pre-wrap break-words font-mono text-[11px] leading-6 text-[#d9bb77]">
+                          {
+                            securityEvent.command_line ??
+                            "Command line unavailable."
+                          }
+                        </code>
+                      </div>
+                    </div>
+
+                  </div>
                 )}
 
               </div>
-            )}
 
-          </section>
+              {/* Detection panel */}
+              <div className="overflow-hidden rounded-[14px] border border-white/[0.075] bg-[linear-gradient(180deg,rgba(17,25,35,0.96),rgba(13,20,28,0.96))] shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
 
-          {/* Raw Event Data */}
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
+                <div className="border-b border-white/[0.07] px-5 py-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-[15px] font-semibold text-[#e9eef2]">
+                        Detection results
+                      </h2>
 
-            <div className="border-b border-zinc-800 p-6">
+                      <p className="mt-1.5 text-[11px] text-[#687784]">
+                        Alerts linked to this event
+                      </p>
+                    </div>
 
-              <h3 className="font-medium">
-                Raw Event Data
-              </h3>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-[9px] font-medium ${
+                        triggeredAlerts.length > 0
+                          ? "border-[#d9a950]/20 bg-[#d9a950]/[0.06] text-[#e0b765]"
+                          : "border-[#63cfa4]/20 bg-[#63cfa4]/[0.06] text-[#78d2af]"
+                      }`}
+                    >
+                      {triggeredAlerts.length} linked
+                    </span>
+                  </div>
+                </div>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Additional telemetry retained from the original event.
-              </p>
+                {triggeredAlerts.length === 0 ? (
+                  <div className="px-5 py-8">
 
-            </div>
+                    <div className="rounded-[12px] border border-[#63cfa4]/15 bg-[#63cfa4]/[0.035] p-5">
 
-            <div className="p-6">
+                      <div className="flex items-center gap-3">
+                        <span className="h-2 w-2 rounded-full bg-[#63cfa4]" />
 
-              {securityEvent.raw_data ? (
-                <pre className="max-h-96 overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 font-mono text-xs leading-6 text-zinc-400">
-                  {JSON.stringify(
-                    securityEvent.raw_data,
-                    null,
-                    2
-                  )}
-                </pre>
-              ) : (
-                <p className="text-sm text-zinc-500">
-                  No raw event data was provided.
-                </p>
-              )}
+                        <p className="text-[12px] font-medium text-[#d9e4df]">
+                          No detection matched
+                        </p>
+                      </div>
 
-            </div>
+                      <p className="mt-3 text-[11px] leading-5 text-[#71817b]">
+                        The telemetry was ingested
+                        successfully without generating
+                        a linked security alert.
+                      </p>
 
-          </section>
+                    </div>
 
-          {/* Technical Metadata */}
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/[0.065]">
 
-            <h3 className="font-medium">
-              Technical Metadata
-            </h3>
+                    {triggeredAlerts.map(
+                      (alert) => (
+                        <TriggeredAlertRow
+                          key={alert.id}
+                          alert={alert}
+                        />
+                      )
+                    )}
 
-            <p className="mt-1 text-sm text-zinc-500">
-              Internal CASE//ZERO security event identifiers.
-            </p>
+                  </div>
+                )}
 
-            <div className="mt-6">
+                <div className="border-t border-white/[0.07] px-5 py-4">
+                  <Link
+                    href="/alerts"
+                    className="flex items-center justify-between rounded-[9px] border border-white/[0.07] bg-black/10 px-4 py-3 text-[11px] font-medium text-[#aab5be] transition hover:border-white/[0.12] hover:bg-white/[0.025] hover:text-white"
+                  >
+                    <span>
+                      Open alert workspace
+                    </span>
 
-              <p className="text-xs uppercase tracking-wider text-zinc-500">
-                Security Event ID
-              </p>
+                    <span className="text-[#c9a965]">
+                      →
+                    </span>
+                  </Link>
+                </div>
 
-              <code className="mt-2 block rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-                {securityEvent.id}
-              </code>
+              </div>
 
-            </div>
+            </section>
 
-          </section>
+            {/* Network / timeline context */}
+            <section className="mt-5 grid gap-5 xl:grid-cols-2">
 
+              <div className="overflow-hidden rounded-[14px] border border-white/[0.075] bg-[linear-gradient(180deg,rgba(17,25,35,0.94),rgba(13,20,28,0.94))]">
+
+                <div className="border-b border-white/[0.07] px-6 py-5">
+                  <h2 className="text-[14px] font-semibold text-[#e5eaee]">
+                    Network context
+                  </h2>
+
+                  <p className="mt-1 text-[11px] text-[#687784]">
+                    Addresses associated with this telemetry record
+                  </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2">
+
+                  <NetworkField
+                    label="Source"
+                    value={sourceAddress}
+                    accent="#69c5d7"
+                  />
+
+                  <NetworkField
+                    label="Destination"
+                    value={destinationAddress}
+                    accent="#c9a965"
+                  />
+
+                </div>
+
+              </div>
+
+              <div className="overflow-hidden rounded-[14px] border border-white/[0.075] bg-[linear-gradient(180deg,rgba(17,25,35,0.94),rgba(13,20,28,0.94))]">
+
+                <div className="border-b border-white/[0.07] px-6 py-5">
+                  <h2 className="text-[14px] font-semibold text-[#e5eaee]">
+                    Record timeline
+                  </h2>
+
+                  <p className="mt-1 text-[11px] text-[#687784]">
+                    Event occurrence and platform ingestion
+                  </p>
+                </div>
+
+                <div className="px-6 py-5">
+
+                  <TimelineEntry
+                    label="Event recorded"
+                    value={formatEventTime(
+                      securityEvent.event_time
+                    )}
+                    accent="#69c5d7"
+                    first
+                  />
+
+                  <TimelineEntry
+                    label="Ingested by CASE//ZERO"
+                    value={formatEventTime(
+                      securityEvent.created_at
+                    )}
+                    accent="#63cfa4"
+                  />
+
+                </div>
+
+              </div>
+
+            </section>
+
+            {/* Raw telemetry */}
+            <section className="mt-5 overflow-hidden rounded-[14px] border border-white/[0.075] bg-[linear-gradient(180deg,rgba(17,25,35,0.95),rgba(13,20,28,0.95))]">
+
+              <div className="flex items-start justify-between gap-6 border-b border-white/[0.07] px-6 py-5">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-[#e5eaee]">
+                    Raw telemetry
+                  </h2>
+
+                  <p className="mt-1 text-[11px] text-[#687784]">
+                    Original structured event attributes retained by the platform
+                  </p>
+                </div>
+
+                <span className="rounded-md border border-white/[0.07] bg-black/10 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-[#657481]">
+                  JSON
+                </span>
+              </div>
+
+              <div className="p-5">
+                {securityEvent.raw_data ? (
+                  <pre className="max-h-[430px] overflow-auto rounded-[10px] border border-white/[0.07] bg-[#05090d] px-5 py-4 font-mono text-[11px] leading-6 text-[#8fa0ad]">
+                    {JSON.stringify(
+                      securityEvent.raw_data,
+                      null,
+                      2
+                    )}
+                  </pre>
+                ) : (
+                  <div className="rounded-[10px] border border-dashed border-white/[0.08] bg-black/10 px-5 py-8 text-center">
+                    <p className="text-[12px] font-medium text-[#98a4ae]">
+                      No raw event data
+                    </p>
+
+                    <p className="mt-1 text-[11px] text-[#5f6d78]">
+                      This event does not include additional raw telemetry.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+            </section>
+
+            {/* Technical metadata */}
+            <section className="mt-5 rounded-[14px] border border-white/[0.075] bg-[#0b1118]/80 px-6 py-5">
+
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.11em] text-[#5f6e7a]">
+                    Security Event ID
+                  </p>
+
+                  <code className="mt-2 block break-all font-mono text-[11px] text-[#96a5b1]">
+                    {securityEvent.id}
+                  </code>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[#63cfa4]" />
+
+                  <span className="text-[10px] text-[#6d7c87]">
+                    CASE//ZERO normalized telemetry record
+                  </span>
+                </div>
+
+              </div>
+
+            </section>
+
+          </div>
         </main>
+      </div>
+    </div>
+  );
+}
 
+
+function SnapshotCard({
+  label,
+  value,
+  context,
+  accent,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  context: string;
+  accent: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[14px] border border-white/[0.075] bg-[linear-gradient(180deg,rgba(17,25,35,0.94),rgba(13,20,28,0.94))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+
+      <div
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            `linear-gradient(90deg, ${accent}, transparent 70%)`,
+        }}
+      />
+
+      <div className="flex items-center justify-between gap-3">
+
+        <p className="text-[11px] font-medium text-[#8996a1]">
+          {label}
+        </p>
+
+        <span
+          className="h-1.5 w-6 shrink-0 rounded-full"
+          style={{
+            background: accent,
+            opacity: 0.7,
+          }}
+        />
+
+      </div>
+
+      <p
+        className={`mt-4 break-words font-semibold tracking-[-0.035em] text-[#f3f5f7] ${
+          compact
+            ? "text-[18px] leading-6"
+            : "text-[36px] leading-none"
+        }`}
+      >
+        {value}
+      </p>
+
+      <p className="mt-4 text-[10px] text-[#657481]">
+        {context}
+      </p>
+
+    </div>
+  );
+}
+
+
+function ContextField({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="border-b border-white/[0.06] px-6 py-5 md:odd:border-r">
+
+      <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#5f6e7a]">
+        {label}
+      </p>
+
+      <p
+        className={`mt-2 break-words text-[12px] text-[#d1d8de] ${
+          mono
+            ? "font-mono"
+            : ""
+        }`}
+      >
+        {value}
+      </p>
+
+    </div>
+  );
+}
+
+
+function CompactField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[10px] border border-white/[0.07] bg-[#091017]/70 px-4 py-4">
+
+      <p className="text-[9px] font-semibold uppercase tracking-[0.09em] text-[#5e6d79]">
+        {label}
+      </p>
+
+      <p className="mt-2 break-words text-[11px] font-medium text-[#c8d0d6]">
+        {value}
+      </p>
+
+    </div>
+  );
+}
+
+
+function NetworkField({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent: string;
+}) {
+  return (
+    <div className="px-6 py-6 sm:first:border-r sm:first:border-white/[0.07]">
+
+      <div className="flex items-center gap-2">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{
+            background: accent,
+          }}
+        />
+
+        <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#64727e]">
+          {label}
+        </p>
+      </div>
+
+      <code className="mt-3 block break-all font-mono text-[13px] text-[#d2d9df]">
+        {value}
+      </code>
+
+    </div>
+  );
+}
+
+
+function TimelineEntry({
+  label,
+  value,
+  accent,
+  first = false,
+}: {
+  label: string;
+  value: string;
+  accent: string;
+  first?: boolean;
+}) {
+  return (
+    <div className="relative flex gap-4 pb-5 last:pb-0">
+
+      {!first && (
+        <div className="absolute left-[4px] -top-5 h-5 w-px bg-white/[0.08]" />
+      )}
+
+      <div className="relative mt-1">
+        <span
+          className="block h-[9px] w-[9px] rounded-full"
+          style={{
+            background: accent,
+          }}
+        />
+
+        <span className="absolute left-[4px] top-[9px] h-[calc(100%+12px)] w-px bg-white/[0.08] last:hidden" />
+      </div>
+
+      <div>
+        <p className="text-[11px] font-medium text-[#c8d0d6]">
+          {label}
+        </p>
+
+        <p className="mt-1 text-[10px] text-[#687784]">
+          {value}
+        </p>
       </div>
 
     </div>
@@ -462,77 +852,48 @@ function TriggeredAlertRow({
   return (
     <Link
       href={`/alerts/${alert.id}`}
-      className="flex items-center justify-between gap-6 px-6 py-5 transition hover:bg-zinc-800/40"
+      className="block px-5 py-5 transition hover:bg-white/[0.025]"
     >
 
-      <div className="min-w-0">
+      <div className="flex items-start justify-between gap-4">
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0">
 
-          <SeverityBadge
-            severity={alert.severity}
-          />
+          <div className="flex flex-wrap items-center gap-2">
 
-          <StatusBadge
-            status={alert.status}
-          />
+            <SeverityBadge
+              severity={alert.severity}
+            />
 
-          <span className="text-xs text-zinc-500">
+            <StatusBadge
+              status={alert.status}
+            />
+
+          </div>
+
+          <p className="mt-3 line-clamp-2 text-[12px] font-medium leading-5 text-[#dbe2e7]">
+            {alert.title}
+          </p>
+
+          {alert.description && (
+            <p className="mt-1 line-clamp-2 text-[10px] leading-5 text-[#667581]">
+              {alert.description}
+            </p>
+          )}
+
+          <p className="mt-3 text-[9px] uppercase tracking-[0.07em] text-[#53616d]">
             {alert.source}
-          </span>
+          </p>
 
         </div>
 
-        <p className="mt-3 text-sm font-medium text-zinc-100">
-          {alert.title}
-        </p>
-
-        {alert.description && (
-          <p className="mt-1 truncate text-xs text-zinc-500">
-            {alert.description}
-          </p>
-        )}
-
-      </div>
-
-      <div className="shrink-0 text-right">
-
-        <p className="text-xs text-zinc-500">
-          {formatEventTime(
-            alert.created_at
-          )}
-        </p>
-
-        <p className="mt-2 text-sm font-medium text-emerald-400">
-          View Alert →
-        </p>
+        <span className="shrink-0 text-[12px] text-[#c9a965]">
+          →
+        </span>
 
       </div>
 
     </Link>
-  );
-}
-
-
-function DetailField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div>
-
-      <p className="text-xs uppercase tracking-wider text-zinc-500">
-        {label}
-      </p>
-
-      <p className="mt-2 break-words text-sm text-zinc-300">
-        {value}
-      </p>
-
-    </div>
   );
 }
 
@@ -550,30 +911,29 @@ function EventTypeBadge({
     string
   > = {
     process_creation:
-      "border-violet-900 bg-violet-950 text-violet-400",
+      "border-[#c9a965]/20 bg-[#c9a965]/[0.07] text-[#d9bb77]",
 
     authentication:
-      "border-blue-900 bg-blue-950 text-blue-400",
+      "border-[#7ca3d8]/20 bg-[#7ca3d8]/[0.07] text-[#8eb2e1]",
 
     network_connection:
-      "border-cyan-900 bg-cyan-950 text-cyan-400",
+      "border-[#69c5d7]/20 bg-[#69c5d7]/[0.07] text-[#86d2df]",
 
     file_creation:
-      "border-orange-900 bg-orange-950 text-orange-400",
+      "border-[#df9659]/20 bg-[#df9659]/[0.07] text-[#e5a56f]",
   };
 
   return (
     <span
-      className={`rounded-md border px-3 py-1.5 text-xs font-medium uppercase ${
+      className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] ${
         styles[
           normalizedEventType
         ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+        "border-white/[0.09] bg-white/[0.035] text-[#99a6b0]"
       }`}
     >
-      {eventType.replaceAll(
-        "_",
-        " "
+      {formatEventType(
+        eventType
       )}
     </span>
   );
@@ -593,25 +953,25 @@ function SeverityBadge({
     string
   > = {
     low:
-      "border-blue-900 bg-blue-950 text-blue-400",
+      "border-[#69c5d7]/20 bg-[#69c5d7]/[0.07] text-[#82cfdb]",
 
     medium:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
+      "border-[#d9a950]/20 bg-[#d9a950]/[0.07] text-[#dfb760]",
 
     high:
-      "border-orange-900 bg-orange-950 text-orange-400",
+      "border-[#df9659]/20 bg-[#df9659]/[0.07] text-[#e6a168]",
 
     critical:
-      "border-red-900 bg-red-950 text-red-400",
+      "border-[#e66b6b]/20 bg-[#e66b6b]/[0.07] text-[#eb8585]",
   };
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`rounded-md border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] ${
         styles[
           normalizedSeverity
         ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+        "border-white/[0.09] bg-white/[0.035] text-[#99a6b0]"
       }`}
     >
       {severity}
@@ -633,28 +993,28 @@ function StatusBadge({
     string
   > = {
     new:
-      "border-zinc-700 bg-zinc-800 text-zinc-300",
+      "border-white/[0.09] bg-white/[0.04] text-[#aeb8c0]",
 
     assigned:
-      "border-blue-900 bg-blue-950 text-blue-400",
+      "border-[#7ca3d8]/20 bg-[#7ca3d8]/[0.07] text-[#8eb2e1]",
 
     investigating:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
+      "border-[#d9a950]/20 bg-[#d9a950]/[0.07] text-[#dfb760]",
 
     resolved:
-      "border-emerald-900 bg-emerald-950 text-emerald-400",
+      "border-[#63cfa4]/20 bg-[#63cfa4]/[0.07] text-[#7bd7b3]",
 
     closed:
-      "border-zinc-800 bg-zinc-950 text-zinc-500",
+      "border-white/[0.07] bg-black/10 text-[#6f7c87]",
   };
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`rounded-md border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] ${
         styles[
           normalizedStatus
         ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+        "border-white/[0.09] bg-white/[0.035] text-[#99a6b0]"
       }`}
     >
       {status}
@@ -684,9 +1044,32 @@ function getEventTitle(
     normalizedEventType ===
     "authentication"
   ) {
-    return "Authentication Event";
+    return "Authentication Activity";
   }
 
+  if (
+    normalizedEventType ===
+    "network_connection"
+  ) {
+    return "Network Connection";
+  }
+
+  if (
+    normalizedEventType ===
+    "file_creation"
+  ) {
+    return "File Creation";
+  }
+
+  return formatEventType(
+    eventType
+  );
+}
+
+
+function formatEventType(
+  eventType: string
+) {
   return eventType
     .replaceAll(
       "_",
@@ -727,7 +1110,9 @@ function getRawDataValue(
     return String(value);
   }
 
-  return JSON.stringify(value);
+  return JSON.stringify(
+    value
+  );
 }
 
 
@@ -741,6 +1126,8 @@ function formatEventTime(
       timeStyle: "short",
     }
   ).format(
-    new Date(timestamp)
+    new Date(
+      timestamp
+    )
   );
 }
