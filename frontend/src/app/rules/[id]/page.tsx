@@ -17,12 +17,17 @@ import type {
 export default async function DetectionRuleDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 }) {
-  const { id } = await params;
+  const { id } =
+    await params;
 
   const rule =
-    await getDetectionRule(id);
+    await getDetectionRule(
+      id
+    );
 
   if (!rule) {
     notFound();
@@ -33,357 +38,530 @@ export default async function DetectionRuleDetailPage({
       rule.id
     );
 
+  const attackMappings =
+    rule.mitre_attack;
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-
+    <div className="min-h-screen text-[#f1f4f7]">
       <div className="flex min-h-screen">
-
         <Sidebar />
 
-        <main className="flex-1 p-10">
+        <main className="min-w-0 flex-1">
+          <div className="mx-auto w-full max-w-[1700px] px-8 py-8 xl:px-10 xl:py-10">
 
-          {/* Back */}
-          <div className="mb-8">
+            {/* Breadcrumb */}
+            <div className="mb-5 flex items-center gap-2 text-[10px]">
+              <Link
+                href="/rules"
+                className="font-medium text-[#dce3e8] transition hover:text-[#c9a965]"
+              >
+                Detection Rules
+              </Link>
 
-            <Link
-              href="/rules"
-              className="text-sm text-zinc-500 transition hover:text-zinc-200"
-            >
-              &larr; Back to Detection Rules
-            </Link>
+              <span className="text-[#44525e]">
+                /
+              </span>
 
-          </div>
-
-          {/* Header */}
-          <header className="mb-8 flex items-start justify-between gap-8">
-
-            <div className="min-w-0">
-
-              <p className="text-sm text-emerald-400">
-                CASE//ZERO / DETECTION RULE
-              </p>
-
-              <h2 className="mt-2 text-3xl font-semibold">
-                {rule.name}
-              </h2>
-
-              <p className="mt-3 max-w-4xl text-sm leading-6 text-zinc-500">
-                {rule.description}
-              </p>
-
+              <span className="text-[#62717e]">
+                Rule Record
+              </span>
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
+            {/* Header */}
+            <header className="mb-7 flex items-start justify-between gap-8">
+              <div className="min-w-0">
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="text-[12px] font-semibold text-[#c9a965]">
+                    Security Operations
+                  </span>
 
-              <SeverityBadge
-                severity={
-                  rule.severity
-                }
-              />
+                  <span className="h-px w-8 bg-[#c9a965]/40" />
 
-              <RuleTypeBadge
-                ruleType={
-                  rule.rule_type
-                }
-              />
-
-              <EnabledBadge
-                enabled={
-                  rule.enabled
-                }
-              />
-
-            </div>
-
-          </header>
-
-          {/* Rule Overview */}
-          <section className="rounded-xl border border-zinc-800 bg-zinc-900">
-
-            <div className="border-b border-zinc-800 px-6 py-5">
-
-              <h3 className="font-medium">
-                Rule Overview
-              </h3>
-
-              <p className="mt-1 text-sm text-zinc-500">
-                Detection metadata and event coverage.
-              </p>
-
-            </div>
-
-            <div className="grid grid-cols-4 gap-8 p-6">
-
-              <OverviewField
-                label="Severity"
-                value={
-                  rule.severity.toUpperCase()
-                }
-              />
-
-              <OverviewField
-                label="Rule Type"
-                value={
-                  rule.rule_type
-                    .replaceAll(
-                      "_",
-                      " "
-                    )
-                    .toUpperCase()
-                }
-              />
-
-              <OverviewField
-                label="Event Type"
-                value={
-                  rule.event_type
-                    .replaceAll(
-                      "_",
-                      " "
-                    )
-                }
-              />
-
-              <OverviewField
-                label="Status"
-                value={
-                  rule.enabled
-                    ? "ENABLED"
-                    : "DISABLED"
-                }
-              />
-
-            </div>
-
-          </section>
-
-          {/* Detection Logic */}
-          <section className="mt-6 rounded-xl border border-violet-900/70 bg-zinc-900">
-
-            <div className="border-b border-zinc-800 px-6 py-5">
-
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-400">
-                Detection Logic
-              </p>
-
-              <h3 className="mt-2 font-medium">
-                Rule Conditions
-              </h3>
-
-              <p className="mt-1 text-sm text-zinc-500">
-                Conditions evaluated by the CASE//ZERO detection engine.
-              </p>
-
-            </div>
-
-            <div className="p-6">
-
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-
-                <p className="text-sm leading-7 text-zinc-300">
-                  {rule.logic}
-                </p>
-
-              </div>
-
-            </div>
-
-          </section>
-
-          {/* MITRE ATT&CK */}
-          <section className="mt-6 overflow-hidden rounded-xl border border-orange-900/70 bg-zinc-900">
-
-            <div className="flex items-start justify-between gap-6 border-b border-zinc-800 px-6 py-5">
-
-              <div>
-
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-400">
-                  MITRE ATT&amp;CK
-                </p>
-
-                <h3 className="mt-2 font-medium">
-                  Technique Mapping
-                </h3>
-
-                <p className="mt-1 text-sm text-zinc-500">
-                  ATT&amp;CK techniques and tactics associated with this detection.
-                </p>
-
-              </div>
-
-              <div className="rounded-md border border-orange-900 bg-orange-950 px-3 py-1.5 text-xs font-medium text-orange-400">
-                {rule.mitre_attack.length}{" "}
-                {rule.mitre_attack.length === 1
-                  ? "Technique"
-                  : "Techniques"}
-              </div>
-
-            </div>
-
-            {rule.mitre_attack.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-2">
-
-                {rule.mitre_attack.map(
-                  (mapping) => (
-                    <MitreAttackCard
-                      key={`${mapping.technique_id}-${mapping.tactic_id}`}
-                      mapping={
-                        mapping
-                      }
-                    />
-                  )
-                )}
-
-              </div>
-            ) : (
-              <div className="px-6 py-10 text-center">
-
-                <p className="text-sm font-medium text-zinc-300">
-                  No ATT&amp;CK mapping available
-                </p>
-
-                <p className="mt-2 text-sm text-zinc-500">
-                  This detection has not yet been mapped to a MITRE ATT&amp;CK technique.
-                </p>
-
-              </div>
-            )}
-
-          </section>
-
-          {/* Response Mapping */}
-          <section className="mt-6 overflow-hidden rounded-xl border border-emerald-900/70 bg-zinc-900">
-
-            <div className="border-b border-zinc-800 px-6 py-5">
-
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-400">
-                Response Mapping
-              </p>
-
-              <h3 className="mt-2 font-medium">
-                Incident Response Playbooks
-              </h3>
-
-              <p className="mt-1 text-sm text-zinc-500">
-                Analyst response procedures mapped to alerts produced by this rule.
-              </p>
-
-            </div>
-
-            {playbooks.length > 0 ? (
-              <div className="space-y-4 p-6">
-
-                {playbooks.map(
-                  (playbook) => (
-                    <PlaybookCard
-                      key={playbook.id}
-                      playbook={
-                        playbook
-                      }
-                    />
-                  )
-                )}
-
-              </div>
-            ) : (
-              <div className="p-6">
-
-                <div className="rounded-lg border border-yellow-900 bg-yellow-950/30 px-4 py-4">
-
-                  <p className="text-sm font-medium text-yellow-400">
-                    No response playbook mapped
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 text-zinc-500">
-                    CASE//ZERO does not currently have an enabled incident response playbook mapped to this detection rule.
-                  </p>
-
+                  <span className="text-[11px] text-[#667583]">
+                    Detection Engineering
+                  </span>
                 </div>
 
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-[34px] font-semibold tracking-[-0.04em] text-[#f4f6f8]">
+                    {rule.name}
+                  </h1>
+
+                  <SeverityBadge
+                    severity={rule.severity}
+                  />
+
+                  <RuleTypeBadge
+                    ruleType={rule.rule_type}
+                  />
+
+                  <EnabledBadge
+                    enabled={rule.enabled}
+                  />
+                </div>
+
+                <p className="mt-3 max-w-4xl text-[13px] leading-6 text-[#81909c]">
+                  {rule.description}
+                </p>
               </div>
-            )}
 
-          </section>
+              <div className="flex shrink-0 items-center gap-3 pt-1">
+                <HeaderStatus
+                  label="Engine"
+                  value={
+                    rule.enabled
+                      ? "Evaluating"
+                      : "Disabled"
+                  }
+                  active={
+                    rule.enabled
+                  }
+                />
 
-          {/* Analyst Resources */}
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900">
+                <HeaderStatus
+                  label="Response"
+                  value={`${playbooks.length} mapped`}
+                />
+              </div>
+            </header>
 
-            <div className="border-b border-zinc-800 px-6 py-5">
+            <div className="h-px bg-gradient-to-r from-[#c9a965]/60 via-[#24323e] to-transparent" />
 
-              <h3 className="font-medium">
-                Analyst Resources
-              </h3>
+            {/* Snapshot */}
+            <section className="mt-7">
+              <div className="mb-3 flex items-end justify-between gap-6">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[#dce3e8]">
+                    Rule snapshot
+                  </h2>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                CASE//ZERO workflows that support investigation of this detection.
-              </p>
+                  <p className="mt-1 text-[11px] text-[#657481]">
+                    Detection configuration and
+                    coverage state
+                  </p>
+                </div>
 
-            </div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-[#53636f]">
+                  {rule.id}
+                </p>
+              </div>
 
-            <div className="grid grid-cols-3 gap-4 p-6">
+              <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+                <SnapshotCard
+                  label="Severity"
+                  value={
+                    rule.severity.toUpperCase()
+                  }
+                  context="Detection priority"
+                  accent={
+                    getSeverityAccent(
+                      rule.severity
+                    )
+                  }
+                />
 
-              <ResourceCard
-                title="Threat Hunting"
-                description="Search related telemetry by user, host, IP address, event type, process, or indicator."
-                href={`/hunt?event_type=${encodeURIComponent(
-                  rule.event_type
-                )}&run=1`}
-                action="Open Hunt"
+                <SnapshotCard
+                  label="Rule type"
+                  value={
+                    formatLabel(
+                      rule.rule_type
+                    )
+                  }
+                  context="Evaluation strategy"
+                  accent="#c9a965"
+                />
+
+                <SnapshotCard
+                  label="Event type"
+                  value={
+                    formatLabel(
+                      rule.event_type
+                    )
+                  }
+                  context="Telemetry coverage"
+                  accent="#69c5d7"
+                />
+
+                <SnapshotCard
+                  label="Engine state"
+                  value={
+                    rule.enabled
+                      ? "Enabled"
+                      : "Disabled"
+                  }
+                  context={
+                    rule.enabled
+                      ? "Currently evaluating"
+                      : "Evaluation suspended"
+                  }
+                  accent={
+                    rule.enabled
+                      ? "#63cfa4"
+                      : "#657481"
+                  }
+                />
+              </div>
+            </section>
+
+            {/* Workspace */}
+            <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+
+              {/* Left column */}
+              <div className="space-y-5">
+
+                {/* Detection Logic */}
+                <section className="overflow-hidden rounded-[14px] border border-[#1d2a35] bg-[#0b141d]/95 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+                  <PanelHeader
+                    title="Detection logic"
+                    description="Rule conditions evaluated by the CASE//ZERO detection engine."
+                    accent="#69c5d7"
+                    badge="RULE LOGIC"
+                  />
+
+                  <div className="p-6">
+                    <div className="rounded-[10px] border border-[#1f2d38] bg-[#070e15] px-5 py-5">
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#596976]">
+                          Evaluation condition
+                        </p>
+
+                        <span className="rounded-md border border-[#69c5d7]/20 bg-[#69c5d7]/[0.05] px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#83cbd7]">
+                          {formatLabel(
+                            rule.event_type
+                          )}
+                        </span>
+                      </div>
+
+                      <code className="block whitespace-pre-wrap break-words font-mono text-[12px] leading-7 text-[#c7d0d7]">
+                        {rule.logic}
+                      </code>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <MetadataTile
+                        label="Rule identifier"
+                        value={rule.id}
+                        mono
+                      />
+
+                      <MetadataTile
+                        label="Normalized event"
+                        value={
+                          rule.event_type
+                        }
+                        mono
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* ATT&CK */}
+                <section className="overflow-hidden rounded-[14px] border border-[#1d2a35] bg-[#0b141d]/95 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+                  <PanelHeader
+                    title="ATT&CK coverage"
+                    description="MITRE ATT&CK techniques and tactics associated with this detection."
+                    accent="#c9a965"
+                    badge={`${attackMappings.length} ${
+                      attackMappings.length === 1
+                        ? "MAPPING"
+                        : "MAPPINGS"
+                    }`}
+                  />
+
+                  {attackMappings.length > 0 ? (
+                    <div className="grid gap-4 p-6 lg:grid-cols-2">
+                      {attackMappings.map(
+                        (mapping) => (
+                          <MitreAttackCard
+                            key={`${mapping.technique_id}-${mapping.tactic_id}`}
+                            mapping={
+                              mapping
+                            }
+                          />
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <div className="px-6 py-12 text-center">
+                      <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-[#273540] bg-[#0d1720] text-[11px] text-[#778691]">
+                        0
+                      </div>
+
+                      <p className="mt-4 text-[13px] font-medium text-[#dce3e8]">
+                        No ATT&amp;CK mappings
+                      </p>
+
+                      <p className="mt-2 text-[11px] leading-5 text-[#657481]">
+                        This detection has not
+                        yet been associated with
+                        a MITRE ATT&amp;CK
+                        technique.
+                      </p>
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              {/* Right column */}
+              <div className="space-y-5">
+
+                {/* Response mapping */}
+                <section className="overflow-hidden rounded-[14px] border border-[#1d2a35] bg-[#0b141d]/95 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+                  <PanelHeader
+                    title="Response mapping"
+                    description="Incident-response workflows associated with this detection."
+                    accent="#63cfa4"
+                    badge={`${playbooks.length} MAPPED`}
+                  />
+
+                  {playbooks.length > 0 ? (
+                    <div className="divide-y divide-[#1b2833]">
+                      {playbooks.map(
+                        (playbook) => (
+                          <PlaybookCard
+                            key={
+                              playbook.id
+                            }
+                            playbook={
+                              playbook
+                            }
+                          />
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-5">
+                      <div className="rounded-[10px] border border-[#c9a965]/20 bg-[#c9a965]/[0.045] p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#c9a965]" />
+
+                          <div>
+                            <p className="text-[12px] font-medium text-[#dac17d]">
+                              No response playbook
+                              mapped
+                            </p>
+
+                            <p className="mt-2 text-[10px] leading-5 text-[#71808c]">
+                              CASE//ZERO does not
+                              currently have an
+                              incident-response
+                              playbook mapped to
+                              this detection.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Investigation pivots */}
+                <section className="overflow-hidden rounded-[14px] border border-[#1d2a35] bg-[#0b141d]/95">
+                  <PanelHeader
+                    title="Investigation pivots"
+                    description="Continue analysis from this detection rule."
+                    accent="#69c5d7"
+                    badge="ANALYST"
+                  />
+
+                  <div className="space-y-3 p-5">
+                    <ResourceCard
+                      title="Hunt matching telemetry"
+                      description="Search telemetry for events covered by this detection."
+                      href={`/hunt?event_type=${encodeURIComponent(
+                        rule.event_type
+                      )}&run=1`}
+                      accent="#c9a965"
+                    />
+
+                    <ResourceCard
+                      title="Review security events"
+                      description="Inspect normalized telemetry available to the detection engine."
+                      href="/events"
+                      accent="#69c5d7"
+                    />
+
+                    <ResourceCard
+                      title="Review alert queue"
+                      description="Inspect detection records requiring analyst review."
+                      href="/alerts"
+                      accent="#63cfa4"
+                    />
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            {/* Technical metadata */}
+            <section className="mt-5 overflow-hidden rounded-[14px] border border-[#1d2a35] bg-[#0b141d]/95">
+              <PanelHeader
+                title="Technical metadata"
+                description="Internal CASE//ZERO rule identifiers and engine configuration."
+                accent="#71818e"
+                badge="INTERNAL"
               />
 
-              <ResourceCard
-                title="Security Events"
-                description="Review normalized security telemetry available to the CASE//ZERO detection engine."
-                href="/events"
-                action="View Events"
-              />
+              <div className="grid gap-px bg-[#1b2833] md:grid-cols-2 xl:grid-cols-4">
+                <TechnicalField
+                  label="Rule ID"
+                  value={rule.id}
+                />
 
-              <ResourceCard
-                title="Alerts"
-                description="Review alerts generated by CASE//ZERO detection and correlation rules."
-                href="/alerts"
-                action="View Alerts"
-              />
+                <TechnicalField
+                  label="Event type"
+                  value={
+                    rule.event_type
+                  }
+                />
 
-            </div>
+                <TechnicalField
+                  label="Rule type"
+                  value={
+                    rule.rule_type
+                  }
+                />
 
-          </section>
-
-          {/* Technical Metadata */}
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-
-            <h3 className="font-medium">
-              Technical Metadata
-            </h3>
-
-            <p className="mt-1 text-sm text-zinc-500">
-              Internal CASE//ZERO detection identifiers.
-            </p>
-
-            <div className="mt-6 grid grid-cols-2 gap-6">
-
-              <MetadataField
-                label="Rule ID"
-                value={
-                  rule.id
-                }
-              />
-
-              <MetadataField
-                label="Event Type"
-                value={
-                  rule.event_type
-                }
-              />
-
-            </div>
-
-          </section>
-
+                <TechnicalField
+                  label="Engine state"
+                  value={
+                    rule.enabled
+                      ? "enabled"
+                      : "disabled"
+                  }
+                />
+              </div>
+            </section>
+          </div>
         </main>
+      </div>
+    </div>
+  );
+}
 
+
+function HeaderStatus({
+  label,
+  value,
+  active = false,
+}: {
+  label: string;
+  value: string;
+  active?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-[10px] border px-4 py-3 ${
+        active
+          ? "border-[#63cfa4]/20 bg-[#63cfa4]/[0.045]"
+          : "border-[#1f2c36] bg-[#0a121a]/75"
+      }`}
+    >
+      <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#62717e]">
+        {label}
+      </p>
+
+      <div className="mt-1 flex items-center gap-2">
+        {active && (
+          <span className="h-2 w-2 rounded-full bg-[#63cfa4] shadow-[0_0_10px_rgba(99,207,164,0.3)]" />
+        )}
+
+        <p
+          className={`text-[11px] font-medium ${
+            active
+              ? "text-[#84d8b7]"
+              : "text-[#d7dee4]"
+          }`}
+        >
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
+function SnapshotCard({
+  label,
+  value,
+  context,
+  accent,
+}: {
+  label: string;
+  value: string;
+  context: string;
+  accent: string;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[14px] border border-[#1e2c37] bg-gradient-to-b from-[#101b25] to-[#0c151e] p-5 shadow-[0_14px_35px_rgba(0,0,0,0.14)]">
+      <div
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            `linear-gradient(90deg, ${accent}, transparent 68%)`,
+        }}
+      />
+
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[12px] font-medium text-[#8996a1]">
+          {label}
+        </p>
+
+        <span
+          className="h-1.5 w-6 shrink-0 rounded-full"
+          style={{
+            background: accent,
+            opacity: 0.74,
+          }}
+        />
       </div>
 
+      <p className="mt-4 truncate text-[23px] font-semibold tracking-[-0.035em] text-[#f0f3f6]">
+        {value}
+      </p>
+
+      <p className="mt-3 text-[10px] text-[#657481]">
+        {context}
+      </p>
+    </div>
+  );
+}
+
+
+function PanelHeader({
+  title,
+  description,
+  accent,
+  badge,
+}: {
+  title: string;
+  description: string;
+  accent: string;
+  badge: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-6 border-b border-[#1d2a35] px-6 py-5">
+      <div className="flex items-start gap-3">
+        <span
+          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+          style={{
+            background: accent,
+          }}
+        />
+
+        <div>
+          <h2 className="text-[14px] font-semibold text-[#e5eaee]">
+            {title}
+          </h2>
+
+          <p className="mt-1 text-[10px] leading-5 text-[#657481]">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      <span className="shrink-0 rounded-md border border-[#263541] bg-[#0b141c] px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#70808c]">
+        {badge}
+      </span>
     </div>
   );
 }
@@ -395,52 +573,40 @@ function MitreAttackCard({
   mapping: MitreAttackMapping;
 }) {
   return (
-    <article className="rounded-xl border border-orange-900/50 bg-zinc-950/70 p-5">
-
-      <div className="flex items-start justify-between gap-6">
-
+    <article className="rounded-[11px] border border-[#263440] bg-[#08111a]/85 p-5 transition hover:border-[#c9a965]/25">
+      <div className="flex items-start justify-between gap-5">
         <div className="min-w-0">
+          <p className="font-mono text-[10px] font-semibold tracking-[0.04em] text-[#d3b970]">
+            {mapping.technique_id}
+          </p>
 
-          <div className="flex flex-wrap items-center gap-2">
-
-            <span className="rounded-md border border-orange-900 bg-orange-950 px-2.5 py-1 font-mono text-xs font-medium text-orange-400">
-              {mapping.technique_id}
-            </span>
-
-            <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium uppercase text-zinc-400">
-              Technique
-            </span>
-
-          </div>
-
-          <h4 className="mt-4 text-lg font-medium text-zinc-100">
+          <h3 className="mt-2 text-[13px] font-semibold text-[#e1e7eb]">
             {mapping.technique_name}
-          </h4>
-
+          </h3>
         </div>
 
+        <span className="rounded-md border border-[#c9a965]/20 bg-[#c9a965]/[0.05] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#cdb36d]">
+          Technique
+        </span>
       </div>
 
-      <div className="mt-5 border-t border-zinc-800 pt-4">
-
-        <p className="text-xs uppercase tracking-wider text-zinc-600">
-          ATT&amp;CK Tactic
+      <div className="mt-5 border-t border-[#1b2833] pt-4">
+        <p className="text-[8px] font-semibold uppercase tracking-[0.12em] text-[#52626f]">
+          ATT&amp;CK tactic
         </p>
 
         <div className="mt-2 flex items-center gap-3">
-
-          <span className="font-mono text-sm text-orange-300">
+          <span className="font-mono text-[10px] text-[#8797a3]">
             {mapping.tactic_id}
           </span>
 
-          <span className="text-sm text-zinc-400">
+          <span className="h-3 w-px bg-[#26333d]" />
+
+          <span className="text-[11px] font-medium text-[#bac5cd]">
             {mapping.tactic_name}
           </span>
-
         </div>
-
       </div>
-
     </article>
   );
 }
@@ -452,65 +618,50 @@ function PlaybookCard({
   playbook: Playbook;
 }) {
   return (
-    <article className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-5">
-
-      <div className="flex items-start justify-between gap-8">
-
-        <div className="min-w-0 flex-1">
-
+    <article className="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-
             <SeverityBadge
               severity={
                 playbook.severity
               }
             />
 
-            <span className="rounded-md border border-emerald-900 bg-emerald-950 px-2.5 py-1 text-xs font-medium uppercase text-emerald-400">
+            <span className="rounded-md border border-[#63cfa4]/20 bg-[#63cfa4]/[0.05] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#80d5b4]">
               Mapped
             </span>
 
-            <span className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium uppercase text-zinc-400">
-              {playbook.steps.length} Steps
+            <span className="rounded-md border border-[#263541] bg-[#0c151d] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#758490]">
+              {playbook.steps.length}{" "}
+              {playbook.steps.length === 1
+                ? "step"
+                : "steps"}
             </span>
-
           </div>
 
-          <h4 className="mt-4 text-lg font-medium text-zinc-100">
+          <h3 className="mt-3 text-[13px] font-semibold text-[#e2e8ec]">
             {playbook.name}
-          </h4>
+          </h3>
 
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-zinc-500">
+          <p className="mt-2 text-[10px] leading-5 text-[#677682]">
             {playbook.description}
           </p>
-
         </div>
-
-        <div className="w-64 shrink-0">
-
-          <p className="text-xs uppercase tracking-wider text-zinc-600">
-            Playbook ID
-          </p>
-
-          <p className="mt-2 break-words text-sm text-zinc-400">
-            {playbook.id}
-          </p>
-
-        </div>
-
       </div>
 
-      <div className="mt-5 border-t border-zinc-800 pt-5">
+      <Link
+        href={`/playbooks/${playbook.id}`}
+        className="mt-4 flex items-center justify-between rounded-[8px] border border-[#263541] bg-[#09121a] px-4 py-3 text-[10px] font-medium text-[#d5dde3] transition hover:border-[#c9a965]/30 hover:text-[#dec47e]"
+      >
+        <span>
+          Open response playbook
+        </span>
 
-        <Link
-          href={`/playbooks/${playbook.id}`}
-          className="inline-flex rounded-lg border border-emerald-800 bg-emerald-950 px-4 py-2.5 text-sm font-medium text-emerald-400 transition hover:bg-emerald-900"
-        >
-          Open Response Playbook &rarr;
-        </Link>
-
-      </div>
-
+        <span className="text-[#c9a965]">
+          →
+        </span>
+      </Link>
     </article>
   );
 }
@@ -520,60 +671,77 @@ function ResourceCard({
   title,
   description,
   href,
-  action,
+  accent,
 }: {
   title: string;
   description: string;
   href: string;
-  action: string;
+  accent: string;
 }) {
   return (
     <Link
       href={href}
-      className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5 transition hover:border-zinc-700 hover:bg-zinc-950"
+      className="group block rounded-[10px] border border-[#22313c] bg-[#08111a]/80 p-4 transition hover:border-[#344550] hover:bg-[#0d1720]"
     >
+      <div className="flex items-start gap-3">
+        <span
+          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+          style={{
+            background: accent,
+          }}
+        />
 
-      <h4 className="text-sm font-medium text-zinc-200">
-        {title}
-      </h4>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[11px] font-semibold text-[#dce3e8]">
+              {title}
+            </p>
 
-      <p className="mt-2 text-xs leading-5 text-zinc-600">
-        {description}
-      </p>
+            <span className="text-[11px] text-[#c9a965] transition group-hover:translate-x-0.5">
+              →
+            </span>
+          </div>
 
-      <p className="mt-4 text-sm font-medium text-emerald-400">
-        {action} &rarr;
-      </p>
-
+          <p className="mt-2 text-[9px] leading-5 text-[#62717e]">
+            {description}
+          </p>
+        </div>
+      </div>
     </Link>
   );
 }
 
 
-function OverviewField({
+function MetadataTile({
   label,
   value,
+  mono = false,
 }: {
   label: string;
   value: string;
+  mono?: boolean;
 }) {
   return (
-    <div>
-
-      <p className="text-xs uppercase tracking-wider text-zinc-500">
+    <div className="rounded-[9px] border border-[#1f2d38] bg-[#09121a] px-4 py-4">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.11em] text-[#53636f]">
         {label}
       </p>
 
-      <p className="mt-2 text-sm font-medium text-zinc-200">
+      <p
+        className={`mt-2 break-words text-[10px] text-[#aebac3] ${
+          mono
+            ? "font-mono"
+            : ""
+        }`}
+      >
         {value}
       </p>
-
     </div>
   );
 }
 
 
-function MetadataField({
+function TechnicalField({
   label,
   value,
 }: {
@@ -581,16 +749,14 @@ function MetadataField({
   value: string;
 }) {
   return (
-    <div>
-
-      <p className="text-xs uppercase tracking-wider text-zinc-500">
+    <div className="bg-[#0b141d] px-6 py-5">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.11em] text-[#52626f]">
         {label}
       </p>
 
-      <code className="mt-2 block overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+      <code className="mt-2 block break-all font-mono text-[10px] text-[#a9b6bf]">
         {value}
       </code>
-
     </div>
   );
 }
@@ -609,26 +775,26 @@ function SeverityBadge({
     string
   > = {
     low:
-      "border-blue-900 bg-blue-950 text-blue-400",
+      "border-[#69c5d7]/25 bg-[#69c5d7]/[0.07] text-[#8bd4e0]",
 
     medium:
-      "border-yellow-900 bg-yellow-950 text-yellow-400",
+      "border-[#c9a965]/30 bg-[#c9a965]/[0.07] text-[#ddc37e]",
 
     high:
-      "border-orange-900 bg-orange-950 text-orange-400",
+      "border-[#dc9259]/30 bg-[#dc9259]/[0.075] text-[#eba36c]",
 
     critical:
-      "border-red-900 bg-red-950 text-red-400",
+      "border-[#e06d72]/30 bg-[#e06d72]/[0.075] text-[#ef8b90]",
   };
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.05em] ${
         styles[normalized]
-        ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
+        ?? "border-[#34414c] bg-[#141d25] text-[#8b98a3]"
       }`}
     >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-90" />
       {severity}
     </span>
   );
@@ -645,15 +811,14 @@ function RuleTypeBadge({
 
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`inline-flex rounded-md border px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.05em] ${
         correlation
-          ? "border-violet-900 bg-violet-950 text-violet-400"
-          : "border-blue-900 bg-blue-950 text-blue-400"
+          ? "border-[#69c5d7]/25 bg-[#69c5d7]/[0.06] text-[#8bd4e0]"
+          : "border-[#c9a965]/25 bg-[#c9a965]/[0.06] text-[#d8bd76]"
       }`}
     >
-      {ruleType.replaceAll(
-        "_",
-        " "
+      {formatLabel(
+        ruleType
       )}
     </span>
   );
@@ -667,15 +832,60 @@ function EnabledBadge({
 }) {
   return (
     <span
-      className={`rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
+      className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.05em] ${
         enabled
-          ? "border-emerald-900 bg-emerald-950 text-emerald-400"
-          : "border-zinc-700 bg-zinc-800 text-zinc-500"
+          ? "border-[#63cfa4]/25 bg-[#63cfa4]/[0.06] text-[#83d8b7]"
+          : "border-[#34414c] bg-[#141d25] text-[#75838f]"
       }`}
     >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          enabled
+            ? "bg-[#63cfa4]"
+            : "bg-[#64727e]"
+        }`}
+      />
+
       {enabled
         ? "Enabled"
         : "Disabled"}
     </span>
   );
+}
+
+
+function getSeverityAccent(
+  severity: string
+) {
+  switch (
+    severity.toLowerCase()
+  ) {
+    case "critical":
+      return "#e06d72";
+
+    case "high":
+      return "#dc9259";
+
+    case "medium":
+      return "#c9a965";
+
+    case "low":
+      return "#69c5d7";
+
+    default:
+      return "#71818e";
+  }
+}
+
+
+function formatLabel(
+  value: string
+) {
+  return value
+    .replaceAll("_", " ")
+    .replace(
+      /\b\w/g,
+      (character) =>
+        character.toUpperCase()
+    );
 }
