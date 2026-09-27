@@ -1,4 +1,4 @@
-# CASE//ZERO
+# **CASE//ZERO**
 
 > A full-stack cybersecurity operations platform for detection, investigation, threat hunting, and incident response.
 
@@ -10,11 +10,14 @@
 ![Containers](https://img.shields.io/badge/containers-Docker-2496ED)
 [![CASE//ZERO CI](https://github.com/danielguillaumont/case-zero/actions/workflows/ci.yml/badge.svg)](https://github.com/danielguillaumont/case-zero/actions/workflows/ci.yml)
 
+**Live Application:**  
+https://case-zero-nine.vercel.app
+
 ---
 
-## Overview
+## **Overview**
 
-**CASE//ZERO** is a cybersecurity engineering project that simulates the workflow of a modern Security Operations Center.
+**CASE//ZERO** is a full-stack cybersecurity engineering project that simulates the workflow of a modern Security Operations Center.
 
 It connects security telemetry, detection engineering, alerts, investigations, threat hunting, threat intelligence, MITRE ATT&CK, incident-response playbooks, authentication, and role-based access control in one application.
 
@@ -28,17 +31,51 @@ Detection Rules
 Alerts
    ↙       ↘
 Evidence   Investigation
-          ↙     ↓      ↘
-       Hunt   Case   Playbook
+          ↙    ↓    ↘
+        Hunt  Case  Playbook
           ↓
    Threat Intelligence
 ```
 
+The project is deployed publicly using a multi-service production architecture while retaining a fully containerized local development environment.
+
 ---
 
-## Core Capabilities
+## **Live Production Architecture**
 
-### Detection & Telemetry
+```text
+User
+  ↓
+Vercel
+Next.js / TypeScript
+  ↓
+Render
+FastAPI / Python
+  ↓
+Neon
+PostgreSQL 18
+```
+
+### **Production Services**
+
+| Layer | Platform | Purpose |
+|---|---|---|
+| Frontend | Vercel | Next.js production hosting |
+| Backend | Render | FastAPI application hosting |
+| Database | Neon | Serverless PostgreSQL 18 |
+| CI | GitHub Actions | Backend tests and frontend production builds |
+| Source Control | GitHub | Version control and deployment source |
+| Local Database | Docker | PostgreSQL 18 development environment |
+
+The public frontend communicates with the Render-hosted FastAPI API, which persists application data in Neon PostgreSQL.
+
+Production database migrations are managed through Alembic during backend deployment.
+
+---
+
+## **Core Capabilities**
+
+### **Detection & Telemetry**
 
 - Normalized security-event ingestion
 - Process and authentication telemetry
@@ -54,7 +91,7 @@ Current detections include:
 - PowerShell Download Cradle
 - Authentication Brute Force
 
-### Investigation
+### **Investigation**
 
 - Alert lifecycle and analyst assignment
 - Source-event evidence
@@ -66,14 +103,14 @@ Current detections include:
 - Analyst notes
 - Case activity timelines
 
-### Threat Hunting
+### **Threat Hunting**
 
 - Structured telemetry searches
 - Free-text queries
 - Host, user, IP, process, source, and event filters
 - Direct navigation into event evidence
 
-### Threat Intelligence
+### **Threat Intelligence**
 
 - Persistent IOC registry
 - IP, domain, URL, and hash indicators
@@ -82,7 +119,7 @@ Current detections include:
 - IOC-to-event correlation
 - Alert-to-IOC matching
 
-### Detection Rules & Playbooks
+### **Detection Rules & Playbooks**
 
 - Detection-rule catalog
 - Detection logic visibility
@@ -93,7 +130,7 @@ Current detections include:
 
 ---
 
-## Authentication & Access Control
+## **Authentication & Access Control**
 
 CASE//ZERO includes end-to-end authentication and role-based access control.
 
@@ -139,7 +176,7 @@ Unauthenticated users cannot access protected SOC data.
 
 ---
 
-## Security Hardening
+## **Security Hardening**
 
 Production-readiness work currently includes:
 
@@ -156,20 +193,29 @@ Production-readiness work currently includes:
 - Persistent PostgreSQL-backed login throttling
 - Generic authentication errors to reduce account enumeration
 - Temporary lockout instead of permanent account disablement
+- Production database credentials stored outside source control
+- Environment-specific deployment configuration
+- CI validation before production changes
 
-Public health:
+Public health endpoint:
 
 ```text
 GET /api/health
+```
 
-{"status":"online"}
+Example response:
+
+```json
+{
+  "status": "online"
+}
 ```
 
 Detailed platform status requires authentication.
 
 ---
 
-## Security Workspaces
+## **Security Workspaces**
 
 CASE//ZERO currently includes:
 
@@ -188,7 +234,7 @@ Each workspace participates in the same investigation workflow rather than opera
 
 ---
 
-## Testing & CI
+## **Testing & CI**
 
 CASE//ZERO currently has **86 passing backend tests** covering:
 
@@ -245,18 +291,20 @@ GitHub Actions validates the application on pushes and pull requests to `main`:
 
 ```text
 Backend
-├── PostgreSQL 18
+├── PostgreSQL 18 service
 ├── Alembic migrations
 └── Pytest
 
 Frontend
-├── npm install
+├── npm ci
 └── Next.js production build
 ```
 
+The frontend CI build is configured with the production API endpoint required by the Next.js production configuration.
+
 ---
 
-## Technology Stack
+## **Technology Stack**
 
 | Area | Technology |
 |---|---|
@@ -265,41 +313,50 @@ Frontend
 | Backend | FastAPI, Python |
 | Validation | Pydantic |
 | ORM | SQLAlchemy |
-| Database | PostgreSQL |
+| Database | PostgreSQL 18 |
+| Production Database | Neon |
 | Migrations | Alembic |
 | Authentication | JWT, OAuth2 |
 | Password Security | Argon2, pwdlib |
 | Authorization | RBAC |
 | Testing | Pytest, FastAPI TestClient |
 | CI/CD | GitHub Actions |
+| Frontend Hosting | Vercel |
+| Backend Hosting | Render |
 | Containers | Docker Compose |
 | API Docs | Swagger / OpenAPI |
 
 ---
 
-## Architecture
+## **Architecture**
 
 ```mermaid
 flowchart LR
     USER["User"]
+    VERCEL["Vercel"]
     UI["Next.js"]
     AUTH["Authentication / RBAC"]
     THROTTLE["Login Abuse Protection"]
+    RENDER["Render"]
     API["FastAPI"]
     DET["Detection Engine"]
-    DB[("PostgreSQL")]
+    NEON["Neon"]
+    DB[("PostgreSQL 18")]
 
-    USER --> UI
+    USER --> VERCEL
+    VERCEL --> UI
     UI --> AUTH
     AUTH --> THROTTLE
-    THROTTLE --> API
+    THROTTLE --> RENDER
+    RENDER --> API
     API --> DET
-    API --> DB
+    API --> NEON
+    NEON --> DB
     DET --> DB
     THROTTLE --> DB
 ```
 
-Core APIs:
+### **Core APIs**
 
 ```text
 /api/auth
@@ -316,45 +373,116 @@ Core APIs:
 
 ---
 
-## Run Locally
+## **Database Architecture**
 
-### Requirements
+CASE//ZERO uses PostgreSQL in both development and production.
+
+### **Local Development**
+
+```text
+FastAPI
+  ↓
+Docker
+  ↓
+PostgreSQL 18
+```
+
+### **Production**
+
+```text
+FastAPI on Render
+  ↓
+Neon
+  ↓
+PostgreSQL 18
+```
+
+Production data was migrated from the original Render PostgreSQL deployment to Neon using PostgreSQL-native backup and restore tooling.
+
+The migration preserved:
+
+- Application schema
+- Alembic migration state
+- Users and authentication data
+- Alerts
+- Cases
+- Case notes
+- Case activities
+- Security events
+- Audit events
+- Threat indicators
+- Login throttle state
+- Indexes
+- Constraints
+- Foreign keys
+
+---
+
+## **Run Locally**
+
+### **Requirements**
 
 - Python 3.12+
-- Node.js
+- Node.js 22+
 - Docker Desktop
 - Git
 
-### Setup
+### **Clone**
 
 ```powershell
 git clone https://github.com/danielguillaumont/case-zero.git
 cd case-zero
+```
 
+### **Environment Configuration**
+
+Create the local environment file:
+
+```powershell
 Copy-Item .env.example .env
-docker compose up -d postgres
 ```
 
 Configure PostgreSQL and JWT values in `.env`.
 
-### Backend
+### **Start PostgreSQL**
+
+```powershell
+docker compose up -d
+```
+
+Verify the container:
+
+```powershell
+docker compose ps
+```
+
+### **Backend**
 
 ```powershell
 cd backend
 
 python -m venv .venv
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
+
 alembic upgrade head
 
-fastapi dev app\main.py
+python -m uvicorn app.main:app --reload
 ```
 
 API:
 
 ```text
 http://127.0.0.1:8000
+```
+
+Health:
+
+```text
+http://127.0.0.1:8000/api/health
 ```
 
 Swagger in local development:
@@ -365,13 +493,15 @@ http://127.0.0.1:8000/docs
 
 API documentation can be disabled through environment configuration for production deployments.
 
-### Create First Administrator
+### **Create First Administrator**
 
 ```powershell
 python -m scripts.create_admin
 ```
 
-### Frontend
+### **Frontend**
+
+Open another terminal:
 
 ```powershell
 cd frontend
@@ -385,11 +515,57 @@ Frontend:
 http://localhost:3000
 ```
 
+For a local production build:
+
+```powershell
+$env:CASE_ZERO_API_URL = "http://127.0.0.1:8000"
+npm run build
+```
+
 ---
 
-## Development Status
+## **Production Deployment**
 
-### Implemented
+### **Frontend**
+
+CASE//ZERO's Next.js frontend is deployed on Vercel:
+
+```text
+https://case-zero-nine.vercel.app
+```
+
+Vercel provides the frontend with:
+
+```text
+CASE_ZERO_API_URL
+```
+
+which points to the production FastAPI service.
+
+### **Backend**
+
+The FastAPI backend is deployed on Render.
+
+Production startup:
+
+```text
+alembic upgrade head &&
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+This ensures database migrations are applied before the API starts serving traffic.
+
+### **Database**
+
+Production PostgreSQL is hosted on Neon in AWS US East 2 (Ohio).
+
+Database credentials are configured as Render environment variables rather than stored in the repository.
+
+---
+
+## **Development Status**
+
+### **Implemented**
 
 - [x] Full-stack SOC application
 - [x] PostgreSQL + Alembic
@@ -419,20 +595,59 @@ http://localhost:3000
 - [x] Generic authentication failure handling
 - [x] Database-backed integration tests
 - [x] GitHub Actions CI
+- [x] Production frontend deployment
+- [x] Production backend deployment
+- [x] Production PostgreSQL deployment
+- [x] Neon PostgreSQL migration
+- [x] Vercel → Render → Neon production architecture
+- [x] Production environment validation
+- [x] Public production application
 
-### Next
+### **Current Focus**
 
-- [ ] Security and authentication audit logging
-- [ ] Frontend security headers and CSP
-- [ ] Production deployment configuration
-- [ ] Final production security review
-- [ ] First public deployment
+- [ ] CASE//ZERO UI V2 redesign
+- [ ] Stronger visual identity and product branding
+- [ ] Improved dashboard information density
+- [ ] Improved responsive behavior
 - [ ] Portfolio screenshots
-- [ ] Architecture and investigation demo
+- [ ] Architecture diagram assets
+- [ ] Investigation workflow demo
+- [ ] Project walkthrough / showcase video
+
+### **Future Engineering**
+
+- [ ] Frontend security headers and CSP
+- [ ] Expanded security and authentication audit visibility
+- [ ] Final production security review
+- [ ] Additional detection rules
+- [ ] Additional threat-intelligence workflows
+- [ ] Extended case automation
+- [ ] External security-tool integrations
 
 ---
 
-## Project Direction
+## **Stable Production Baseline**
+
+A known-good production checkpoint was created before beginning the UI redesign:
+
+```text
+Git tag: pre-ui-v2
+```
+
+This version represents the stable production architecture before the next major interface redesign.
+
+```text
+Vercel Frontend      ✅
+Render FastAPI       ✅
+Neon PostgreSQL 18   ✅
+Authentication       ✅
+Production Data      ✅
+GitHub Actions CI    ✅
+```
+
+---
+
+## **Project Direction**
 
 CASE//ZERO is evolving toward a case-centered security operations platform where detections, evidence, investigations, analyst decisions, response actions, and future automation share a common investigation context.
 
@@ -449,16 +664,8 @@ Longer-term development will explore:
 
 ---
 
-## Project Goal
+## **Project Goal**
 
 CASE//ZERO demonstrates practical experience across:
 
-**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · Application Security · RBAC · API Development · Database Engineering · Full-Stack Development · Automated Testing · CI/CD**
-
----
-
-## Disclaimer
-
-CASE//ZERO is an independent educational and portfolio project designed to simulate cybersecurity operations workflows.
-
-It is not intended to replace a production SIEM, SOAR, EDR, identity provider, or enterprise incident-response platform.
+**Detection Engineering · Security Operations · Incident Response · Threat Hunting · Threat Intelligence · MITRE ATT&CK · Authentication · Application Security · RBAC · API Development · Database Engineering · Full-Stack Development · Automated Testing · CI/CD · Docker · PostgreSQL · Cloud Deployment**
