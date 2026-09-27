@@ -78,6 +78,9 @@ jobs:
     name: Frontend Build
     runs-on: ubuntu-latest
 
+    env:
+      CASE_ZERO_API_URL: https://case-zero-api-fymf.onrender.com
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
