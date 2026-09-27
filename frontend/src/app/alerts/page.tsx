@@ -39,6 +39,11 @@ export default async function AlertsPage() {
         === "resolved"
     );
 
+  const environmentLabel =
+    process.env.NODE_ENV === "production"
+      ? "Production"
+      : "Local Development";
+
   const metrics = [
     {
       label: "Open Alerts",
@@ -86,7 +91,7 @@ export default async function AlertsPage() {
             </div>
 
             <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-400">
-              Local Development
+              {environmentLabel}
             </div>
 
           </header>
