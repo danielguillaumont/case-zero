@@ -25,6 +25,10 @@ node_modules/
 .next/
 out/
 
+# Database backups
+*.dump
+*.backup
+
 # Logs
 *.log
 

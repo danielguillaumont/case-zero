@@ -25,30 +25,22 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.2
 
+      # Production PostgreSQL is hosted on Neon.
+      # Values are configured manually in the Render dashboard.
       - key: POSTGRES_USER
-        fromDatabase:
-          name: case-zero-db
-          property: user
+        sync: false
 
       - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: case-zero-db
-          property: password
+        sync: false
 
       - key: POSTGRES_DB
-        fromDatabase:
-          name: case-zero-db
-          property: database
+        sync: false
 
       - key: POSTGRES_HOST
-        fromDatabase:
-          name: case-zero-db
-          property: host
+        sync: false
 
       - key: POSTGRES_PORT
-        fromDatabase:
-          name: case-zero-db
-          property: port
+        sync: false
 
       - key: JWT_SECRET_KEY
         generateValue: true
@@ -73,14 +65,3 @@ services:
           type: web
           name: case-zero-api
           envVarKey: RENDER_EXTERNAL_HOSTNAME
-
-
-databases:
-  - name: case-zero-db
-    plan: free
-    region: ohio
-    postgresMajorVersion: "18"
-    databaseName: casezero
-    user: casezero
-
-    ipAllowList: []
