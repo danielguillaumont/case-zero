@@ -8,6 +8,12 @@ import {
 } from "@/lib/auth";
 
 
+const API_BASE_URL = (
+  process.env.CASE_ZERO_API_URL
+  ?? "http://127.0.0.1:8000"
+).replace(/\/+$/, "");
+
+
 async function patchCase(
   caseId: string,
   updateData: Record<string, string>
@@ -16,7 +22,7 @@ async function patchCase(
     await getAuthorizationHeaders();
 
   const response = await fetch(
-    `http://127.0.0.1:8000/api/cases/${caseId}`,
+    `${API_BASE_URL}/api/cases/${caseId}`,
     {
       method: "PATCH",
       headers: {
@@ -55,6 +61,10 @@ async function patchCase(
 
   revalidatePath(
     "/cases"
+  );
+
+  revalidatePath(
+    "/alerts"
   );
 
   revalidatePath(
@@ -120,7 +130,7 @@ export async function addCaseNote(
     await getAuthorizationHeaders();
 
   const response = await fetch(
-    `http://127.0.0.1:8000/api/cases/${caseId}/notes`,
+    `${API_BASE_URL}/api/cases/${caseId}/notes`,
     {
       method: "POST",
       headers: {
@@ -156,5 +166,13 @@ export async function addCaseNote(
 
   revalidatePath(
     `/cases/${caseId}`
+  );
+
+  revalidatePath(
+    "/cases"
+  );
+
+  revalidatePath(
+    "/"
   );
 }

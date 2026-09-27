@@ -8,6 +8,12 @@ import {
 } from "@/lib/auth";
 
 
+const API_BASE_URL = (
+  process.env.CASE_ZERO_API_URL
+  ?? "http://127.0.0.1:8000"
+).replace(/\/+$/, "");
+
+
 async function patchAlert(
   alertId: string,
   updateData: Record<string, string>
@@ -16,7 +22,7 @@ async function patchAlert(
     await getAuthorizationHeaders();
 
   const response = await fetch(
-    `http://127.0.0.1:8000/api/alerts/${alertId}`,
+    `${API_BASE_URL}/api/alerts/${alertId}`,
     {
       method: "PATCH",
       headers: {
@@ -112,7 +118,7 @@ export async function createCaseFromAlert(
     await getAuthorizationHeaders();
 
   const response = await fetch(
-    `http://127.0.0.1:8000/api/alerts/${alertId}/case`,
+    `${API_BASE_URL}/api/alerts/${alertId}/case`,
     {
       method: "POST",
       headers:
