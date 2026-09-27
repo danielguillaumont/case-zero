@@ -1,212 +1,240 @@
-import Link from "next/link";
-
 import Sidebar from "@/components/Sidebar";
+import EventExplorerClient from "../../components/EventExplorerClient";
 
 import {
   getSecurityEvents,
 } from "@/lib/api";
 
-import type {
-  SecurityEvent,
-} from "@/lib/api";
-
 
 export default async function EventsPage() {
-  const events = await getSecurityEvents();
+  const events =
+    await getSecurityEvents();
 
-  const processEvents = events.filter(
-    (event) =>
-      event.event_type.toLowerCase() ===
-      "process_creation"
-  );
+  const processEvents =
+    events.filter(
+      (event) =>
+        event.event_type.toLowerCase()
+        === "process_creation"
+    );
 
-  const uniqueHosts = new Set(
-    events
-      .map((event) => event.hostname)
-      .filter(
-        (hostname): hostname is string =>
-          Boolean(hostname)
+  const authenticationEvents =
+    events.filter(
+      (event) =>
+        event.event_type.toLowerCase()
+        === "authentication"
+    );
+
+  const uniqueHosts =
+    new Set(
+      events
+        .map(
+          (event) =>
+            event.hostname
+        )
+        .filter(
+          (
+            hostname
+          ): hostname is string =>
+            Boolean(
+              hostname
+            )
+        )
+    );
+
+  const uniqueUsers =
+    new Set(
+      events
+        .map(
+          (event) =>
+            event.username
+        )
+        .filter(
+          (
+            username
+          ): username is string =>
+            Boolean(
+              username
+            )
+        )
+    );
+
+  const uniqueSources =
+    new Set(
+      events
+        .map(
+          (event) =>
+            event.source
+        )
+        .filter(Boolean)
+    );
+
+  const latestEvent =
+    getLatestEventTime(
+      events.map(
+        (event) =>
+          event.event_time
       )
-  );
-
-  const uniqueUsers = new Set(
-    events
-      .map((event) => event.username)
-      .filter(
-        (username): username is string =>
-          Boolean(username)
-      )
-  );
-
-  const metrics = [
-    {
-      label: "Total Events",
-      value: events.length,
-    },
-    {
-      label: "Process Events",
-      value: processEvents.length,
-    },
-    {
-      label: "Unique Hosts",
-      value: uniqueHosts.size,
-    },
-    {
-      label: "Unique Users",
-      value: uniqueUsers.size,
-    },
-  ];
+    );
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen text-[#f1f4f7]">
 
       <div className="flex min-h-screen">
 
         <Sidebar />
 
-        <main className="flex-1 p-10">
+        <main className="min-w-0 flex-1">
 
-          <header className="mb-10 flex items-center justify-between">
+          <div className="mx-auto w-full max-w-[1700px] px-8 py-8 xl:px-10 xl:py-10">
 
-            <div>
+            {/* Header */}
+            <header className="cz-dashboard-header mb-7 flex items-start justify-between gap-8">
 
-              <p className="text-sm text-emerald-400">
-                CASE//ZERO
-              </p>
+              <div>
 
-              <h2 className="mt-1 text-3xl font-semibold">
-                Security Event Explorer
-              </h2>
+                <div className="mb-3 flex items-center gap-3">
 
-              <p className="mt-2 text-sm text-zinc-500">
-                Review normalized security telemetry ingested by the platform.
-              </p>
+                  <span className="text-[12px] font-semibold text-[#c9a965]">
+                    Security Operations
+                  </span>
 
-            </div>
+                  <span className="h-px w-8 bg-[#c9a965]/40" />
 
-            <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-400">
-              Live Telemetry
-            </div>
+                  <span className="text-[11px] text-[#667583]">
+                    Telemetry
+                  </span>
 
-          </header>
+                </div>
 
-          <section>
+                <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-[#f4f6f8]">
+                  Security Event Explorer
+                </h2>
 
-            <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">
-              Event Overview
-            </h3>
+                <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#81909c]">
+                  Search and inspect normalized
+                  security telemetry collected
+                  across endpoints, identities,
+                  and network activity.
+                </p>
 
-            <div className="grid grid-cols-4 gap-4">
+              </div>
 
-              {metrics.map(
-                (metric) => (
-                  <div
-                    key={metric.label}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
-                  >
+              <div className="flex items-center gap-3 pt-1">
 
-                    <p className="text-sm text-zinc-500">
-                      {metric.label}
-                    </p>
+                <div className="rounded-[10px] border border-[#63cfa4]/15 bg-[#63cfa4]/[0.045] px-4 py-3">
 
-                    <p className="mt-3 text-3xl font-semibold">
-                      {metric.value}
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#668c7d]">
+                    Pipeline
+                  </p>
+
+                  <div className="mt-1 flex items-center gap-2">
+
+                    <span className="h-2 w-2 rounded-full bg-[#63cfa4]" />
+
+                    <p className="text-[11px] font-medium text-[#84d8b7]">
+                      Live telemetry
                     </p>
 
                   </div>
-                )
-              )}
 
-            </div>
+                </div>
 
-          </section>
+              </div>
 
-          <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+            </header>
 
-            <div className="border-b border-zinc-800 p-6">
+            {/* Metrics */}
+            <section>
 
-              <div className="flex items-center justify-between">
+              <div className="mb-3 flex items-end justify-between">
 
                 <div>
 
-                  <h3 className="font-medium">
-                    Security Events
+                  <h3 className="text-[14px] font-medium text-[#dce3e8]">
+                    Telemetry overview
                   </h3>
 
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Normalized telemetry currently stored in CASE//ZERO.
+                  <p className="mt-1 text-[11px] text-[#657481]">
+                    Current normalized event dataset
                   </p>
 
                 </div>
 
-                <span className="text-xs text-zinc-500">
-                  {events.length} total
-                </span>
+                <p className="text-[10px] text-[#5e6d79]">
+                  {
+                    latestEvent
+                      ? `Latest event ${formatCompactTime(
+                          latestEvent
+                        )}`
+                      : "No telemetry recorded"
+                  }
+                </p>
 
               </div>
 
-            </div>
+              <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
 
-            {events.length === 0 ? (
-              <div className="flex min-h-64 items-center justify-center">
+                <MetricCard
+                  label="Total events"
+                  value={
+                    events.length
+                  }
+                  context={
+                    `${uniqueSources.size} telemetry source${
+                      uniqueSources.size === 1
+                        ? ""
+                        : "s"
+                    }`
+                  }
+                  accent="#69c5d7"
+                />
 
-                <div className="text-center">
+                <MetricCard
+                  label="Process activity"
+                  value={
+                    processEvents.length
+                  }
+                  context="Process creation telemetry"
+                  accent="#c9a965"
+                />
 
-                  <p className="text-sm font-medium text-zinc-300">
-                    No security events found
-                  </p>
+                <MetricCard
+                  label="Authentication"
+                  value={
+                    authenticationEvents.length
+                  }
+                  context="Identity activity recorded"
+                  accent="#7ca3d8"
+                />
 
-                  <p className="mt-2 text-sm text-zinc-500">
-                    Events ingested through the CASE//ZERO API will appear here.
-                  </p>
-
-                </div>
-
-              </div>
-            ) : (
-              <div>
-
-                <div className="grid grid-cols-[170px_1fr_150px_220px_190px] gap-4 border-b border-zinc-800 bg-zinc-950/40 px-6 py-3 text-xs uppercase tracking-wider text-zinc-500">
-
-                  <span>
-                    Event Type
-                  </span>
-
-                  <span>
-                    Event
-                  </span>
-
-                  <span>
-                    Source
-                  </span>
-
-                  <span>
-                    Identity / Host
-                  </span>
-
-                  <span>
-                    Event Time
-                  </span>
-
-                </div>
-
-                <div className="divide-y divide-zinc-800">
-
-                  {events.map(
-                    (event) => (
-                      <SecurityEventRow
-                        key={event.id}
-                        event={event}
-                      />
-                    )
-                  )}
-
-                </div>
+                <MetricCard
+                  label="Entities observed"
+                  value={
+                    uniqueHosts.size
+                    + uniqueUsers.size
+                  }
+                  context={
+                    `${uniqueHosts.size} hosts · ${uniqueUsers.size} users`
+                  }
+                  accent="#63cfa4"
+                />
 
               </div>
-            )}
 
-          </section>
+            </section>
+
+            {/* Explorer */}
+            <section className="mt-5">
+
+              <EventExplorerClient
+                events={
+                  events
+                }
+              />
+
+            </section>
+
+          </div>
 
         </main>
 
@@ -217,157 +245,122 @@ export default async function EventsPage() {
 }
 
 
-function SecurityEventRow({
-  event,
+function MetricCard({
+  label,
+  value,
+  context,
+  accent,
 }: {
-  event: SecurityEvent;
+  label: string;
+  value: number;
+  context: string;
+  accent: string;
 }) {
   return (
-    <Link
-      href={`/events/${event.id}`}
-      className="grid grid-cols-[170px_1fr_150px_220px_190px] items-center gap-4 px-6 py-5 transition hover:bg-zinc-800/40"
-    >
+    <div className="cz-metric p-5">
 
-      <EventTypeBadge
-        eventType={event.event_type}
+      <div
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            `linear-gradient(90deg, ${accent}, transparent 70%)`,
+        }}
       />
 
-      <div className="min-w-0">
+      <div className="relative z-10">
 
-        <p className="truncate text-sm font-medium text-zinc-100">
-          {getEventTitle(event)}
+        <div className="flex items-center justify-between">
+
+          <p className="text-[12px] font-medium text-[#8996a1]">
+            {label}
+          </p>
+
+          <span
+            className="h-1.5 w-6 rounded-full"
+            style={{
+              background:
+                accent,
+              opacity:
+                0.7,
+            }}
+          />
+
+        </div>
+
+        <p className="mt-4 text-[38px] font-semibold leading-none tracking-[-0.05em] text-[#f3f5f7]">
+          {value}
         </p>
 
-        <p className="mt-1 truncate text-xs text-zinc-500">
-          {getEventDescription(event)}
+        <p className="mt-4 text-[11px] text-[#657481]">
+          {context}
         </p>
 
       </div>
 
-      <span className="truncate text-sm text-zinc-400">
-        {event.source}
-      </span>
-
-      <div className="min-w-0">
-
-        <p className="truncate text-sm text-zinc-300">
-          {event.hostname ??
-            "Unknown host"}
-        </p>
-
-        <p className="mt-1 truncate text-xs text-zinc-500">
-          {event.username ??
-            "Unknown user"}
-        </p>
-
-      </div>
-
-      <span className="text-sm text-zinc-500">
-        {formatEventTime(
-          event.event_time
-        )}
-      </span>
-
-    </Link>
+    </div>
   );
 }
 
 
-function EventTypeBadge({
-  eventType,
-}: {
-  eventType: string;
-}) {
-  const normalizedEventType =
-    eventType.toLowerCase();
-
-  const styles: Record<
-    string,
-    string
-  > = {
-    process_creation:
-      "border-violet-900 bg-violet-950 text-violet-400",
-
-    authentication:
-      "border-blue-900 bg-blue-950 text-blue-400",
-
-    network_connection:
-      "border-cyan-900 bg-cyan-950 text-cyan-400",
-
-    file_creation:
-      "border-orange-900 bg-orange-950 text-orange-400",
-  };
-
-  return (
-    <span
-      className={`w-fit rounded-md border px-2.5 py-1 text-xs font-medium uppercase ${
-        styles[
-          normalizedEventType
-        ] ??
-        "border-zinc-700 bg-zinc-800 text-zinc-400"
-      }`}
-    >
-      {eventType.replaceAll(
-        "_",
-        " "
-      )}
-    </span>
-  );
-}
-
-
-function getEventTitle(
-  event: SecurityEvent
+function getLatestEventTime(
+  timestamps: string[]
 ) {
   if (
-    event.event_type.toLowerCase() ===
-    "process_creation"
+    timestamps.length === 0
   ) {
-    return (
-      event.process_name ??
-      "Process creation"
-    );
+    return null;
   }
 
-  return event.event_type.replaceAll(
-    "_",
-    " "
-  );
-}
-
-
-function getEventDescription(
-  event: SecurityEvent
-) {
-  if (event.command_line) {
-    return event.command_line;
-  }
+  const validDates =
+    timestamps
+      .map(
+        (timestamp) =>
+          new Date(
+            timestamp
+          )
+      )
+      .filter(
+        (date) =>
+          !Number.isNaN(
+            date.getTime()
+          )
+      );
 
   if (
-    event.source_ip &&
-    event.destination_ip
+    validDates.length === 0
   ) {
-    return `${event.source_ip} → ${event.destination_ip}`;
+    return null;
   }
 
-  if (event.source_ip) {
-    return `Source IP: ${event.source_ip}`;
-  }
-
-  return `Event ID: ${event.id}`;
+  return new Date(
+    Math.max(
+      ...validDates.map(
+        (date) =>
+          date.getTime()
+      )
+    )
+  ).toISOString();
 }
 
 
-function formatEventTime(
+function formatCompactTime(
   timestamp: string
 ) {
   return new Intl.DateTimeFormat(
     "en-CA",
     {
-      dateStyle: "medium",
-      timeStyle: "short",
+      month:
+        "short",
+      day:
+        "numeric",
+      hour:
+        "numeric",
+      minute:
+        "2-digit",
     }
   ).format(
-    new Date(timestamp)
+    new Date(
+      timestamp
+    )
   );
 }
