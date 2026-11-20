@@ -11,6 +11,7 @@ from app.models.security_event import (
     SecurityEvent,
 )
 from app.services.detection_engine import (
+    DETECTION_RULES,
     evaluate_security_event,
     get_detection_rules,
     matches_brute_force_authentication,
@@ -57,6 +58,26 @@ async def test_dual_match_preserves_alert_order_and_content():
         assert (alert.severity, alert.status, alert.source) == ("high", "new", "detection-engine")
         assert alert.source_event_id == event.id
         assert alert.case_id is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("disabled_rule", "remaining_rule"),
+    [
+        ("encoded-powershell", "powershell-download-cradle"),
+        ("powershell-download-cradle", "encoded-powershell"),
+    ],
+)
+async def test_dual_match_respects_disabled_live_rule(monkeypatch, disabled_rule, remaining_rule):
+    monkeypatch.setitem(DETECTION_RULES[disabled_rule], "enabled", False)
+    event = create_process_event(
+        process_name="pwsh",
+        command_line="pwsh -enc TEST Invoke-WebRequest",
+    )
+
+    alerts = await evaluate_security_event(event, FakeSession([]))
+
+    assert [alert.detection_rule_id for alert in alerts] == [remaining_rule]
 
 
 class FakeScalarResult:

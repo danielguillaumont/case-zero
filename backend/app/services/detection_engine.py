@@ -1,4 +1,3 @@
-import re
 from datetime import timedelta
 
 from sqlalchemy import func, select
@@ -6,31 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.alert import Alert
 from app.models.security_event import SecurityEvent
-
-
-POWERSHELL_PROCESS_NAMES = {
-    "powershell.exe",
-    "powershell",
-    "pwsh.exe",
-    "pwsh",
-}
-
-
-ENCODED_POWERSHELL_PATTERN = re.compile(
-    r"(?:^|\s)-(?:enc|encodedcommand)(?:\s|$)",
-    re.IGNORECASE,
-)
-
-
-POWERSHELL_DOWNLOAD_INDICATORS = (
-    "downloadstring(",
-    "downloadfile(",
-    "invoke-webrequest",
-    "invoke-restmethod",
-    "new-object net.webclient",
-    "system.net.webclient",
-    "start-bitstransfer",
-)
+from app.services import single_event_evaluator
 
 
 BRUTE_FORCE_WINDOW_MINUTES = 5
@@ -211,35 +186,6 @@ async def evaluate_security_event(
     return generated_alerts
 
 
-def is_powershell_process(
-    security_event: SecurityEvent,
-) -> bool:
-    process_name = (
-        security_event.process_name or ""
-    )
-
-    normalized_process_name = (
-        process_name
-        .replace("\\", "/")
-        .rsplit("/", 1)[-1]
-        .lower()
-    )
-
-    return (
-        normalized_process_name
-        in POWERSHELL_PROCESS_NAMES
-    )
-
-
-def is_process_creation_event(
-    security_event: SecurityEvent,
-) -> bool:
-    return (
-        security_event.event_type.lower()
-        == "process_creation"
-    )
-
-
 def is_authentication_failure(
     security_event: SecurityEvent,
 ) -> bool:
@@ -271,48 +217,20 @@ def is_authentication_failure(
 def matches_encoded_powershell(
     security_event: SecurityEvent,
 ) -> bool:
-    if not is_process_creation_event(
-        security_event
-    ):
-        return False
-
-    if not is_powershell_process(
-        security_event
-    ):
-        return False
-
-    command_line = (
-        security_event.command_line or ""
-    )
-
-    return bool(
-        ENCODED_POWERSHELL_PATTERN.search(
-            command_line
-        )
+    return single_event_evaluator.matches_encoded_powershell(
+        security_event.event_type,
+        security_event.process_name,
+        security_event.command_line,
     )
 
 
 def matches_powershell_download_cradle(
     security_event: SecurityEvent,
 ) -> bool:
-    if not is_process_creation_event(
-        security_event
-    ):
-        return False
-
-    if not is_powershell_process(
-        security_event
-    ):
-        return False
-
-    command_line = (
-        security_event.command_line or ""
-    ).lower()
-
-    return any(
-        indicator in command_line
-        for indicator
-        in POWERSHELL_DOWNLOAD_INDICATORS
+    return single_event_evaluator.matches_powershell_download_cradle(
+        security_event.event_type,
+        security_event.process_name,
+        security_event.command_line,
     )
 
 
