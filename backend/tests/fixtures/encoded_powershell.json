@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "fixture_id": "synthetic-encoded-powershell",
+  "provenance": {
+    "source": "synthetic",
+    "description": "Offline encoded PowerShell replay demonstration"
+  },
+  "events": [
+    {
+      "event_id": "benign-later",
+      "event_time": "2026-11-20T12:01:00Z",
+      "fields": {
+        "event_type": "process_creation",
+        "source": "synthetic",
+        "process_name": "powershell.exe",
+        "command_line": "powershell.exe Get-Service"
+      }
+    },
+    {
+      "event_id": "encoded",
+      "event_time": "2026-11-20T07:00:00-05:00",
+      "fields": {
+        "event_type": "process_creation",
+        "source": "synthetic",
+        "process_name": "pwsh.exe",
+        "command_line": "pwsh.exe -enc TEST"
+      }
+    },
+    {
+      "event_id": "benign-tie",
+      "event_time": "2026-11-20T12:00:00Z",
+      "fields": {
+        "event_type": "process_creation",
+        "source": "synthetic",
+        "process_name": "pwsh.exe",
+        "command_line": "pwsh.exe Get-Date"
+      }
+    }
+  ]
+}
