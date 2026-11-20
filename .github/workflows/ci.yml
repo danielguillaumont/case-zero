@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      APP_ENV: test
       POSTGRES_USER: casezero
       POSTGRES_PASSWORD: casezero-test-password
       POSTGRES_DB: casezero_test
