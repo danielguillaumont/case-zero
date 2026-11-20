@@ -9,7 +9,9 @@ ROOT_DIR = Path(
     __file__
 ).resolve().parents[2]
 
-EXPLICIT_TEST_MODE = os.getenv("APP_ENV", "").strip().lower() == "test"
+_PROCESS_APP_ENV = os.getenv("APP_ENV", "").strip().lower()
+_PROCESS_REPLAY_PREVIEW = os.getenv("CASE_ZERO_REPLAY_PREVIEW") == "true"
+EXPLICIT_TEST_MODE = _PROCESS_APP_ENV == "test"
 
 if not EXPLICIT_TEST_MODE:
     load_dotenv(ROOT_DIR / ".env")
@@ -43,6 +45,12 @@ if (
 
 IS_PRODUCTION = (
     APP_ENV == "production"
+)
+
+REPLAY_PREVIEW_ENABLED = (
+    _PROCESS_REPLAY_PREVIEW
+    and _PROCESS_APP_ENV in {"development", "test"}
+    and APP_ENV in {"development", "test"}
 )
 
 
