@@ -34,6 +34,7 @@ from app.auth import require_roles
 from app.config import (
     ALLOWED_HOSTS,
     API_DOCS_ENABLED,
+    REPLAY_PREVIEW_ENABLED,
 )
 from app.database import (
     check_database_connection,
@@ -88,6 +89,11 @@ app.include_router(hunt_router)
 app.include_router(intelligence_router)
 app.include_router(playbooks_router)
 app.include_router(rules_router)
+
+if REPLAY_PREVIEW_ENABLED:
+    from app.api.routes.replay_preview import router as replay_preview_router
+
+    app.include_router(replay_preview_router)
 
 
 @app.get("/")
