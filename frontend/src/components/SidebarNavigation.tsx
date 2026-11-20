@@ -18,6 +18,7 @@ type NavigationIcon =
   | "cases"
   | "hunt"
   | "intelligence"
+  | "lab"
   | "rules"
   | "playbooks";
 
@@ -85,6 +86,11 @@ const navigationGroups: NavigationGroup[] = [
 
     items: [
       {
+        label: "Detection Lab",
+        href: "/lab",
+        icon: "lab",
+      },
+      {
         label: "Rules",
         href: "/rules",
         icon: "rules",
@@ -108,8 +114,10 @@ type SidebarUser = {
 
 export default function SidebarNavigation({
   user,
+  showDetectionLab,
 }: {
   user: SidebarUser;
+  showDetectionLab: boolean;
 }) {
   const pathname =
     usePathname();
@@ -165,7 +173,7 @@ export default function SidebarNavigation({
                 <h1 className="text-[20px] font-semibold tracking-[-0.035em] text-[#f0f3f6]">
                   CASE
                   <span className="text-[#c6a15b]">
-                    //
+                    {"//"}
                   </span>
                   <span className="text-[#73cad6]">
                     ZERO
@@ -201,7 +209,7 @@ export default function SidebarNavigation({
 
                   <div className="space-y-1">
 
-                    {group.items.map(
+                    {group.items.filter((item) => item.icon !== "lab" || showDetectionLab).map(
                       (item) => {
                         const active =
                           isActive(
@@ -346,6 +354,13 @@ function NavIcon({
   };
 
   switch (icon) {
+    case "lab":
+      return (
+        <svg {...commonProps}>
+          <path d="M9 3h6m-5 0v6l-6 10a1 1 0 0 0 1 2h14a1 1 0 0 0 1-2L14 9V3M7 15h10" />
+        </svg>
+      );
+
     case "dashboard":
       return (
         <svg {...commonProps}>

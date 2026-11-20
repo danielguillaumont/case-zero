@@ -94,7 +94,7 @@ export default async function LoginPage({
                   <p className="text-[20px] font-semibold tracking-[-0.04em] text-[#f2f4f6]">
                     CASE
                     <span className="text-[#c9a965]">
-                      //
+                      {"//"}
                     </span>
                     <span className="text-[#77cad7]">
                       ZERO
@@ -302,7 +302,7 @@ export default async function LoginPage({
                 <p className="text-[20px] font-semibold tracking-[-0.04em]">
                   CASE
                   <span className="text-[#c9a965]">
-                    //
+                    {"//"}
                   </span>
                   <span className="text-[#77cad7]">
                     ZERO
