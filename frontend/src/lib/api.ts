@@ -1,6 +1,15 @@
+import "server-only";
+
 import {
+  getAccessToken,
   getAuthorizationHeaders,
 } from "@/lib/auth";
+import {
+  parseReplayPreview,
+  replayFailure,
+  replayPreviewEnabled,
+  type ReplayPreviewState,
+} from "@/lib/replay-preview-contract";
 
 
 const API_BASE_URL =
@@ -225,6 +234,34 @@ async function apiFetch(
       cache: "no-store",
     }
   );
+}
+
+export function isReplayPreviewEnabled(): boolean {
+  return replayPreviewEnabled(process.env.NODE_ENV, process.env.CASE_ZERO_LAB_PREVIEW);
+}
+
+export async function requestReplayPreview(): Promise<ReplayPreviewState> {
+  if (!isReplayPreviewEnabled()) return { status: "disabled" };
+  if (!await getAccessToken()) return { status: "unauthenticated" };
+
+  let response: Response;
+  try {
+    response = await apiFetch("/api/lab/replay-preview", {
+      method: "POST",
+      redirect: "error",
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    return { status: "unavailable" };
+  }
+  if (!response.ok) return { status: replayFailure(response.status) };
+
+  try {
+    const preview = parseReplayPreview(await response.json());
+    return preview ? { status: "success", preview } : { status: "invalid-response" };
+  } catch {
+    return { status: "invalid-response" };
+  }
 }
 
 
