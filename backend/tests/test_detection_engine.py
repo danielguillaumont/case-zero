@@ -12,10 +12,51 @@ from app.models.security_event import (
 )
 from app.services.detection_engine import (
     evaluate_security_event,
+    get_detection_rules,
     matches_brute_force_authentication,
     matches_encoded_powershell,
     matches_powershell_download_cradle,
 )
+
+
+def test_builtin_rule_ids_are_stable():
+    assert [rule["id"] for rule in get_detection_rules()] == [
+        "encoded-powershell",
+        "powershell-download-cradle",
+        "auth-brute-force",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_dual_match_preserves_alert_order_and_content():
+    event = create_process_event(
+        process_name="C:/Tools/PWSH.EXE",
+        command_line="pwsh -ENC TEST Invoke-WebRequest",
+    )
+    event_detail = (
+        f"Host: {event.hostname}. User: {event.username}. "
+        f"Security Event ID: {event.id}. Command Line: {event.command_line}"
+    )
+
+    alerts = await evaluate_security_event(event, FakeSession([]))
+
+    assert [(alert.detection_rule_id, alert.title, alert.description) for alert in alerts] == [
+        (
+            "encoded-powershell",
+            "Encoded PowerShell Command Detected",
+            f"CASE//ZERO detected an encoded PowerShell command. {event_detail}",
+        ),
+        (
+            "powershell-download-cradle",
+            "PowerShell Download Cradle Detected",
+            "CASE//ZERO detected PowerShell activity capable of retrieving remote content. "
+            f"{event_detail}",
+        ),
+    ]
+    for alert in alerts:
+        assert (alert.severity, alert.status, alert.source) == ("high", "new", "detection-engine")
+        assert alert.source_event_id == event.id
+        assert alert.case_id is None
 
 
 class FakeScalarResult:
