@@ -915,7 +915,8 @@ The migration preserved:
 
 # **Testing & CI**
 
-CASE//ZERO includes **86 passing backend tests** covering the platform's major security and application workflows.
+The v2.0.1 release recorded **86 passing backend tests**. The latest local
+backend baseline is recorded below.
 
 Test coverage includes:
 
@@ -974,6 +975,171 @@ Temporary Cooldown
 ```
 
 ---
+
+## **Disposable PostgreSQL tests on Windows**
+
+Development uses `compose.yaml`, host port `5432`, and a persistent volume.
+The disposable test project uses `compose.test.yaml`, `127.0.0.1:55432`, and
+`casezero_test` with public test-only credentials. Its PostgreSQL data lives on
+a 512 MiB container-local tmpfs and is lost when the container stops or is
+removed. Production uses Neon. Keep all commands below on local Docker Desktop.
+
+**Local verification (2026-11-20).** On Windows PowerShell with Docker Desktop's
+Linux engine and PostgreSQL 18, the container identity, loopback binding, and
+tmpfs checks passed. An authenticated read-only connection confirmed
+`casezero_test` as `casezero_local_test`. All 12 Alembic migrations applied
+successfully. The backend suite reported **129 passed, 1 warning in 30.53 seconds**.
+The remaining warning was a `StarletteDeprecationWarning` for the HTTPX test-client
+integration. The development volume was preserved.
+
+From the repository root in Windows PowerShell 5.1, verify the Docker context
+and validate Compose. The explicit env file keeps Compose from loading the
+repository's development `.env`. Stop on Docker configuration access errors.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+if (Get-ChildItem Env:COMPOSE_*) { throw 'Clear Compose overrides in this shell.' }
+$testContext = docker context show
+if ($LASTEXITCODE -ne 0 -or -not $testContext) { throw 'Cannot select a Docker context.' }
+$endpoint = docker context inspect $testContext --format '{{.Endpoints.docker.Host}}'
+if ($LASTEXITCODE -ne 0 -or $endpoint -notin @('npipe:////./pipe/docker_engine', 'npipe:////./pipe/dockerDesktopLinuxEngine')) {
+    throw 'Select the local Docker Desktop context.'
+}
+$testDocker = @('--context', $testContext)
+$testProject = 'case-zero-v21b-test'
+$testCompose = $testDocker + @('compose', '--env-file', '.\compose.test.env',
+    '--project-name', $testProject, '--file', '.\compose.test.yaml')
+docker @testCompose config --quiet
+if ($LASTEXITCODE -ne 0) { throw 'Test Compose validation failed.' }
+
+$engine = docker @testDocker info --format '{{.OSType}}'
+if ($LASTEXITCODE -ne 0 -or $engine -ne 'linux') { throw 'A local Linux Docker engine is required.' }
+if ([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() |
+    Where-Object Port -eq 55432) { throw 'TCP port 55432 is already in use.' }
+netsh interface ipv4 show excludedportrange protocol=tcp
+if ($LASTEXITCODE -ne 0) { throw 'Could not check Windows port reservations.' }
+$projectFilter = "label=com.docker.compose.project=$testProject"
+$existingContainers = docker @testDocker ps -aq --filter $projectFilter
+if ($LASTEXITCODE -ne 0 -or $existingContainers) { throw 'Check existing test-project containers.' }
+$existingNetworks = docker @testDocker network ls -q --filter $projectFilter
+if ($LASTEXITCODE -ne 0 -or $existingNetworks) { throw 'Check existing test-project networks.' }
+```
+
+Confirm `55432` falls outside the excluded ranges. Record the development
+container ID and volume attachment through read-only metadata if present.
+Obtain separate approval for startup, then run the following in the same shell.
+Stop on any unexpected result before connecting to PostgreSQL.
+
+```powershell
+docker @testCompose up --wait --wait-timeout 120 postgres-test
+if ($LASTEXITCODE -ne 0) { throw 'Test PostgreSQL startup failed.' }
+$binding = @(docker @testCompose port postgres-test 5432)
+if ($LASTEXITCODE -ne 0 -or $binding.Count -ne 1 -or $binding[0] -ne '127.0.0.1:55432') { throw 'Unexpected test port binding.' }
+$testId = docker @testCompose ps -q postgres-test
+if ($LASTEXITCODE -ne 0 -or @($testId).Count -ne 1 -or -not $testId) { throw 'Expected one test container.' }
+$labelsJson = docker @testDocker inspect --type container --format '{{json .Config.Labels}}' $testId
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect test container labels.' }
+$labels = ConvertFrom-Json $labelsJson
+$imageAndHealth = docker @testDocker inspect --format '{{.Config.Image}} {{.State.Health.Status}}' $testId
+if ($LASTEXITCODE -ne 0 -or $imageAndHealth -ne 'postgres:18 healthy' -or
+    $labels.'com.docker.compose.project' -ne $testProject -or
+    $labels.'com.docker.compose.service' -ne 'postgres-test') { throw 'Unexpected container identity.' }
+$tmpfsJson = docker @testDocker inspect --format '{{json .HostConfig.Tmpfs}}' $testId
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect test tmpfs.' }
+$tmpfs = ConvertFrom-Json $tmpfsJson
+if (@($tmpfs.PSObject.Properties).Count -ne 1 -or $tmpfs.'/var/lib/postgresql' -ne 'size=512m') {
+    throw 'Unexpected tmpfs configuration.'
+}
+$mounts = docker @testDocker inspect --format '{{range .Mounts}}{{println .Type .Destination}}{{end}}' $testId
+if ($LASTEXITCODE -ne 0 -or ($mounts | Where-Object { $_ -and $_ -ne 'tmpfs /var/lib/postgresql' })) {
+    throw 'Unexpected container storage attachment.'
+}
+```
+
+After approval for database access, use the backend's Python 3.12 environment
+with dependencies from `backend/requirements.txt`. The read-only connection
+below checks the server reached through the verified host port. Keep these
+settings in this shell and close it when finished.
+
+```powershell
+if (Get-ChildItem Env:PG*) { throw 'Clear libpq overrides in this shell.' }
+$env:APP_ENV = 'test'
+$env:POSTGRES_HOST = '127.0.0.1'
+$env:POSTGRES_PORT = '55432'
+$env:POSTGRES_DB = 'casezero_test'
+$env:POSTGRES_USER = 'casezero_local_test'
+$env:POSTGRES_PASSWORD = 'casezero-local-test-only'
+
+Push-Location .\backend
+try {
+    @'
+import psycopg
+from app import config
+
+with psycopg.connect(
+    host=config.POSTGRES_HOST, port=config.POSTGRES_PORT,
+    dbname=config.POSTGRES_DB, user=config.POSTGRES_USER,
+    password=config.POSTGRES_PASSWORD, connect_timeout=5,
+) as connection:
+    connection.read_only = True
+    identity = connection.execute(
+        "SELECT current_database(), current_user, current_setting('server_version_num')::int / 10000"
+    ).fetchone()
+    if identity != ("casezero_test", "casezero_local_test", 18):
+        raise SystemExit("Unexpected test database identity.")
+    print("Verified casezero_test as casezero_local_test on PostgreSQL 18.")
+'@ | python -
+    if ($LASTEXITCODE -ne 0) { throw 'Test database identity check failed.' }
+} finally {
+    Pop-Location
+}
+```
+
+Repeat the Docker and database identity checks before running either command.
+After separate migration approval, run this from the repository root.
+
+```powershell
+Push-Location .\backend
+try {
+    python -m alembic upgrade head
+    if ($LASTEXITCODE -ne 0) { throw 'Test database migration failed.' }
+} finally {
+    Pop-Location
+}
+```
+
+After Alembic succeeds and test execution is separately approved, run this
+from the repository root.
+
+```powershell
+Push-Location .\backend
+try {
+    python -m pytest -v
+    if ($LASTEXITCODE -ne 0) { throw 'Backend tests failed.' }
+} finally {
+    Pop-Location
+}
+```
+
+After the authorized session, recheck the local Docker context in the same
+shell. Teardown checks the project inventory against the verified container ID,
+including stopped containers. If startup failed before recording that ID,
+inspect the test project's resources before attempting cleanup. After teardown,
+confirm `55432` is released and compare the development container and volume
+attachment with the preflight record.
+
+```powershell
+$expectedId = docker @testDocker inspect --type container --format '{{.Id}}' $testId
+if ($LASTEXITCODE -ne 0 -or -not $expectedId) { throw 'Cannot identify the verified test container.' }
+$projectIds = @(docker @testDocker ps -aq --no-trunc --filter $projectFilter)
+if ($LASTEXITCODE -ne 0 -or $projectIds.Count -ne 1 -or $projectIds[0] -ne $expectedId) {
+    throw 'Unexpected test project inventory. Inspect before teardown.'
+}
+docker @testCompose down
+if ($LASTEXITCODE -ne 0) { throw 'Test Compose teardown failed.' }
+$remainingIds = docker @testDocker ps -aq --filter $projectFilter
+if ($LASTEXITCODE -ne 0 -or $remainingIds) { throw 'Check remaining test project containers.' }
+```
 
 ## **GitHub Actions**
 

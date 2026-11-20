@@ -1,0 +1,17 @@
+services:
+  postgres-test:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: casezero_local_test
+      POSTGRES_PASSWORD: casezero-local-test-only
+      POSTGRES_DB: casezero_test
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql:size=512m
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "5432", "-U", "casezero_local_test", "-d", "casezero_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: "no"
