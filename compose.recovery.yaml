@@ -1,0 +1,33 @@
+services:
+  postgres-source:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: recovery_source
+      POSTGRES_PASSWORD: source-rehearsal-only
+      POSTGRES_DB: casezero_test
+    ports:
+      - "127.0.0.1:55433:5432"
+    tmpfs:
+      - /var/lib/postgresql:size=512m
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "recovery_source", "-d", "casezero_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: "no"
+  postgres-restore:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: recovery_restore
+      POSTGRES_PASSWORD: restore-rehearsal-only
+      POSTGRES_DB: casezero_test
+    ports:
+      - "127.0.0.1:55434:5432"
+    tmpfs:
+      - /var/lib/postgresql:size=512m
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "recovery_restore", "-d", "casezero_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: "no"
