@@ -9,9 +9,10 @@ ROOT_DIR = Path(
     __file__
 ).resolve().parents[2]
 
-load_dotenv(
-    ROOT_DIR / ".env"
-)
+EXPLICIT_TEST_MODE = os.getenv("APP_ENV", "").strip().lower() == "test"
+
+if not EXPLICIT_TEST_MODE:
+    load_dotenv(ROOT_DIR / ".env")
 
 
 VALID_APP_ENVIRONMENTS = {
@@ -25,6 +26,9 @@ APP_ENV = os.getenv(
     "APP_ENV",
     "development",
 ).strip().lower()
+
+if APP_ENV == "test" and not EXPLICIT_TEST_MODE:
+    raise RuntimeError("Set APP_ENV=test in the process environment for test runs.")
 
 
 if (
@@ -40,6 +44,54 @@ if (
 IS_PRODUCTION = (
     APP_ENV == "production"
 )
+
+
+def validate_test_database_environment() -> None:
+    required_settings = (
+        "POSTGRES_HOST",
+        "POSTGRES_PORT",
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+    )
+    missing_settings = [
+        name for name in required_settings if not os.getenv(name, "").strip()
+    ]
+    if missing_settings:
+        raise RuntimeError(
+            "Missing explicit test database settings: " + ", ".join(missing_settings)
+        )
+
+    if os.environ["POSTGRES_HOST"].strip() not in {"127.0.0.1", "::1"}:
+        raise RuntimeError("Test POSTGRES_HOST must be 127.0.0.1 or ::1.")
+
+    if os.environ["POSTGRES_DB"] != "casezero_test":
+        raise RuntimeError("Test POSTGRES_DB must be casezero_test.")
+
+    # libpq reads process settings independently of the application URL.
+    driver_overrides = (
+        "PGHOST",
+        "PGHOSTADDR",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "PGPASSFILE",
+        "PGSERVICE",
+        "PGSERVICEFILE",
+        "PGSYSCONFDIR",
+        "PGOPTIONS",
+    )
+    present_overrides = [name for name in driver_overrides if name in os.environ]
+    if present_overrides:
+        raise RuntimeError(
+            "Unset libpq environment overrides for test runs: "
+            + ", ".join(present_overrides)
+        )
+
+
+if EXPLICIT_TEST_MODE:
+    validate_test_database_environment()
 
 
 def parse_positive_integer(
@@ -59,7 +111,7 @@ def parse_positive_integer(
     except ValueError as exc:
         raise RuntimeError(
             f"{name} must be an integer."
-        ) from exc
+        ) from (None if EXPLICIT_TEST_MODE else exc)
 
     if value <= 0:
         raise RuntimeError(
