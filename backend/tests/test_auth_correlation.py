@@ -255,6 +255,12 @@ def test_cli_output_is_byte_identical_and_digest_covers_results():
     assert first == second
     payload = json.loads(first)
     digest = payload.pop("output_sha256")
+    # Recorded independently in the v2.4-D closeout before import hardening.
+    assert (
+        payload["input_sha256"]
+        == "9ece53bac4e149ae2e6a13a81ed905a4092798db90a695238c11a4574fcf7cc9"
+    )
+    assert digest == "f3d44b088a3a1855e52ec9ce23834488842ba331f1ab50a23c1e5fb910cb1a0f"
     assert (
         digest
         == hashlib.sha256(
