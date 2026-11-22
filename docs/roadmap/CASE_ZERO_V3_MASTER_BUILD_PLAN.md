@@ -821,12 +821,15 @@ A new feature enters the roadmap only if it: (a) improves the central user job, 
 
 ## 18.4 Simple status tracker
 
-| Milestone | Status on plan issue date | Required update after work |
+The tracker records development progress. The latest published release is
+still v2.0.1. [GitHub Releases](https://github.com/danielguillaumont/case-zero/releases)
+
+| Milestone | Verified development status | Remaining gate or evidence |
 |---|---|---|
-| v2.1 Baseline and recovery | Not started for v3 | Audit evidence, tests, production confirmation |
-| v2.2 Replay domain | Planned | Run determinism and isolation evidence |
-| v2.3 Versioned tests | Planned | Regression test suite and CI gate |
-| v2.4 External compatibility | Planned | External fixture, support matrix and tests |
+| v2.1 Baseline and recovery | Baseline audit and local recovery work merged | Production recovery confirmation remains open. [Audit](v3-baseline-audit.md) · [Production readiness](v21d4-production-readiness.md) |
+| v2.2 Replay domain | Bounded offline replay, v1 evidence verification, and feature-gated authenticated preview merged | Persistent replay runs and outputs, cancellation, and hosted availability remain unverified or unimplemented. [Replay and preview merges](https://github.com/danielguillaumont/case-zero/pull/16) |
+| v2.3 Versioned tests | Synthetic Encoded PowerShell regression proof merged and verified in PR CI | General rule AST and Boolean operator coverage, persisted version-aware evidence, and broader scenarios remain open. [Milestone closeout](v23-milestone-closeout.md) |
+| v2.4 External compatibility | Planned | Select legally reusable data and a narrow rule subset, then demonstrate mapping, explicit rejection of unsupported syntax, and deterministic correlation. |
 | v2.5 Explainability | Planned | UI walkthrough and evidence links |
 | v2.6 Operational hardening | Planned | Resilience/performance/report proofs |
 | v2.7 Optional AI | Gated / optional | Eval results or explicit deferral |
