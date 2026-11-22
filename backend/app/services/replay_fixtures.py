@@ -154,6 +154,11 @@ def load_replay_fixture(path: Path) -> ReplayFixture:
         raise
     except (OSError, RuntimeError, ValueError):
         raise FixtureError("Unable to read fixture file.") from None
+    return parse_replay_fixture(data)
+
+
+def parse_replay_fixture(data: bytes) -> ReplayFixture:
+    """Validate in-memory fixture bytes with the same contract as the file loader."""
     if len(data) > MAX_FILE_BYTES:
         raise FixtureError(f"Fixture exceeds maximum file size ({MAX_FILE_BYTES} bytes).")
     try:
