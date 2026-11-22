@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import selectors
+import stat
 import subprocess
 import sys
 from dataclasses import replace
@@ -63,6 +64,44 @@ def _docker(*args):
     return result.stdout.strip()
 
 
+def _verified_docker_context():
+    context = _docker("context", "show")
+    endpoint = _docker(
+        "context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}"
+    )
+    cli = ("--context", context)
+    engine_format = "{{.OSType}}/{{.OperatingSystem}}"
+    if sys.platform == "win32":
+        assert endpoint == "npipe:////./pipe/dockerDesktopLinuxEngine"
+        assert (
+            _docker(*cli, "info", "--format", engine_format) == "linux/Docker Desktop"
+        )
+    else:
+        assert sys.platform == "linux", "Unsupported integration test platform."
+        assert os.getenv("GITHUB_ACTIONS") == "true"
+        assert os.getenv("RUNNER_ENVIRONMENT") == "github-hosted"
+        assert os.getenv("RUNNER_OS") == "Linux"
+        assert context == "default" and endpoint == "unix:///var/run/docker.sock"
+        assert stat.S_ISSOCK(Path("/var/run/docker.sock").stat().st_mode)
+        assert _docker(*cli, "info", "--format", engine_format).startswith(
+            "linux/Ubuntu "
+        )
+    return cli
+
+
+def _verify_linux_network(cli, info, container_id):
+    expected = f"{_PROJECT}_default"
+    networks = info["NetworkSettings"]["Networks"]
+    assert set(networks) == {expected}
+    network_id = networks[expected]["NetworkID"]
+    assert len(network_id) == 64
+    network = json.loads(_docker(*cli, "network", "inspect", network_id))[0]
+    assert network["Name"] == expected and network["Driver"] == "bridge"
+    assert network["Labels"]["com.docker.compose.project"] == _PROJECT
+    assert network["Labels"]["com.docker.compose.network"] == "default"
+    assert set(network["Containers"]) == {container_id}
+
+
 @pytest.fixture(scope="module")
 def verified_database():
     assert not sys.flags.optimize
@@ -82,16 +121,7 @@ def verified_database():
             pytest.fail(f"Unexpected test setting for {key}.", pytrace=False)
     port = int(os.environ["POSTGRES_PORT"])
     assert 1024 < port <= 65535 and port != 5432
-    context = _docker("context", "show")
-    endpoint = _docker(
-        "context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}"
-    )
-    assert endpoint == "npipe:////./pipe/dockerDesktopLinuxEngine"
-    cli = ("--context", context)
-    assert (
-        _docker(*cli, "info", "--format", "{{.OSType}}/{{.OperatingSystem}}")
-        == "linux/Docker Desktop"
-    )
+    cli = _verified_docker_context()
     ids = _docker(
         *cli,
         "ps",
@@ -102,6 +132,7 @@ def verified_database():
     ).splitlines()
     assert len(ids) == 1 and len(ids[0]) == 64
     info = json.loads(_docker(*cli, "inspect", "--type", "container", ids[0]))[0]
+    assert info["Config"]["Labels"]["com.docker.compose.project"] == _PROJECT
     assert info["Config"]["Labels"]["com.docker.compose.service"] == "postgres-test"
     assert (
         info["Config"]["Image"] == "postgres:18"
@@ -115,6 +146,8 @@ def verified_database():
     assert info["NetworkSettings"]["Ports"] == {
         "5432/tcp": [{"HostIp": "127.0.0.1", "HostPort": str(port)}],
     }
+    if sys.platform == "linux":
+        _verify_linux_network(cli, info, ids[0])
     inside = _docker(
         *cli,
         "exec",
