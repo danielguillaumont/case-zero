@@ -1,0 +1,16 @@
+title: Encoded PowerShell replay compatibility example
+id: 6cd9859b-8f64-46bb-b0f7-aa3b059a605e
+description: CASE//ZERO test rule for the bundled synthetic Encoded PowerShell scenario
+author: CASE//ZERO
+logsource:
+  product: windows
+  service: sysmon
+  category: process_creation
+detection:
+  windows_powershell:
+    Image|endswith: powershell.exe
+  pwsh:
+    Image|endswith: pwsh.exe
+  encoded:
+    CommandLine|contains: ' -enc '
+  condition: (windows_powershell or pwsh) and encoded
