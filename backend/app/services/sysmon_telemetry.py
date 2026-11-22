@@ -205,8 +205,6 @@ def _convert(
     event_id = _required(source, "System/EventID")
     if not _UNSIGNED.fullmatch(event_id):
         raise _RecordError("malformed_field", "System/EventID")
-    if event_id != "1":
-        raise _RecordError("unsupported_event_id", "System/EventID")
     field = "System/TimeCreated/@SystemTime"
     system_time = _required(source, field)
     if not _SYSTEM_TIME.fullmatch(system_time):
@@ -216,6 +214,8 @@ def _convert(
         _utc_timestamp(system_time[:26] + "Z", field)
     except FixtureError:
         raise _RecordError("invalid_timestamp", field) from None
+    if event_id != "1":
+        raise _RecordError("unsupported_event_id", "System/EventID")
 
     _event_data(root, source)
     field = "EventData/UtcTime"
