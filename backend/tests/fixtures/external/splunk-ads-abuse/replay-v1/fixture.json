@@ -1,0 +1,65 @@
+{
+  "events": [
+    {
+      "event_id": "357234",
+      "event_time": "2023-11-10T17:45:34.534000Z",
+      "fields": {
+        "command_line": null,
+        "event_type": "process_creation",
+        "hostname": "splunk-lab-host.invalid",
+        "process_name": "powershell_ise.exe",
+        "source": "Microsoft-Windows-Sysmon/Operational"
+      }
+    },
+    {
+      "event_id": "361080",
+      "event_time": "2023-11-10T17:46:53.362000Z",
+      "fields": {
+        "command_line": null,
+        "event_type": "process_creation",
+        "hostname": "splunk-lab-host.invalid",
+        "process_name": "notepad.exe",
+        "source": "Microsoft-Windows-Sysmon/Operational"
+      }
+    },
+    {
+      "event_id": "361131",
+      "event_time": "2023-11-10T17:46:53.443000Z",
+      "fields": {
+        "command_line": null,
+        "event_type": "process_creation",
+        "hostname": "splunk-lab-host.invalid",
+        "process_name": "test_ads_abuse.txt:Not_Malware.exe",
+        "source": "Microsoft-Windows-Sysmon/Operational"
+      }
+    },
+    {
+      "event_id": "361146",
+      "event_time": "2023-11-10T17:46:53.476000Z",
+      "fields": {
+        "command_line": null,
+        "event_type": "process_creation",
+        "hostname": "splunk-lab-host.invalid",
+        "process_name": "powershell.exe",
+        "source": "Microsoft-Windows-Sysmon/Operational"
+      }
+    },
+    {
+      "event_id": "362120",
+      "event_time": "2023-11-10T17:47:01.481000Z",
+      "fields": {
+        "command_line": null,
+        "event_type": "process_creation",
+        "hostname": "splunk-lab-host.invalid",
+        "process_name": "powershell.exe",
+        "source": "Microsoft-Windows-Sysmon/Operational"
+      }
+    }
+  ],
+  "fixture_id": "external-sysmon-xml-v1-c164a062f6808e0121b476a335ebce1a7809b9b23f203c5afae8ae7951705094",
+  "provenance": {
+    "description": "Sysmon capture SHA-256 c164a062f6808e0121b476a335ebce1a7809b9b23f203c5afae8ae7951705094; policy exclude-sysmon-event-id-15/v1.",
+    "source": "splunk-sysmon-xml/v1"
+  },
+  "schema_version": 1
+}

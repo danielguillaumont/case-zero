@@ -1,0 +1,250 @@
+{
+  "counts": {
+    "accepted": 5,
+    "rejected": 0,
+    "source": 13,
+    "unsupported": 8
+  },
+  "diagnostics": [
+    {
+      "code": "null_field",
+      "field": "EventData/CommandLine",
+      "ordinal": 0,
+      "severity": "warning"
+    },
+    {
+      "code": "null_field",
+      "field": "EventData/CommandLine",
+      "ordinal": 1,
+      "severity": "warning"
+    },
+    {
+      "code": "null_field",
+      "field": "EventData/CommandLine",
+      "ordinal": 2,
+      "severity": "warning"
+    },
+    {
+      "code": "null_field",
+      "field": "EventData/CommandLine",
+      "ordinal": 3,
+      "severity": "warning"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 4,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 5,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 6,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 7,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 8,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 9,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 10,
+      "severity": "error"
+    },
+    {
+      "code": "unsupported_event_id",
+      "field": "System/EventID",
+      "ordinal": 11,
+      "severity": "error"
+    },
+    {
+      "code": "null_field",
+      "field": "EventData/CommandLine",
+      "ordinal": 12,
+      "severity": "warning"
+    }
+  ],
+  "fixture_content_sha256": "4433f943edf9a499d7b7319d94aa62328ab759ab91579d5af5c1ad9884106289",
+  "fixture_file_sha256": "fa4d58a9b86d3a0c6319130581de9db715ea277c64d2dbe17af177f6ac4a336a",
+  "fixture_id": "external-sysmon-xml-v1-c164a062f6808e0121b476a335ebce1a7809b9b23f203c5afae8ae7951705094",
+  "mapping_version": "splunk-sysmon-xml/v1",
+  "policy": "exclude-sysmon-event-id-15/v1",
+  "records": [
+    {
+      "replay_ordinal": 4,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "1",
+      "source_event_time": "2023-11-10 17:47:01.481",
+      "source_ordinal": 0,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "362120",
+      "source_system_time": "2023-11-10T17:47:01.494649300Z",
+      "status": "accepted"
+    },
+    {
+      "replay_ordinal": 3,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "1",
+      "source_event_time": "2023-11-10 17:46:53.476",
+      "source_ordinal": 1,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361146",
+      "source_system_time": "2023-11-10T17:46:53.480040900Z",
+      "status": "accepted"
+    },
+    {
+      "replay_ordinal": 2,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "1",
+      "source_event_time": "2023-11-10 17:46:53.443",
+      "source_ordinal": 2,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361131",
+      "source_system_time": "2023-11-10T17:46:53.465612200Z",
+      "status": "accepted"
+    },
+    {
+      "replay_ordinal": 1,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "1",
+      "source_event_time": "2023-11-10 17:46:53.362",
+      "source_ordinal": 3,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361080",
+      "source_system_time": "2023-11-10T17:46:53.370595100Z",
+      "status": "accepted"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 4,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361069",
+      "source_system_time": "2023-11-10T17:46:53.300844400Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 5,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361068",
+      "source_system_time": "2023-11-10T17:46:53.299931300Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 6,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361067",
+      "source_system_time": "2023-11-10T17:46:53.299803900Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 7,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361065",
+      "source_system_time": "2023-11-10T17:46:53.299515100Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 8,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "361045",
+      "source_system_time": "2023-11-10T17:46:53.160172700Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 9,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "360975",
+      "source_system_time": "2023-11-10T17:46:51.445043700Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 10,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "360974",
+      "source_system_time": "2023-11-10T17:46:51.424975500Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": null,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "15",
+      "source_event_time": null,
+      "source_ordinal": 11,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "360972",
+      "source_system_time": "2023-11-10T17:46:51.421343200Z",
+      "status": "unsupported"
+    },
+    {
+      "replay_ordinal": 0,
+      "source_channel": "Microsoft-Windows-Sysmon/Operational",
+      "source_event_id": "1",
+      "source_event_time": "2023-11-10 17:45:34.534",
+      "source_ordinal": 12,
+      "source_provider": "Microsoft-Windows-Sysmon",
+      "source_record_id": "357234",
+      "source_system_time": "2023-11-10T17:45:34.548185300Z",
+      "status": "accepted"
+    }
+  ],
+  "schema_version": 1,
+  "source_provenance": {
+    "author": "Steven Dick",
+    "commit": "5879f5423e6c08df2b22b63f7b36e84866f9c51c",
+    "dataset_id": "e18714c0-ab84-44f6-9117-5531e3eb3a0c",
+    "license": "Apache-2.0",
+    "original_sha256": "6345b116bfd31b233a639a9699b2b9374e82cd9ef680e750b84b9d087fd9e2b1",
+    "path": "datasets/attack_techniques/T1564.004/ads_abuse/ads_abuse_sysmon.log",
+    "repository": "splunk/attack_data",
+    "sanitized": true
+  },
+  "source_sha256": "c164a062f6808e0121b476a335ebce1a7809b9b23f203c5afae8ae7951705094"
+}
