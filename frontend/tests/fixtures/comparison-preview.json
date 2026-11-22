@@ -1,0 +1,232 @@
+{
+  "comparison": {
+    "authoring_version_id": [
+      "encoded-powershell",
+      "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+    ],
+    "baseline": {
+      "executed_version_id": [
+        "encoded-powershell",
+        "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+      ],
+      "grade_sha256": "e93e9083dbc33d38364bde806d2ecdc013fde26832d4b9046749b605af85bb92",
+      "labeled_satisfaction": {
+        "denominator": 3,
+        "numerator": 2
+      },
+      "passed": false,
+      "requested_version_id": [
+        "encoded-powershell",
+        "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+      ],
+      "totals": {
+        "evaluation_error": 0,
+        "false_negative": 1,
+        "false_positive": 0,
+        "true_negative": 2,
+        "true_positive": 0,
+        "unsupported": 0
+      }
+    },
+    "candidate": {
+      "executed_version_id": [
+        "encoded-powershell",
+        "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+      ],
+      "grade_sha256": "c26ca597718b885bf081977c09a93daa67db823ea6581987ebfb41875b6e82c5",
+      "labeled_satisfaction": {
+        "denominator": 3,
+        "numerator": 3
+      },
+      "passed": true,
+      "requested_version_id": [
+        "encoded-powershell",
+        "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+      ],
+      "totals": {
+        "evaluation_error": 0,
+        "false_negative": 0,
+        "false_positive": 0,
+        "true_negative": 2,
+        "true_positive": 1,
+        "unsupported": 0
+      }
+    },
+    "candidate_minus_baseline": {
+      "evaluation_error": 0,
+      "false_negative": -1,
+      "false_positive": 0,
+      "true_negative": 0,
+      "true_positive": 1,
+      "unsupported": 0
+    },
+    "change_totals": {
+      "improved": 1,
+      "inconclusive": 0,
+      "regressed": 0,
+      "unchanged": 2
+    },
+    "comparison_sha256": "537a653234548dca4490997a4c344c4cbaa1673c1314b95357eefda55e7136a2",
+    "expectations": [
+      {
+        "baseline_classification": "true_negative",
+        "candidate_classification": "true_negative",
+        "change": "unchanged",
+        "event_id": "benign-tie",
+        "expectation_id": "benign-get-date",
+        "expected_outcome": "no_match"
+      },
+      {
+        "baseline_classification": "true_negative",
+        "candidate_classification": "true_negative",
+        "change": "unchanged",
+        "event_id": "benign-later",
+        "expectation_id": "benign-get-service",
+        "expected_outcome": "no_match"
+      },
+      {
+        "baseline_classification": "false_negative",
+        "candidate_classification": "true_positive",
+        "change": "improved",
+        "event_id": "encoded",
+        "expectation_id": "encoded-switch",
+        "expected_outcome": "match"
+      }
+    ],
+    "expectations_sha256": "2b566489fdd31209b056c21a657749cef15467aaab61dff96261ff407ec42220",
+    "fixture_id": "synthetic-encoded-powershell",
+    "fixture_sha256": "025c8bb93536b73227406c8c74e2f64d8592350b328792147a77f628357beb6d",
+    "labeled_events": 3,
+    "schema_version": 1,
+    "total_events": 3,
+    "unlabeled_events": 0
+  },
+  "evidence": {
+    "benign-get-date": {
+      "baseline": {
+        "classification": "true_negative",
+        "diagnostic_code": "expected_non_match_observed",
+        "executed_version_id": [
+          "encoded-powershell",
+          "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+        ],
+        "grade_sha256": "e93e9083dbc33d38364bde806d2ecdc013fde26832d4b9046749b605af85bb92",
+        "observed_outcome": "no_match",
+        "requested_version_id": [
+          "encoded-powershell",
+          "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+        ]
+      },
+      "candidate": {
+        "classification": "true_negative",
+        "diagnostic_code": "expected_non_match_observed",
+        "executed_version_id": [
+          "encoded-powershell",
+          "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+        ],
+        "grade_sha256": "c26ca597718b885bf081977c09a93daa67db823ea6581987ebfb41875b6e82c5",
+        "observed_outcome": "no_match",
+        "requested_version_id": [
+          "encoded-powershell",
+          "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+        ]
+      },
+      "change": "unchanged",
+      "comparison_sha256": "537a653234548dca4490997a4c344c4cbaa1673c1314b95357eefda55e7136a2",
+      "event_time": "2026-11-20T12:00:00.000000Z",
+      "evidence_sha256": "479d0f4ae9073b31e17d9f194a14c9df5a87aedc45e207c9c14f68ff1706ae53",
+      "expectation_id": "benign-get-date",
+      "expectations_sha256": "2b566489fdd31209b056c21a657749cef15467aaab61dff96261ff407ec42220",
+      "expected_outcome": "no_match",
+      "fixture_id": "synthetic-encoded-powershell",
+      "fixture_sha256": "025c8bb93536b73227406c8c74e2f64d8592350b328792147a77f628357beb6d",
+      "schema_version": 1,
+      "source_event_id": "benign-tie",
+      "source_event_ordinal": 2
+    },
+    "benign-get-service": {
+      "baseline": {
+        "classification": "true_negative",
+        "diagnostic_code": "expected_non_match_observed",
+        "executed_version_id": [
+          "encoded-powershell",
+          "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+        ],
+        "grade_sha256": "e93e9083dbc33d38364bde806d2ecdc013fde26832d4b9046749b605af85bb92",
+        "observed_outcome": "no_match",
+        "requested_version_id": [
+          "encoded-powershell",
+          "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+        ]
+      },
+      "candidate": {
+        "classification": "true_negative",
+        "diagnostic_code": "expected_non_match_observed",
+        "executed_version_id": [
+          "encoded-powershell",
+          "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+        ],
+        "grade_sha256": "c26ca597718b885bf081977c09a93daa67db823ea6581987ebfb41875b6e82c5",
+        "observed_outcome": "no_match",
+        "requested_version_id": [
+          "encoded-powershell",
+          "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+        ]
+      },
+      "change": "unchanged",
+      "comparison_sha256": "537a653234548dca4490997a4c344c4cbaa1673c1314b95357eefda55e7136a2",
+      "event_time": "2026-11-20T12:01:00.000000Z",
+      "evidence_sha256": "7bbe647eb3dfb09c6e2463aff47e202441a507ec9f71caebb5c7f816f8dac26c",
+      "expectation_id": "benign-get-service",
+      "expectations_sha256": "2b566489fdd31209b056c21a657749cef15467aaab61dff96261ff407ec42220",
+      "expected_outcome": "no_match",
+      "fixture_id": "synthetic-encoded-powershell",
+      "fixture_sha256": "025c8bb93536b73227406c8c74e2f64d8592350b328792147a77f628357beb6d",
+      "schema_version": 1,
+      "source_event_id": "benign-later",
+      "source_event_ordinal": 0
+    },
+    "encoded-switch": {
+      "baseline": {
+        "classification": "false_negative",
+        "diagnostic_code": "expected_detection_missed",
+        "executed_version_id": [
+          "encoded-powershell",
+          "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+        ],
+        "grade_sha256": "e93e9083dbc33d38364bde806d2ecdc013fde26832d4b9046749b605af85bb92",
+        "observed_outcome": "no_match",
+        "requested_version_id": [
+          "encoded-powershell",
+          "5817c6a4721aa9892d4f4e13de8c5e36c783f377ec2789337194d5c94005d2f5"
+        ]
+      },
+      "candidate": {
+        "classification": "true_positive",
+        "diagnostic_code": "expected_match_observed",
+        "executed_version_id": [
+          "encoded-powershell",
+          "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+        ],
+        "grade_sha256": "c26ca597718b885bf081977c09a93daa67db823ea6581987ebfb41875b6e82c5",
+        "observed_outcome": "match",
+        "requested_version_id": [
+          "encoded-powershell",
+          "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+        ]
+      },
+      "change": "improved",
+      "comparison_sha256": "537a653234548dca4490997a4c344c4cbaa1673c1314b95357eefda55e7136a2",
+      "event_time": "2026-11-20T12:00:00.000000Z",
+      "evidence_sha256": "30382d7fc8de939f6a3cb212b033ad930715eebe9fb57a4382795adf51859a20",
+      "expectation_id": "encoded-switch",
+      "expectations_sha256": "2b566489fdd31209b056c21a657749cef15467aaab61dff96261ff407ec42220",
+      "expected_outcome": "match",
+      "fixture_id": "synthetic-encoded-powershell",
+      "fixture_sha256": "025c8bb93536b73227406c8c74e2f64d8592350b328792147a77f628357beb6d",
+      "schema_version": 1,
+      "source_event_id": "encoded",
+      "source_event_ordinal": 1
+    }
+  }
+}
