@@ -9,14 +9,17 @@ live predicate's non-match behavior. All three fields are validated before
 matching. Error results identify the field without echoing its content.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
-from app.services.replay_fixtures import ReplayEvent, ReplayFixture
+from app.services.replay_fixtures import FixtureError, ReplayEvent, ReplayFixture
+from app.services.rule_versions import RuleCompatibility, RuleDefinition, RuleVersion
 from app.services.single_event_evaluator import matches_encoded_powershell
 
 
 ENCODED_POWERSHELL_RULE_ID = "encoded-powershell"
+EVALUATOR_CONTRACT = "encoded-powershell/v1"
+_ENCODED_POWERSHELL_VERSION = RuleVersion(RuleDefinition())
 
 
 class UnsupportedRuleError(ValueError):
@@ -38,11 +41,51 @@ class EvaluationResult:
     error: EvaluationError | None = None
 
 
-def _evaluate_event(event: ReplayEvent) -> EvaluationResult:
+@dataclass(frozen=True, slots=True)
+class VersionedEvaluation:
+    """In-memory decisions and the version selected by their evaluator."""
+
+    version_id: tuple[str, str]
+    decisions: tuple[EvaluationResult, ...]
+
+
+def _resolve_version(version: RuleVersion, fixture_schema_version: int) -> RuleVersion:
+    if type(version) is not RuleVersion:
+        raise UnsupportedRuleError("Expected a RuleVersion for replay.")
+    try:
+        definition = version.definition
+        if type(definition) is not RuleDefinition or type(definition.compatibility) is not RuleCompatibility:
+            raise ValueError
+        # Revalidate immutable values and recompute identity at the execution boundary.
+        selected = RuleVersion(replace(definition, compatibility=replace(definition.compatibility)))
+        supplied_digest = version.content_sha256
+    except (AttributeError, ValueError) as exc:
+        raise UnsupportedRuleError("Invalid or unsupported replay rule definition.") from exc
+    if type(supplied_digest) is not str or supplied_digest != selected.content_sha256:
+        raise UnsupportedRuleError("Replay rule version digest does not match its definition.")
+
+    definition = selected.definition
+    if (
+        definition.rule_id != ENCODED_POWERSHELL_RULE_ID
+        or definition.predicate_id != "encoded-powershell-switch/v1"
+        or definition.definition_schema_version != 1
+        or definition.compatibility.evaluator_contract != EVALUATOR_CONTRACT
+        or definition.compatibility.fixture_schema_version != 1
+    ):
+        raise UnsupportedRuleError("No evaluator is registered for this replay rule definition.")
+    if (
+        type(fixture_schema_version) is not int
+        or fixture_schema_version != definition.compatibility.fixture_schema_version
+    ):
+        raise FixtureError("Unsupported fixture schema version.")
+    return selected
+
+
+def _evaluate_encoded_powershell_event(event: ReplayEvent, rule_id: str) -> EvaluationResult:
     event_type = event.fields.get("event_type")
     process_name = event.fields.get("process_name")
     command_line = event.fields.get("command_line")
-    reference = (ENCODED_POWERSHELL_RULE_ID, event.event_id, event.ordinal)
+    reference = (rule_id, event.event_id, event.ordinal)
 
     if "event_type" not in event.fields:
         return EvaluationResult(*reference, "error", EvaluationError("missing_field", "event_type"))
@@ -57,8 +100,18 @@ def _evaluate_event(event: ReplayEvent) -> EvaluationResult:
     return EvaluationResult(*reference, "match" if matched else "no_match")
 
 
+def evaluate_fixture_version(fixture: ReplayFixture, version: RuleVersion) -> VersionedEvaluation:
+    """Resolve the exact version, then evaluate a loader-normalized fixture."""
+    selected = _resolve_version(version, fixture.schema_version)
+    decisions = tuple(
+        _evaluate_encoded_powershell_event(event, selected.definition.rule_id)
+        for event in fixture.events
+    )
+    return VersionedEvaluation(selected.version_id, decisions)
+
+
 def evaluate_fixture(fixture: ReplayFixture, rule_id: str) -> tuple[EvaluationResult, ...]:
     """Return immutable decisions for a normalized fixture and exact rule ID."""
     if rule_id != ENCODED_POWERSHELL_RULE_ID:
         raise UnsupportedRuleError("Only the encoded-powershell rule is supported for replay.")
-    return tuple(_evaluate_event(event) for event in fixture.events)
+    return evaluate_fixture_version(fixture, _ENCODED_POWERSHELL_VERSION).decisions

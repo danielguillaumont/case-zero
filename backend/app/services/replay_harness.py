@@ -8,6 +8,11 @@ The output digest covers the canonical manifest before output_sha256 is
 added. Fixture provenance is retained. Event fields and recorded timestamp
 spellings are omitted. An event error marks the run failed and retains its
 ordered decisions for diagnosis. Invalid inputs raise without a manifest.
+
+A future version-aware manifest needs a new schema and verifier. Its hash
+must cover the identity returned by version-bound evaluation, and verification
+must resolve and rerun that exact definition. Keep v1 serialization and
+verification available for existing evidence.
 """
 
 import argparse
@@ -22,6 +27,7 @@ from typing import Literal
 
 from app.services.replay_evaluator import (
     ENCODED_POWERSHELL_RULE_ID,
+    EVALUATOR_CONTRACT,
     EvaluationResult,
     UnsupportedRuleError,
     evaluate_fixture,
@@ -30,7 +36,6 @@ from app.services.replay_fixtures import MAX_EVENTS, FixtureError, ReplayFixture
 
 
 MANIFEST_VERSION = 1
-EVALUATOR_CONTRACT = "encoded-powershell/v1"
 
 
 def _canonical_json(payload: dict[str, object]) -> bytes:

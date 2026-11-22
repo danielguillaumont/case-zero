@@ -34,6 +34,9 @@ def test_independent_cli_runs_are_byte_identical_and_hash_verifiable():
     assert first.returncode == second.returncode == 0, (first.stderr, second.stderr)
     assert first.stderr == second.stderr == b""
     assert first.stdout == second.stdout
+    assert hashlib.sha256(first.stdout).hexdigest() == (
+        "f32268d29259b7cdb548573d3ef9985b4eddecdd5e4ad7f86fd8811bd29651a6"
+    )
 
     manifest = json.loads(first.stdout)
     output_hash = manifest.pop("output_sha256")
@@ -153,7 +156,7 @@ class ImportBoundary:
     def find_spec(self, fullname, path=None, target=None):
         allowed = {
             "app", "app.services", "app.services.replay_harness", "app.services.replay_fixtures",
-            "app.services.replay_evaluator", "app.services.single_event_evaluator",
+            "app.services.replay_evaluator", "app.services.single_event_evaluator", "app.services.rule_versions",
         }
         if fullname.startswith(("app.", "sqlalchemy", "psycopg", "fastapi")) and fullname not in allowed:
             raise AssertionError("Operational import attempted: " + fullname)
