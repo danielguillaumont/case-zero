@@ -3,7 +3,8 @@
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from uuid import UUID
 
@@ -22,11 +23,15 @@ from app.services.replay_fixtures import (
     MAX_EVENTS,
     FixtureError,
     ReplayFixture,
+    _fixture_content_hash,
     _string,
 )
 
 COMPILER_CONTRACT = "case-zero-sigma-compiler/v1"
 EVALUATOR_CONTRACT = "case-zero-sigma-sysmon-process/v1"
+TRACE_SCHEMA_VERSION = 1
+MAX_TRACE_BYTES = 2 * 1024 * 1024
+_TRACE_EVENT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
 MAX_RULE_BYTES = 16 * 1024
 _FIELDS = {
     "Image": "process_name",
@@ -143,6 +148,54 @@ class SigmaEvaluation:
     evaluator_contract: str
     fixture_sha256: str
     decisions: tuple[SigmaDecision, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SigmaTraceNode:
+    operator: str
+    result: bool | None
+    field: str | None = None
+    children: tuple["SigmaTraceNode", ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SigmaTraceField:
+    field: str
+    status: str
+
+
+@dataclass(frozen=True, slots=True)
+class SigmaEventTrace:
+    event_id: str
+    ordinal: int
+    outcome: str
+    fields: tuple[SigmaTraceField, ...] = ()
+    condition: SigmaTraceNode | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SigmaTrace:
+    version_id: tuple[str, str]
+    compiler_contract: str
+    evaluator_contract: str
+    fixture_sha256: str
+    events: tuple[SigmaEventTrace, ...]
+    schema_version: int = TRACE_SCHEMA_VERSION
+
+    def canonical_json(self) -> bytes:
+        """Serialize the redacted trace with its separate content identity."""
+        payload = asdict(self)
+        digest = hashlib.sha256(_trace_json(payload)).hexdigest()
+        encoded = _trace_json({**payload, "trace_sha256": digest})
+        if len(encoded) > MAX_TRACE_BYTES:
+            raise SigmaCompatibilityError("Sigma trace exceeds the output byte limit.")
+        return encoded
+
+
+def _trace_json(payload: dict) -> bytes:
+    return json.dumps(
+        payload, sort_keys=True, ensure_ascii=True, separators=(",", ":")
+    ).encode("utf-8")
 
 
 def _identity(rule_id: object) -> None:
@@ -394,18 +447,31 @@ def load_sigma_rule(path: Path) -> CompiledSigmaRule:
     return compile_sigma_rule(data)
 
 
-def _matches(node: Expression, values: dict[str, str | None]) -> bool | None:
+def _matches(
+    node: Expression,
+    values: dict[str, str | None],
+    trace: list[SigmaTraceNode] | None = None,
+) -> bool | None:
     if len(node) == 2:
         operator, children = node
-        results = [_matches(child, values) for child in children]
+        child_trace = [] if trace is not None else None
+        results = [_matches(child, values, child_trace) for child in children]
         if operator == "and":
-            return False if False in results else None if None in results else True
-        return True if True in results else None if None in results else False
+            result = False if False in results else None if None in results else True
+        else:
+            result = True if True in results else None if None in results else False
+        if trace is not None:
+            trace.append(SigmaTraceNode(operator, result, children=tuple(child_trace)))
+        return result
     operator, name, literal = node
     text = values[name]
-    if text is None:
-        return None
-    literal = literal.casefold()
+    result = None if text is None else _compare(operator, text, literal.casefold())
+    if trace is not None:
+        trace.append(SigmaTraceNode(operator, result, field=name))
+    return result
+
+
+def _compare(operator: str, text: str, literal: str) -> bool:
     match operator:
         case "exact":
             return text == literal
@@ -422,6 +488,14 @@ def evaluate_sigma_fixture(
     fixture: ReplayFixture, rule: CompiledSigmaRule
 ) -> SigmaEvaluation:
     """Run one compiled rule on a loader-normalized fixture in fixture order."""
+    return _evaluate_sigma_fixture(fixture, rule)
+
+
+def _evaluate_sigma_fixture(
+    fixture: ReplayFixture,
+    rule: CompiledSigmaRule,
+    record_trace: Callable[[SigmaEventTrace], None] | None = None,
+) -> SigmaEvaluation:
     if type(rule) is not CompiledSigmaRule:
         raise SigmaCompatibilityError("Expected a compiled Sigma rule.")
     fields = sorted(_validate_compiled(rule))
@@ -441,8 +515,36 @@ def evaluate_sigma_fixture(
         raise SigmaCompatibilityError(
             "Fixture event count is outside the supported bounds."
         )
+    if record_trace is not None:
+        try:
+            content_hash = _fixture_content_hash(
+                fixture.schema_version,
+                fixture.fixture_id,
+                fixture.provenance,
+                fixture.events,
+            )
+        except (AttributeError, TypeError, ValueError, RecursionError):
+            raise SigmaCompatibilityError(
+                "Sigma trace requires hashable fixture content."
+            ) from None
+        if (
+            type(fixture.content_hash) is not str
+            or fixture.content_hash != content_hash
+        ):
+            raise SigmaCompatibilityError(
+                "Sigma trace fixture identity does not match its content."
+            )
     decisions = []
     for event in fixture.events:
+        if record_trace is not None and (
+            type(event.event_id) is not str
+            or not _TRACE_EVENT_ID.fullmatch(event.event_id)
+            or type(event.ordinal) is not int
+            or not 0 <= event.ordinal < len(fixture.events)
+        ):
+            raise SigmaCompatibilityError(
+                "Sigma trace requires a bounded event ID and ordinal."
+            )
         if (
             event.fields.get("event_type") != "process_creation"
             or event.fields.get("source") not in _SOURCES
@@ -450,6 +552,10 @@ def evaluate_sigma_fixture(
             decisions.append(
                 SigmaDecision(event.event_id, event.ordinal, "unsupported_event")
             )
+            if record_trace is not None:
+                record_trace(
+                    SigmaEventTrace(event.event_id, event.ordinal, "unsupported_event")
+                )
             continue
         values: dict[str, str | None] = {}
         issues = []
@@ -467,10 +573,11 @@ def evaluate_sigma_fixture(
                     values[name] = _string(value, name).casefold()
                 except FixtureError:
                     issues.append(SigmaFieldIssue(name, "invalid"))
+        trace_nodes = [] if record_trace is not None else None
         if any(issue.code == "invalid" for issue in issues):
             outcome = "error"
         else:
-            matched = _matches(rule.expression, values)
+            matched = _matches(rule.expression, values, trace_nodes)
             outcome = (
                 "indeterminate"
                 if matched is None
@@ -481,6 +588,20 @@ def evaluate_sigma_fixture(
         decisions.append(
             SigmaDecision(event.event_id, event.ordinal, outcome, tuple(issues))
         )
+        if record_trace is not None:
+            statuses = {issue.field: issue.code for issue in issues}
+            record_trace(
+                SigmaEventTrace(
+                    event.event_id,
+                    event.ordinal,
+                    outcome,
+                    tuple(
+                        SigmaTraceField(name, statuses.get(name, "present"))
+                        for name in fields
+                    ),
+                    trace_nodes[0] if trace_nodes else None,
+                )
+            )
     return SigmaEvaluation(
         rule.version_id,
         rule.source_sha256,
@@ -489,3 +610,27 @@ def evaluate_sigma_fixture(
         fixture.content_hash,
         tuple(decisions),
     )
+
+
+def trace_sigma_fixture(fixture: ReplayFixture, rule: CompiledSigmaRule) -> SigmaTrace:
+    """Collect a bounded redacted trace from the real evaluation walk."""
+    events: list[SigmaEventTrace] = []
+    size = 0
+
+    def record(event: SigmaEventTrace) -> None:
+        nonlocal size
+        size += len(_trace_json(asdict(event))) + 1  # Include a JSON array separator.
+        if size > MAX_TRACE_BYTES:
+            raise SigmaCompatibilityError("Sigma trace exceeds the output byte limit.")
+        events.append(event)
+
+    evaluation = _evaluate_sigma_fixture(fixture, rule, record)
+    trace = SigmaTrace(
+        evaluation.version_id,
+        evaluation.compiler_contract,
+        evaluation.evaluator_contract,
+        evaluation.fixture_sha256,
+        tuple(events),
+    )
+    trace.canonical_json()  # Enforce the complete envelope limit before returning it.
+    return trace

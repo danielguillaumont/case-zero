@@ -208,10 +208,23 @@ def parse_replay_fixture(data: bytes) -> ReplayFixture:
         events.append(ReplayEvent(event_id, event_time, recorded_event_time, ordinal, MappingProxyType(fields)))
 
     ordered = tuple(sorted(events, key=lambda event: (event.event_time, event.ordinal)))
+    return ReplayFixture(
+        version, fixture_id, MappingProxyType(provenance), ordered,
+        _fixture_content_hash(version, fixture_id, provenance, ordered),
+    )
+
+
+def _fixture_content_hash(
+    version: int,
+    fixture_id: str,
+    provenance: Mapping[str, str],
+    ordered: tuple[ReplayEvent, ...],
+) -> str:
+    """Hash a normalized fixture in loader order using the v1 contract."""
     canonical = {
         "schema_version": version,
         "fixture_id": fixture_id,
-        "provenance": provenance,
+        "provenance": dict(provenance),
         "events": [
             {
                 "event_id": event.event_id,
@@ -223,4 +236,4 @@ def parse_replay_fixture(data: bytes) -> ReplayFixture:
         ],
     }
     encoded = json.dumps(canonical, sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
-    return ReplayFixture(version, fixture_id, MappingProxyType(provenance), ordered, hashlib.sha256(encoded).hexdigest())
+    return hashlib.sha256(encoded).hexdigest()
