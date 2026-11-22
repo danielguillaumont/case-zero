@@ -91,9 +91,11 @@ app.include_router(playbooks_router)
 app.include_router(rules_router)
 
 if REPLAY_PREVIEW_ENABLED:
+    from app.api.routes.comparison_preview import router as comparison_preview_router
     from app.api.routes.replay_preview import router as replay_preview_router
 
     app.include_router(replay_preview_router)
+    app.include_router(comparison_preview_router)
 
 
 @app.get("/")

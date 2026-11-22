@@ -19,7 +19,10 @@ from app.services.replay_evaluator import (
     evaluate_fixture_version,
     evaluate_regression_fixture_version,
 )
-from app.services.replay_expectations import load_replay_expectations
+from app.services.replay_expectations import (
+    ReplayExpectations,
+    load_replay_expectations,
+)
 from app.services.replay_fixtures import (
     FixtureError,
     ReplayFixture,
@@ -184,6 +187,26 @@ def grade_replay(
     """Load exact local inputs and grade the selected version against authored labels."""
     if type(schema_version) is not int or schema_version != GRADING_SCHEMA_VERSION:
         raise GradingError("Unsupported grading schema version.")
+    requested_version_id = _requested_identity(selected_version)
+    fixture = load_replay_fixture(fixture_path)
+    expectations = load_replay_expectations(
+        expectations_path, fixture, authoring_version
+    )
+    return _grade_loaded(fixture, expectations, selected_version, requested_version_id)
+
+
+def grade_loaded_replay(
+    fixture: ReplayFixture,
+    expectations: ReplayExpectations,
+    selected_version: RuleVersion,
+) -> ReplayGrade:
+    """Grade a fixture and authored expectations already validated by their parsers."""
+    return _grade_loaded(
+        fixture, expectations, selected_version, _requested_identity(selected_version)
+    )
+
+
+def _requested_identity(selected_version: RuleVersion) -> tuple[str, str]:
     if (
         type(selected_version) is not RuleVersion
         or type(selected_version.definition) is not RuleDefinition
@@ -198,10 +221,15 @@ def grade_replay(
             "Selected rule-version identity does not match its definition."
         )
 
-    fixture = load_replay_fixture(fixture_path)
-    expectations = load_replay_expectations(
-        expectations_path, fixture, authoring_version
-    )
+    return requested_version_id
+
+
+def _grade_loaded(
+    fixture: ReplayFixture,
+    expectations: ReplayExpectations,
+    selected_version: RuleVersion,
+    requested_version_id: tuple[str, str],
+) -> ReplayGrade:
     expectations.validate_target(fixture, requested_version_id[0])
     try:
         if selected_version.definition.predicate_id == WEAKENED_PREDICATE_ID:
@@ -245,7 +273,7 @@ def grade_replay(
 
     counts = Counter(grade.classification for grade in grades)
     return ReplayGrade(
-        schema_version=schema_version,
+        schema_version=GRADING_SCHEMA_VERSION,
         fixture_id=fixture.fixture_id,
         fixture_sha256=fixture.content_hash,
         expectations_sha256=expectations.content_sha256,
