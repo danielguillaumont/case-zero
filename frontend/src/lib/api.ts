@@ -10,6 +10,15 @@ import {
   replayPreviewEnabled,
   type ReplayPreviewState,
 } from "@/lib/replay-preview-contract";
+import {
+  comparisonFailure,
+  isComparisonExpectationId,
+  isPreviewDigest,
+  parseComparison,
+  parseEvidence,
+  type ComparisonState,
+  type EvidenceState,
+} from "@/lib/comparison-preview-contract";
 
 
 const API_BASE_URL =
@@ -262,6 +271,78 @@ export async function requestReplayPreview(): Promise<ReplayPreviewState> {
   } catch {
     return { status: "invalid-response" };
   }
+}
+
+const COMPARISON_PREVIEW_PATH = "/api/lab/comparison-preview";
+const MAX_COMPARISON_BYTES = 16 * 1024;
+
+async function readComparisonJson(response: Response): Promise<unknown> {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Missing preview response.");
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  let bytes = 0;
+  let text = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) return JSON.parse(text + decoder.decode());
+      bytes += value.byteLength;
+      if (bytes > MAX_COMPARISON_BYTES) throw new Error("Oversized preview response.");
+      text += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    void reader.cancel().catch(() => {});
+  }
+}
+
+async function requestComparisonData<T>(
+  path: string, signal: AbortSignal, parse: (value: unknown) => T | null, evidence = false,
+): Promise<{ status: "success"; preview: T } | { status: ReturnType<typeof comparisonFailure> }> {
+  let response: Response;
+  try {
+    response = await apiFetch(path, { method: "GET", redirect: "error", signal });
+  } catch {
+    return { status: "unavailable" };
+  }
+  if (!response.ok) {
+    void response.body?.cancel().catch(() => {});
+    return { status: comparisonFailure(response.status, evidence) };
+  }
+  try {
+    const preview = parse(await readComparisonJson(response));
+    return preview ? { status: "success", preview } : { status: "invalid-response" };
+  } catch {
+    return { status: signal.aborted ? "unavailable" : "invalid-response" };
+  }
+}
+
+export async function requestComparisonPreview(): Promise<ComparisonState> {
+  if (!isReplayPreviewEnabled()) return { status: "disabled" };
+  if (!await getAccessToken()) return { status: "unauthenticated" };
+  return requestComparisonData(COMPARISON_PREVIEW_PATH, AbortSignal.timeout(5000), parseComparison);
+}
+
+export async function requestExpectationEvidence(
+  expectationId: unknown, comparisonDigest: unknown,
+): Promise<EvidenceState> {
+  if (!isReplayPreviewEnabled()) return { status: "disabled" };
+  if (!await getAccessToken()) return { status: "unauthenticated" };
+  if (!isComparisonExpectationId(expectationId)) return { status: "evidence-not-found" };
+  if (!isPreviewDigest(comparisonDigest)) return { status: "invalid-response" };
+
+  const signal = AbortSignal.timeout(5000);
+  const current = await requestComparisonData(COMPARISON_PREVIEW_PATH, signal, parseComparison);
+  if (current.status !== "success") return current;
+  if (current.preview.comparison_sha256 !== comparisonDigest) return { status: "invalid-response" };
+  if (!current.preview.expectations.some((row) => row.expectation_id === expectationId)) {
+    return { status: "evidence-not-found" };
+  }
+  return requestComparisonData(
+    `${COMPARISON_PREVIEW_PATH}/expectations/${encodeURIComponent(expectationId)}/evidence`,
+    signal,
+    (value) => parseEvidence(value, current.preview, expectationId),
+    true,
+  );
 }
 
 
