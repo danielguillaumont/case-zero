@@ -1,0 +1,16 @@
+{
+  "fixture_type": "authentication-correlation",
+  "schema_version": 1,
+  "fixture_id": "synthetic-authentication-correlation",
+  "provenance": {"source": "case-zero-synthetic"},
+  "events": [
+    {"event_id": "threshold", "event_time": "2026-11-20T07:05:00-05:00", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "failure"},
+    {"event_id": "first", "event_time": "2026-11-20T12:00:00Z", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "failed"},
+    {"event_id": "second", "event_time": "2026-11-20T12:01:00Z", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "denied"},
+    {"event_id": "other-user", "event_time": "2026-11-20T12:01:20Z", "event_type": "authentication", "username": "another-demo-user", "source_ip": "192.0.2.8", "outcome": "failure"},
+    {"event_id": "success", "event_time": "2026-11-20T12:01:30Z", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "success"},
+    {"event_id": "third", "event_time": "2026-11-20T12:02:00Z", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "invalid"},
+    {"event_id": "fourth", "event_time": "2026-11-20T12:02:00Z", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "failure"},
+    {"event_id": "sixth", "event_time": "2026-11-20T12:05:00Z", "event_type": "authentication", "username": "demo-user", "source_ip": "192.0.2.8", "outcome": "failure"}
+  ]
+}
