@@ -155,6 +155,13 @@ def load_replay_expectations(path: Path, fixture: ReplayFixture, authoring_versi
         raise
     except (OSError, RuntimeError, ValueError):
         raise ExpectationError("Unable to read expectation file.") from None
+    return parse_replay_expectations(data, fixture, authoring_version)
+
+
+def parse_replay_expectations(
+    data: bytes, fixture: ReplayFixture, authoring_version: RuleVersion
+) -> ReplayExpectations:
+    """Validate a bounded expectation snapshot against its fixture and author."""
     if len(data) > MAX_FILE_BYTES:
         raise ExpectationError("Expectation file exceeds maximum size.")
 
