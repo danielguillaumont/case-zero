@@ -23,6 +23,8 @@ from app.services.replay_evidence import verify_replay_evidence
 BACKEND = Path(__file__).resolve().parents[1]
 URL = "/api/lab/replay-preview"
 COMPARISON_URL = "/api/lab/comparison-preview"
+EVIDENCE_PATH = COMPARISON_URL + "/expectations/{expectation_id}/evidence"
+EVIDENCE_URL = EVIDENCE_PATH.format(expectation_id="encoded-switch")
 RULE = "encoded-powershell"
 USER_ID = UUID("00000000-0000-4000-8000-000000000001")
 TEST_ENV = {
@@ -81,11 +83,14 @@ event.listen(engine.sync_engine, "do_connect", forbid_database)
 event.listen(engine.sync_engine, "checkout", forbid_database)
 preview_path = "/api/lab/replay-preview"
 comparison_path = "/api/lab/comparison-preview"
+evidence_path = "/api/lab/comparison-preview/expectations/{expectation_id}/evidence"
 operations = app.openapi()["paths"]
 assert (preview_path in operations) is expected
 assert (comparison_path in operations) is expected
+assert (evidence_path in operations) is expected
 assert TestClient(app).post(preview_path).status_code == (401 if expected else 404)
 assert TestClient(app).get(comparison_path).status_code == (401 if expected else 404)
+assert TestClient(app).get(evidence_path.format(expectation_id="encoded-switch")).status_code == (401 if expected else 404)
 assert ("app.api.routes.replay_preview" in sys.modules) is expected
 assert ("app.api.routes.comparison_preview" in sys.modules) is expected
 assert "/api/events" in operations and "/api/auth/me" in operations
@@ -94,6 +99,8 @@ if expected:
     assert "requestBody" not in operations[preview_path]["post"]
     assert set(operations[comparison_path]) == {"get"}
     assert "requestBody" not in operations[comparison_path]["get"]
+    assert set(operations[evidence_path]) == {"get"}
+    assert "requestBody" not in operations[evidence_path]["get"]
 """
     env = {key: os.environ[key] for key in ("SYSTEMROOT", "PATH") if key in os.environ}
     env.update(TEST_ENV)
@@ -162,7 +169,7 @@ def preview(monkeypatch):
             event.remove(engine, name, forbid_database)
 
 
-@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL)])
+@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL), ("GET", EVIDENCE_URL)])
 def test_missing_authentication(preview, method, url):
     client, _, _, _, lookup, audit = preview
     response = client.request(method, url)
@@ -176,7 +183,10 @@ def test_missing_authentication(preview, method, url):
     ("analyst", False, "auth.inactive_session"),
     ("viewer", True, "rbac.access_denied"),
 ])
-@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL)])
+@pytest.mark.parametrize(("method", "url"), [
+    ("POST", URL), ("GET", COMPARISON_URL), ("GET", EVIDENCE_URL),
+    ("GET", EVIDENCE_PATH.format(expectation_id="unknown")),
+])
 def test_denials_preserve_auth_auditing(preview, monkeypatch, role, active, audit_event, method, url):
     from app.api.routes import comparison_preview
 
@@ -185,13 +195,14 @@ def test_denials_preserve_auth_auditing(preview, monkeypatch, role, active, audi
     user.is_active = active
     monkeypatch.setattr(route, "run_replay", lambda *args: pytest.fail("Denied request ran replay."))
     monkeypatch.setattr(comparison_preview, "grade_loaded_replay", lambda *args: pytest.fail("Denied request ran comparison."))
+    monkeypatch.setattr(comparison_preview, "_load_bundle", lambda: pytest.fail("Denied request read evidence."))
     assert client.request(method, url, headers=headers).status_code == 403
     lookup.assert_awaited_once()
     audit.assert_awaited_once()
     assert audit.await_args.kwargs["event_type"] == audit_event
 
 
-@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL)])
+@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL), ("GET", EVIDENCE_URL)])
 def test_invalid_token_retains_audit(preview, method, url):
     client, _, _, _, lookup, audit = preview
     assert client.request(method, url, headers={"Authorization": "Bearer invalid"}).status_code == 401
@@ -285,7 +296,7 @@ def test_failed_replay_and_oversized_serialized_output_fail_closed(preview, monk
     assert client.post(URL, headers=headers).status_code == 503
 
 
-@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL)])
+@pytest.mark.parametrize(("method", "url"), [("POST", URL), ("GET", COMPARISON_URL), ("GET", EVIDENCE_URL)])
 def test_preview_execution_has_no_outbound_network_or_operational_io(preview, monkeypatch, method, url):
     client, _, _, headers, lookup, audit = preview
 
@@ -333,19 +344,25 @@ def test_comparison_preview_reproduces_the_published_offline_comparison(preview,
     {"params": {"fixture": "untrusted-path"}},
     {"content": b" "},
     {"json": {}},
-    {"content": iter([b"chunk"])},
+    {"content": (b"chunk",)},
 ], ids=["query", "body", "json", "streamed"])
-def test_comparison_rejects_input_before_reading_assets(preview, monkeypatch, kwargs):
+@pytest.mark.parametrize("url", [COMPARISON_URL, EVIDENCE_URL])
+def test_comparison_rejects_input_before_reading_assets(preview, monkeypatch, kwargs, url):
     from app.api.routes import comparison_preview
 
     client, _, _, headers, _, _ = preview
     monkeypatch.setattr(comparison_preview, "_read_bundled_asset", lambda *_: pytest.fail("Invalid request read an asset."))
-    assert client.request("GET", COMPARISON_URL, headers=headers, **kwargs).status_code == 400
+    if isinstance(kwargs.get("content"), tuple):
+        kwargs = {**kwargs, "content": iter(kwargs["content"])}
+    assert client.request("GET", url, headers=headers, **kwargs).status_code == 400
 
 
 @pytest.mark.parametrize("asset", ["_FIXTURE_PATH", "_EXPECTATIONS_PATH"])
 @pytest.mark.parametrize("problem", ["missing", "directory", "oversized", "tampered"])
-def test_comparison_asset_validation_precedes_evaluation(preview, monkeypatch, tmp_path, asset, problem):
+@pytest.mark.parametrize(("url", "code"), [
+    (COMPARISON_URL, "comparison_preview_unavailable"), (EVIDENCE_URL, "evidence_preview_unavailable"),
+])
+def test_comparison_asset_validation_precedes_evaluation(preview, monkeypatch, tmp_path, asset, problem, url, code):
     from app.api.routes import comparison_preview
 
     client, _, _, headers, _, _ = preview
@@ -363,14 +380,17 @@ def test_comparison_asset_validation_precedes_evaluation(preview, monkeypatch, t
         target.write_text(json.dumps(data), encoding="utf-8")
     monkeypatch.setattr(comparison_preview, asset, target)
     monkeypatch.setattr(comparison_preview, "grade_loaded_replay", lambda *_: pytest.fail("Invalid asset was evaluated."))
-    response = client.get(COMPARISON_URL, headers=headers)
+    response = client.get(url, headers=headers)
     assert response.status_code == 503
-    assert response.json() == {"detail": {"code": "comparison_preview_unavailable"}}
+    assert response.json() == {"detail": {"code": code}}
     assert response.headers["cache-control"] == "no-store"
 
 
 @pytest.mark.parametrize("failure", ["exception", "extra_field", "changed_result", "oversized"])
-def test_comparison_internal_failures_are_sanitized(preview, monkeypatch, failure):
+@pytest.mark.parametrize(("url", "code"), [
+    (COMPARISON_URL, "comparison_preview_unavailable"), (EVIDENCE_URL, "evidence_preview_unavailable"),
+])
+def test_comparison_internal_failures_are_sanitized(preview, monkeypatch, failure, url, code):
     from app.api.routes import comparison_preview
 
     client, _, _, headers, _, _ = preview
@@ -390,7 +410,89 @@ def test_comparison_internal_failures_are_sanitized(preview, monkeypatch, failur
         monkeypatch.setattr(comparison_preview, "_MAX_RESPONSE_BYTES", 16)
     else:
         monkeypatch.setattr(comparison_preview, "compare_replay_summaries", malformed)
-    response = client.get(COMPARISON_URL, headers=headers)
+    response = client.get(url, headers=headers)
     assert response.status_code == 503
-    assert response.json() == {"detail": {"code": "comparison_preview_unavailable"}}
+    assert response.json() == {"detail": {"code": code}}
     assert "TEST_ONLY_PRIVATE_VALUE" not in response.text
+
+
+@pytest.mark.parametrize(
+    ("role", "expectation", "event_id", "ordinal", "event_time", "expected", "baseline", "candidate", "change"),
+    [
+        ("analyst", "encoded-switch", "encoded", 1, "2026-11-20T12:00:00.000000Z",
+         "match", "false_negative", "true_positive", "improved"),
+        ("administrator", "benign-get-date", "benign-tie", 2, "2026-11-20T12:00:00.000000Z",
+         "no_match", "true_negative", "true_negative", "unchanged"),
+        ("analyst", "benign-get-service", "benign-later", 0, "2026-11-20T12:01:00.000000Z",
+         "no_match", "true_negative", "true_negative", "unchanged"),
+    ],
+)
+def test_evidence_is_repeatable_redacted_and_bound_to_parent(
+    preview, role, expectation, event_id, ordinal, event_time, expected, baseline, candidate, change
+):
+    client, _, user, headers, lookup, audit = preview
+    user.role = role
+    parent_response = client.get(COMPARISON_URL, headers=headers)
+    assert hashlib.sha256(parent_response.content).hexdigest() == "61f50d1b4fc71f47092576afa32b133ad33b3d4d6949a1f2e808f41c4915cec9"
+    parent = parent_response.json()
+    url = EVIDENCE_PATH.format(expectation_id=expectation)
+    first, second = (client.get(url, headers=headers) for _ in range(2))
+    assert first.status_code == second.status_code == 200
+    assert first.content == second.content
+    assert first.headers["cache-control"] == "no-store"
+    assert len(first.content) <= 16 * 1024
+    evidence = first.json()
+    assert evidence["schema_version"] == 1
+    assert (evidence["source_event_id"], evidence["source_event_ordinal"], evidence["event_time"]) == (event_id, ordinal, event_time)
+    assert (evidence["expectation_id"], evidence["expected_outcome"], evidence["change"]) == (expectation, expected, change)
+    assert [(evidence[name]["observed_outcome"], evidence[name]["classification"]) for name in ("baseline", "candidate")] == [
+        ("no_match", baseline), ("match" if candidate == "true_positive" else "no_match", candidate),
+    ]
+    if change == "improved":
+        assert evidence["baseline"]["diagnostic_code"] == "expected_detection_missed"
+        assert evidence["candidate"]["diagnostic_code"] == "expected_match_observed"
+    else:
+        assert {evidence[name]["diagnostic_code"] for name in ("baseline", "candidate")} == {"expected_non_match_observed"}
+    row = next(item for item in parent["expectations"] if item["expectation_id"] == expectation)
+    assert (row["event_id"], row["expected_outcome"], row["change"]) == (event_id, expected, change)
+    for name in ("baseline", "candidate"):
+        assert evidence[name]["classification"] == row[f"{name}_classification"]
+        for key in ("grade_sha256", "requested_version_id", "executed_version_id"):
+            assert evidence[name][key] == parent[name][key]
+    for key in ("fixture_id", "fixture_sha256", "expectations_sha256", "comparison_sha256"):
+        assert evidence[key] == parent[key]
+    digest = evidence.pop("evidence_sha256")
+    assert digest == hashlib.sha256(json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    for forbidden in (b"command_line", b"pwsh.exe", b"rationale", b"hostname", b"username", b"condition", b"trace", b"case_id"):
+        assert forbidden not in first.content
+    assert lookup.await_count == 3
+    audit.assert_not_awaited()
+
+
+def test_unknown_expectation_is_exact_and_does_not_run_comparison(preview, monkeypatch):
+    from app.api.routes import comparison_preview
+
+    client, _, _, headers, _, _ = preview
+    monkeypatch.setattr(comparison_preview, "_verified_comparison", lambda *_: pytest.fail("Unknown expectation ran replay."))
+    for key in ("ENCODED-SWITCH", "TEST_ONLY_PRIVATE_VALUE"):
+        response = client.get(EVIDENCE_PATH.format(expectation_id=key), headers=headers)
+        assert response.status_code == 404
+        assert response.json() == {"detail": {"code": "expectation_not_found"}}
+        assert response.headers["cache-control"] == "no-store"
+
+
+def test_evidence_rejects_a_summary_that_disagrees_with_verified_parent(preview, monkeypatch):
+    from app.api.routes import comparison_preview
+
+    client, _, _, headers, _, _ = preview
+    verify = comparison_preview._verified_comparison
+
+    def inconsistent(*args):
+        canonical, parent, (baseline, candidate) = verify(*args)
+        return canonical, parent, (replace(baseline, executed_version_id=candidate.executed_version_id), candidate)
+
+    monkeypatch.setattr(comparison_preview, "_verified_comparison", inconsistent)
+    response = client.get(EVIDENCE_URL, headers=headers)
+    assert response.status_code == 503
+    assert response.json() == {"detail": {"code": "evidence_preview_unavailable"}}
+    assert response.headers["cache-control"] == "no-store"
