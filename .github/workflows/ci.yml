@@ -74,6 +74,10 @@ jobs:
         working-directory: backend
         run: python -m pytest -v
 
+      - name: Prove offline detection regression
+        working-directory: backend
+        run: python -m app.services.replay_regression_proof
+
 
   frontend-build:
     name: Frontend Build

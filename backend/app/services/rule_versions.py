@@ -7,6 +7,9 @@ whitespace or string edges. The evaluator contract also identifies replay's
 field validation and error behavior. Keep those IDs tied to their original
 semantics when introducing future versions.
 
+The long-switch predicate and its separate evaluator contract describe the
+offline regression variant, which recognizes only -encodedcommand.
+
 The content hash covers the complete definition, including its title and
 compatibility. The version ID is the logical rule ID paired with that digest.
 It identifies a declaration, not a fingerprint of Python code or evidence of
@@ -17,16 +20,25 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass, field
 
+CORRECTED_PREDICATE_ID = "encoded-powershell-switch/v1"
+CORRECTED_EVALUATOR_CONTRACT = "encoded-powershell/v1"
+WEAKENED_PREDICATE_ID = "encoded-powershell-long-switch/v1"
+WEAKENED_EVALUATOR_CONTRACT = "encoded-powershell-long-switch/v1"
+_CONTRACTS_BY_PREDICATE = {
+    CORRECTED_PREDICATE_ID: CORRECTED_EVALUATOR_CONTRACT,
+    WEAKENED_PREDICATE_ID: WEAKENED_EVALUATOR_CONTRACT,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class RuleCompatibility:
-    evaluator_contract: str = "encoded-powershell/v1"
+    evaluator_contract: str = CORRECTED_EVALUATOR_CONTRACT
     fixture_schema_version: int = 1
 
     def __post_init__(self) -> None:
         if type(self.evaluator_contract) is not str:
             raise ValueError("evaluator_contract must be a string.")
-        if self.evaluator_contract != "encoded-powershell/v1":
+        if self.evaluator_contract not in _CONTRACTS_BY_PREDICATE.values():
             raise ValueError("Unsupported evaluator contract.")
         if type(self.fixture_schema_version) is not int:
             raise ValueError("fixture_schema_version must be an integer.")
@@ -38,7 +50,7 @@ class RuleCompatibility:
 class RuleDefinition:
     rule_id: str = "encoded-powershell"
     title: str = "Encoded PowerShell"
-    predicate_id: str = "encoded-powershell-switch/v1"
+    predicate_id: str = CORRECTED_PREDICATE_ID
     compatibility: RuleCompatibility = field(default_factory=RuleCompatibility)
     definition_schema_version: int = 1
 
@@ -49,17 +61,27 @@ class RuleDefinition:
             raise ValueError("Unsupported definition schema version.")
         if type(self.rule_id) is not str or self.rule_id != "encoded-powershell":
             raise ValueError("Unsupported rule_id. Expected encoded-powershell.")
-        if type(self.predicate_id) is not str or self.predicate_id != "encoded-powershell-switch/v1":
+        if (
+            type(self.predicate_id) is not str
+            or self.predicate_id not in _CONTRACTS_BY_PREDICATE
+        ):
             raise ValueError("Unsupported predicate_id for encoded-powershell.")
         if type(self.compatibility) is not RuleCompatibility:
             raise ValueError("compatibility must be a RuleCompatibility.")
+        if (
+            self.compatibility.evaluator_contract
+            != _CONTRACTS_BY_PREDICATE[self.predicate_id]
+        ):
+            raise ValueError("Evaluator contract does not support this predicate_id.")
         if (
             type(self.title) is not str
             or not 1 <= len(self.title) <= 120
             or not self.title.isprintable()
             or self.title != self.title.strip()
         ):
-            raise ValueError("title must contain 1 to 120 printable characters with no surrounding whitespace.")
+            raise ValueError(
+                "title must contain 1 to 120 printable characters with no surrounding whitespace."
+            )
 
     def canonical_json(self) -> bytes:
         """Return sorted compact JSON as UTF-8, with ASCII escapes and no newline.
@@ -81,7 +103,9 @@ class RuleVersion:
         if type(self.definition) is not RuleDefinition:
             raise ValueError("definition must be a RuleDefinition.")
         object.__setattr__(
-            self, "content_sha256", hashlib.sha256(self.definition.canonical_json()).hexdigest()
+            self,
+            "content_sha256",
+            hashlib.sha256(self.definition.canonical_json()).hexdigest(),
         )
 
     @property
