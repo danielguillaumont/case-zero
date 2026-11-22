@@ -605,6 +605,43 @@ Current detections include:
 
 ---
 
+## **Detection Validation & Regression Testing**
+
+The v2.3 development milestone adds an offline regression proof for the
+built-in Encoded PowerShell detection. The latest published release remains
+v2.0.1. [Milestone closeout](docs/roadmap/v23-milestone-closeout.md) · [GitHub Releases](https://github.com/danielguillaumont/case-zero/releases)
+
+Each immutable rule version has a SHA-256 content identity. Replay validates
+that identity and the evaluator and fixture contracts before running the
+selected built-in predicate. The grader verifies the executed version and
+compares its decisions with independently authored expectations tied to the
+exact fixture revision. The CLI emits deterministic JSON with version IDs,
+fixture and expectation digests, per-event grades, and totals.
+
+The bundled synthetic fixture has one expected match using `-enc` and two
+benign controls. Its command lines are evaluated as recorded text.
+
+| Rule version | Recognized switches | TP | TN | FN | Result |
+|---|---|---:|---:|---:|---|
+| Weakened | `-encodedcommand` | 0 | 2 | 1 | Expected FAIL |
+| Corrected | `-enc`, `-encodedcommand` | 1 | 2 | 0 | PASS |
+
+From the repository root, use the Python 3.12 environment created in the
+[backend setup](#4-start-the-backend). The proof runs without PostgreSQL,
+migrations, or a running API.
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.services.replay_regression_proof
+```
+
+An exit code of `0` with `"proof_passed":true` means the expected FAIL/PASS
+pair was reproduced. GitHub Actions runs the same proof after the backend
+tests and fails the step if the comparison changes or validation fails.
+[CI workflow](.github/workflows/ci.yml) · [Verified PR #21 run](https://github.com/danielguillaumont/case-zero/actions/runs/44976758308)
+
+---
+
 ## **Incident Response**
 
 - Response playbook catalog
