@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "fixture_id": "synthetic-encoded-powershell",
+  "fixture_sha256": "025c8bb93536b73227406c8c74e2f64d8592350b328792147a77f628357beb6d",
+  "rule_id": "encoded-powershell",
+  "authoring_version_id": [
+    "encoded-powershell",
+    "b243c81ae85fb7a63d053837434d32a9eb349ffd56e0e2d6acb6908495c8ce80"
+  ],
+  "expectations": [
+    {
+      "expectation_id": "encoded-switch",
+      "name": "Encoded PowerShell switch",
+      "event_id": "encoded",
+      "polarity": "positive",
+      "expected_outcome": "match",
+      "source": "synthetic encoded PowerShell scenario",
+      "rationale": "The synthetic PowerShell process includes the encoded-command switch."
+    },
+    {
+      "expectation_id": "benign-get-date",
+      "name": "Benign PowerShell Get-Date",
+      "event_id": "benign-tie",
+      "polarity": "negative",
+      "expected_outcome": "no_match",
+      "source": "synthetic encoded PowerShell scenario",
+      "rationale": "The synthetic PowerShell process runs Get-Date without an encoded-command switch."
+    },
+    {
+      "expectation_id": "benign-get-service",
+      "name": "Benign PowerShell Get-Service",
+      "event_id": "benign-later",
+      "polarity": "negative",
+      "expected_outcome": "no_match",
+      "source": "synthetic encoded PowerShell scenario",
+      "rationale": "The synthetic PowerShell process runs Get-Service without an encoded-command switch."
+    }
+  ]
+}
