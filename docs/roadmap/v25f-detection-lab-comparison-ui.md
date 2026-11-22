@@ -52,7 +52,16 @@ cross-response validation, request gating, failure states and rendered markup
 using captured backend responses. The API suite exercises the actual routes
 without a database.
 
-Validation passed 15 Node tests and 82 backend API tests. The local browser
-smoke attempt stopped when Chrome closed its debugging connection before page
-interaction, so browser keyboard and responsive behavior still need a manual
-check. Automated markup tests cover semantic controls and accessible names.
+The implementation run passed 15 Node tests and 82 backend API tests. Its
+browser smoke attempt stopped when Chrome closed its debugging connection
+before page interaction. Automated markup tests cover semantic controls and
+accessible names.
+
+A subsequent maintainer-reported local manual walkthrough used an authenticated
+administrator on desktop and at a 390 px mobile viewport. The weakened baseline
+satisfied 2/3 labels and the corrected candidate satisfied 3/3, with one
+improvement, two unchanged benign controls and zero regressions. Evidence opened
+for all three expectations. The existing replay preview returned three events,
+one match and two non-matches. This was a bounded synthetic walkthrough.
+Independent screen-reader, keyboard-only and novice-user testing remain open.
+[v2.5 acceptance review](../releases/v2.5.md)
