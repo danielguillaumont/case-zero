@@ -17,6 +17,7 @@ from app.services.replay_evaluator import (
     UnsupportedRuleError,
     VersionedEvaluation,
     evaluate_fixture_version,
+    evaluate_regression_fixture_version,
 )
 from app.services.replay_expectations import load_replay_expectations
 from app.services.replay_fixtures import (
@@ -24,7 +25,11 @@ from app.services.replay_fixtures import (
     ReplayFixture,
     load_replay_fixture,
 )
-from app.services.rule_versions import RuleDefinition, RuleVersion
+from app.services.rule_versions import (
+    WEAKENED_PREDICATE_ID,
+    RuleDefinition,
+    RuleVersion,
+)
 
 GRADING_SCHEMA_VERSION = 1
 Classification = Literal[
@@ -199,7 +204,10 @@ def grade_replay(
     )
     expectations.validate_target(fixture, requested_version_id[0])
     try:
-        evaluation = evaluate_fixture_version(fixture, selected_version)
+        if selected_version.definition.predicate_id == WEAKENED_PREDICATE_ID:
+            evaluation = evaluate_regression_fixture_version(fixture, selected_version)
+        else:
+            evaluation = evaluate_fixture_version(fixture, selected_version)
     except (UnsupportedRuleError, FixtureError):
         executed_version_id = None
         decisions = {}
