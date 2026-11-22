@@ -78,6 +78,55 @@ jobs:
         working-directory: backend
         run: python -m app.services.replay_regression_proof
 
+      - name: Export offline detection proof
+        working-directory: backend
+        shell: bash
+        run: |
+          staging_dir=$(mktemp -d "$RUNNER_TEMP/case-zero-proof.XXXXXXXX")
+          proof_dir="$staging_dir/bundle"
+          python -m app.services.replay_proof_export --output-dir "$proof_dir"
+          printf 'PROOF_DIR=%s\n' "$proof_dir" >> "$GITHUB_ENV"
+
+      - name: Independently verify detection proof
+        working-directory: backend
+        shell: bash
+        run: python -m app.services.replay_proof_verify --bundle-dir "$PROOF_DIR"
+
+      - name: Check proof artifact staging
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import stat
+          from pathlib import Path
+
+          directory = Path(os.environ["PROOF_DIR"])
+          if not stat.S_ISDIR(directory.lstat().st_mode):
+              raise SystemExit("Proof staging must be a real directory.")
+
+          expected = {"proof.json", "proof.md"}
+          if {entry.name for entry in directory.iterdir()} != expected:
+              raise SystemExit("Proof staging must contain exactly proof.json and proof.md.")
+
+          for name in sorted(expected):
+              info = (directory / name).lstat()
+              if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= 16 * 1024:
+                  raise SystemExit(f"Invalid proof artifact: {name}.")
+          print("Proof artifact staging passed.")
+          PY
+
+      - name: Upload verified detection proof
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: case-zero-detection-proof
+          path: |
+            ${{ env.PROOF_DIR }}/proof.json
+            ${{ env.PROOF_DIR }}/proof.md
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: false
+
 
   frontend-build:
     name: Frontend Build
