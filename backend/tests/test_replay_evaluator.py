@@ -145,6 +145,7 @@ class ImportBoundary:
         allowed = {
             "app", "app.services", "app.services.replay_evaluator",
             "app.services.replay_fixtures", "app.services.single_event_evaluator",
+            "app.services.rule_versions",
         }
         if fullname.startswith(("app.", "sqlalchemy", "psycopg", "fastapi")) and fullname not in allowed:
             raise AssertionError("Operational import attempted: " + fullname)
