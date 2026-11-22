@@ -88,3 +88,38 @@ class ComparisonPreviewResponse(_PreviewModel):
         list[ComparisonExpectation], Field(min_length=3, max_length=3)
     ]
     comparison_sha256: Sha256
+
+
+class ExpectationEvidenceRun(_PreviewModel):
+    requested_version_id: VersionId
+    executed_version_id: VersionId
+    grade_sha256: Sha256
+    observed_outcome: Literal["match", "no_match"]
+    classification: Literal["true_positive", "true_negative", "false_negative"]
+    diagnostic_code: Literal[
+        "expected_match_observed",
+        "expected_non_match_observed",
+        "expected_detection_missed",
+    ]
+
+
+class ExpectationEvidenceResponse(_PreviewModel):
+    schema_version: Literal[1]
+    fixture_id: Literal["synthetic-encoded-powershell"]
+    fixture_sha256: Sha256
+    expectations_sha256: Sha256
+    expectation_id: InvestigationId
+    source_event_id: InvestigationId
+    source_event_ordinal: Count
+    event_time: Annotated[
+        str,
+        StringConstraints(
+            pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z$"
+        ),
+    ]
+    expected_outcome: Literal["match", "no_match"]
+    baseline: ExpectationEvidenceRun
+    candidate: ExpectationEvidenceRun
+    change: Literal["improved", "unchanged"]
+    comparison_sha256: Sha256
+    evidence_sha256: Sha256
