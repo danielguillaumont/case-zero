@@ -1347,14 +1347,15 @@ which points server-side frontend requests to the production FastAPI API.
 
 The FastAPI backend is deployed on Render.
 
-Production startup:
+The checked-in Render web startup command is:
 
 ```text
-alembic upgrade head &&
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-This ensures pending database migrations are applied before the API begins serving traffic.
+Apply production migrations through a separate, explicitly approved operation.
+Confirm Render's effective live startup and deployment settings before release.
+[Production migration approval and rollback procedure](docs/roadmap/v26g1-deployment-migration-safety.md)
 
 ---
 

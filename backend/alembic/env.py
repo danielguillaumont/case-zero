@@ -21,6 +21,7 @@ from app.models.case_note import CaseNote
 from app.models.login_throttle import (
     LoginThrottle,
 )
+from app.models import replay_run  # noqa: F401 - register replay tables
 from app.models.security_audit_event import (
     SecurityAuditEvent,
 )
